@@ -41,8 +41,9 @@ interface Settings {
     openmodeldb: boolean;
     civitasbay: boolean;
   };
-  // ArtificialAnalysis API settings
+  // External API keys (user-provided)
   artificialAnalysisApiKey: string;
+  gitHubToken: string;  // Optional: For higher GitHub API rate limits
   // UI preferences
   theme: 'auto' | 'light' | 'dark';
   compactMode: boolean;
@@ -102,8 +103,9 @@ const defaultSettings: Settings = {
     openmodeldb: true,
     civitasbay: true, // Enabled - good for model preservation
   },
-  // ArtificialAnalysis API settings
+  // External API keys (user-provided)
   artificialAnalysisApiKey: "",
+  gitHubToken: "",  // Optional: For higher GitHub API rate limits
   // UI preferences
   theme: 'auto',
   compactMode: false,

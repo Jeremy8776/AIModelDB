@@ -4,16 +4,21 @@ import { parseGitHubRepo, mapSpdxToType } from '../utils';
 
 type PartialModel = Partial<Model>;
 
-export async function enrichFromGitHub(model: Model): Promise<PartialModel | null> {
+/**
+ * Enriches model data from GitHub repository information
+ * @param model The model to enrich
+ * @param gitHubToken Optional GitHub personal access token for higher rate limits
+ */
+export async function enrichFromGitHub(model: Model, gitHubToken?: string): Promise<PartialModel | null> {
     const repoInfo = parseGitHubRepo(model.repo || model.url || null);
     if (!repoInfo) return null;
     const { owner, name } = repoInfo;
-    const ghToken = import.meta.env.VITE_GITHUB_TOKEN || '';
+    const token = gitHubToken || '';
     const headers: Record<string, string> = {
         'Accept': 'application/vnd.github+json',
         'X-GitHub-Api-Version': '2022-11-28',
         'User-Agent': 'ai-model-db-pro',
-        ...(ghToken ? { 'Authorization': `Bearer ${ghToken}` } : {})
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
     };
     try {
         const resp = await fetch(proxyUrl(`/github-api/repos/${owner}/${name}`, `https://api.github.com/repos/${owner}/${name}`), { headers });

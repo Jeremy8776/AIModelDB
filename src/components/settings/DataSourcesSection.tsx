@@ -165,6 +165,32 @@ export function DataSourcesSection({ onSync, addConsoleLog }: DataSourcesSection
         </div>
       )}
 
+      {/* GitHub Token (Optional) */}
+      <div className={`rounded-xl border p-4 ${bgCard}`}>
+        <h4 className="font-medium mb-2">GitHub Token (Optional)</h4>
+        <p className="text-sm text-zinc-700 dark:text-zinc-400 mb-3">
+          Increases API rate limits for syncing GitHub repositories. Without a token, you're limited to 60 requests/hour.
+        </p>
+        <input
+          type="password"
+          value={settings.gitHubToken || ""}
+          onChange={(e) => saveSettings({ gitHubToken: e.target.value })}
+          placeholder="ghp_..."
+          className={`w-full rounded-lg border ${bgInput} px-3 py-2 text-sm font-mono`}
+        />
+        <p className="text-xs text-zinc-500 dark:text-zinc-500 mt-2">
+          Create a personal access token at{' '}
+          <a
+            href="https://github.com/settings/tokens"
+            onClick={(e) => handleExternalLink(e, 'https://github.com/settings/tokens')}
+            className="text-accent hover:underline cursor-pointer"
+          >
+            GitHub Settings → Developer Settings → Personal Access Tokens
+          </a>
+          . No special permissions needed.
+        </p>
+      </div>
+
       {/* Sync Settings */}
       <div className={`rounded-xl border p-4 ${bgCard}`}>
         <h4 className="font-medium mb-4">Sync Settings</h4>

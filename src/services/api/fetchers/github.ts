@@ -40,11 +40,13 @@ function determineDomainFromTopics(topics: string[]): Domain {
 }
 
 /**
- * Fetch popular generative model repositories from GitHub
- * @param limit Maximum number of repositories to fetch (default: 50)
- * @returns Object containing complete and flagged models
+ * Fetches popular generative AI repositories from GitHub API
+ * @param limit Number of repositories to fetch
+ * @param gitHubToken Optional GitHub personal access token for higher rate limits
  */
-export async function fetchGitHubPopular(limit = 50): Promise<{ complete: Model[], flagged: Model[] }> {
+export async function fetchPopularGenerativeRepos(limit = 30, gitHubToken?: string): Promise<{ complete: Model[], flagged: Model[] }> {
+    console.log(`[GitHub] Fetching popular generative repos (limit: ${limit})...`);
+
     let complete: Model[] = [];
     let flagged: Model[] = [];
 
@@ -56,13 +58,14 @@ export async function fetchGitHubPopular(limit = 50): Promise<{ complete: Model[
             `/github-api/search/repositories?q=${query}+stars:>50+language:python&sort=stars&order=desc&per_page=${limit}`,
             `https://api.github.com/search/repositories?q=${query}+stars:>50+language:python&sort=stars&order=desc&per_page=${limit}`
         );
-        const ghToken = import.meta.env.VITE_GITHUB_TOKEN || '';
+        // Use provided token or empty string (no token = lower rate limits)
+        const token = gitHubToken || '';
         const response = await fetch(url, {
             headers: {
                 'Accept': 'application/vnd.github+json',
                 'X-GitHub-Api-Version': '2022-11-28',
                 'User-Agent': 'ai-model-db-pro',
-                ...(ghToken ? { 'Authorization': `Bearer ${ghToken}` } : {})
+                ...(token ? { 'Authorization': `Bearer ${token}` } : {})
             }
         });
 
