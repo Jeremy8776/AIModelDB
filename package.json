@@ -1,0 +1,105 @@
+{
+  "name": "ai-model-db-pro",
+  "productName": "AI Model DB Pro",
+  "private": true,
+  "version": "0.2.1",
+  "description": "A comprehensive database for tracking and managing AI models across multiple providers",
+  "author": "AI Model DB Pro",
+  "license": "MIT",
+  "main": "electron/main.js",
+  "scripts": {
+    "dev": "vite",
+    "dev:prod": "cross-env VITE_FORCE_PROD=true vite",
+    "build": "vite build",
+    "build:check": "tsc -b && vite build",
+    "start": "vite preview --host 0.0.0.0 --port 5173",
+    "preview": "vite preview",
+    "serve": "cross-env VITE_USE_PROXY=true node server/index.js",
+    "build:serve": "cross-env VITE_USE_PROXY=true npm run build && cross-env VITE_USE_PROXY=true node server/index.js",
+    "e2e": "node scripts/e2e-check.mjs",
+    "electron:dev": "concurrently -k \"cross-env BROWSER=none npm run dev\" \"wait-on http://localhost:5173 && cross-env NODE_ENV=development electron .\"",
+    "electron:build": "npm run build && electron-builder",
+    "electron:build:win": "npm run build && electron-builder --win",
+    "electron:build:mac": "npm run build && electron-builder --mac",
+    "electron:build:linux": "npm run build && electron-builder --linux",
+    "electron:start": "cross-env NODE_ENV=production electron ."
+  },
+  "dependencies": {
+    "cheerio": "^1.0.0-rc.12",
+    "express": "^4.19.2",
+    "http-proxy-middleware": "^2.0.6",
+    "lucide-react": "^0.452.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.55",
+    "@types/react-dom": "^18.2.19",
+    "@vitejs/plugin-react": "^4.2.1",
+    "autoprefixer": "^10.4.17",
+    "concurrently": "^8.2.2",
+    "cross-env": "^7.0.3",
+    "electron": "^28.1.0",
+    "electron-builder": "^24.9.1",
+    "electron-squirrel-startup": "^1.0.0",
+    "postcss": "^8.4.35",
+    "puppeteer": "^24.16.1",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5.4.0",
+    "vite": "^7.2.2",
+    "wait-on": "^7.2.0"
+  },
+  "build": {
+    "appId": "com.aimodeldb.pro",
+    "productName": "AI Model DB Pro",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "public/**/*"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "public/icon.ico"
+    },
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "icon": "public/icon.icns",
+      "category": "public.app-category.developer-tools"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "icon": "public/icon.png",
+      "category": "Development"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
+  }
+}

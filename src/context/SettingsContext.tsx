@@ -1,0 +1,203 @@
+import React, { createContext, useState, ReactNode, useContext, useEffect } from 'react';
+import { ApiDir } from '../types';
+import { DEFAULT_API_DIR } from '../services/api';
+import { CurrencyCode } from '../utils/currency';
+
+interface Settings {
+  apiConfig: ApiDir;
+  minDownloadsBypass: number;
+  autoRefresh: {
+    enabled: boolean;
+    interval: number;
+    unit: 'minutes' | 'hours' | 'days';
+  };
+  systemPrompt: string;
+  currency: CurrencyCode;
+  showCostValidation: boolean;
+  autoMergeDuplicates: boolean;
+  defaultPageSize: number | null;
+  showImportToast: boolean;
+  showConsoleButton: boolean;
+  // Validation settings
+  validationBatchSize: number;
+  validationTimeout: number;
+  validationRetries: number;
+  validationAutoSave: boolean;
+  // Preferred model provider for validation
+  preferredModelProvider: string | null;
+  // Data source preferences
+  dataSources: {
+    huggingface: boolean;
+    artificialanalysis: boolean;
+    llmDiscovery: boolean;
+    roboflow: boolean;
+    kaggle: boolean;
+    tensorart: boolean;
+    civitai: boolean;
+    runcomfy: boolean;
+    prompthero: boolean;
+    liblib: boolean;
+    shakker: boolean;
+    openmodeldb: boolean;
+    civitasbay: boolean;
+  };
+  // ArtificialAnalysis API settings
+  artificialAnalysisApiKey: string;
+  // UI preferences
+  theme: 'auto' | 'light' | 'dark';
+  compactMode: boolean;
+  showAdvancedFilters: boolean;
+  autoExpandSections: boolean;
+  // Import/Export preferences
+  importAutoMerge: boolean;
+  exportFormat: 'json' | 'csv' | 'xlsx';
+  backupBeforeSync: boolean;
+  // Corporate safety settings
+  enableNSFWFiltering: boolean;
+  nsfwFilteringStrict: boolean;
+  logNSFWAttempts: boolean;
+}
+
+interface SettingsContextType {
+  settings: Settings;
+  saveSettings: (settings: Partial<Settings>) => void;
+  resetSettings: () => void;
+}
+
+const defaultSettings: Settings = {
+  apiConfig: DEFAULT_API_DIR,
+  minDownloadsBypass: 500,
+  autoRefresh: {
+    enabled: false,
+    interval: 24,
+    unit: 'hours'
+  },
+  systemPrompt: "",
+  currency: 'USD',
+  showCostValidation: true,
+  autoMergeDuplicates: true,
+  defaultPageSize: 50,
+  showImportToast: true,
+  showConsoleButton: true,
+  // Validation settings
+  validationBatchSize: 50,
+  validationTimeout: 60000, // 60 seconds
+  validationRetries: 3,
+  validationAutoSave: true,
+  // Preferred model provider for validation
+  preferredModelProvider: null,
+  // Data source preferences  
+  dataSources: {
+    huggingface: true,
+    artificialanalysis: true,
+    llmDiscovery: true,
+    roboflow: true,
+    kaggle: true,
+    tensorart: true,
+    civitai: true,
+    runcomfy: false, // explicitly disabled per request
+    prompthero: true,
+    liblib: true,
+    shakker: true,
+    openmodeldb: true,
+    civitasbay: true, // Enabled - good for model preservation
+  },
+  // ArtificialAnalysis API settings
+  artificialAnalysisApiKey: "",
+  // UI preferences
+  theme: 'auto',
+  compactMode: false,
+  showAdvancedFilters: false,
+  autoExpandSections: true,
+  // Import/Export preferences
+  importAutoMerge: true,
+  exportFormat: 'json',
+  backupBeforeSync: false,
+  // Corporate safety settings
+  enableNSFWFiltering: true, // Enabled by default for corporate use
+  nsfwFilteringStrict: true, // Strict filtering for corporate environment
+  logNSFWAttempts: true, // Log NSFW attempts for compliance
+};
+
+const SettingsContext = createContext<SettingsContextType>({
+  settings: defaultSettings,
+  saveSettings: () => { },
+  resetSettings: () => { }
+});
+
+export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [settings, setSettings] = useState<Settings>(defaultSettings);
+
+  // Load settings from localStorage on initial mount
+  useEffect(() => {
+    try {
+      const savedSettings = localStorage.getItem('aiModelDBPro_settings');
+      if (savedSettings) {
+        // Parse and decrypt if necessary
+        const parsedSettings = JSON.parse(savedSettings);
+
+        // For security, we need to decrypt API keys
+        // This is a simple example - in a real app, you'd use a more secure encryption
+        const decryptedSettings = {
+          ...parsedSettings,
+          apiConfig: Object.entries(parsedSettings.apiConfig).reduce((acc, [key, value]) => {
+            const config = value as any;
+            return {
+              ...acc,
+              [key]: {
+                ...config,
+                apiKey: config.apiKey ? atob(config.apiKey) : "",
+              }
+            };
+          }, {} as ApiDir),
+        };
+
+        setSettings(decryptedSettings);
+      }
+    } catch (error) {
+      console.error('Error loading settings from localStorage:', error);
+    }
+  }, []);
+
+  // Save settings to localStorage whenever they change
+  const saveSettings = (newSettings: Partial<Settings>) => {
+    try {
+      const updatedSettings = { ...settings, ...newSettings };
+
+      // For security, we need to encrypt API keys before storing
+      // This is a simple example - in a real app, you'd use a more secure encryption
+      const encryptedSettings = {
+        ...updatedSettings,
+        apiConfig: Object.entries(updatedSettings.apiConfig).reduce((acc, [key, value]) => {
+          return {
+            ...acc,
+            [key]: {
+              ...value,
+              apiKey: value.apiKey ? btoa(value.apiKey) : "",
+            }
+          };
+        }, {} as ApiDir),
+      };
+
+      localStorage.setItem('aiModelDBPro_settings', JSON.stringify(encryptedSettings));
+      setSettings(updatedSettings);
+    } catch (error) {
+      console.error('Error saving settings to localStorage:', error);
+    }
+  };
+
+  const resetSettings = () => {
+    localStorage.removeItem('aiModelDBPro_settings');
+    setSettings(defaultSettings);
+  };
+
+  return (
+    <SettingsContext.Provider value={{ settings, saveSettings, resetSettings }}>
+      {children}
+    </SettingsContext.Provider>
+  );
+};
+
+export const useSettings = () => useContext(SettingsContext);
+
+export default SettingsContext;

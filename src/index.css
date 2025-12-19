@@ -1,0 +1,492 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom utility classes that reference CSS variables */
+@layer utilities {
+  .bg-accent {
+    background-color: var(--accent) !important;
+  }
+
+  .bg-accent-dark {
+    background-color: var(--accentDark) !important;
+  }
+
+  .bg-accent-light {
+    background-color: var(--accentLight) !important;
+  }
+
+  .hover\:bg-accent:hover {
+    background-color: var(--accent) !important;
+  }
+
+  .hover\:bg-accent-dark:hover {
+    background-color: var(--accentDark) !important;
+  }
+
+  .hover\:bg-accent-light:hover {
+    background-color: var(--accentLight) !important;
+  }
+
+  .text-accent {
+    color: var(--accent) !important;
+  }
+
+  .text-accent-dark {
+    color: var(--accentDark) !important;
+  }
+
+  .text-accent-light {
+    color: var(--accentLight) !important;
+  }
+
+  .hover\:text-accent:hover {
+    color: var(--accent) !important;
+  }
+
+  .border-accent {
+    border-color: var(--accent) !important;
+  }
+
+  .border-accent-dark {
+    border-color: var(--accentDark) !important;
+  }
+
+  .hover\:border-accent:hover {
+    border-color: var(--accent) !important;
+  }
+
+  .ring-accent {
+    --tw-ring-color: var(--accent) !important;
+  }
+
+  .focus\:ring-accent:focus {
+    --tw-ring-color: var(--accent) !important;
+  }
+
+  .shadow-accent {
+    box-shadow: 0 4px 14px var(--accentGlow) !important;
+  }
+
+  .bg-accent-selected {
+    background-color: var(--accentGlow) !important;
+  }
+}
+
+:root {
+  color-scheme: dark;
+
+  /* Default dark theme values - Violet Purple Accent */
+  --accent: #8b5cf6;
+  --accentHover: #a78bfa;
+  --accentLight: #c4b5fd;
+  --accentDark: #7c3aed;
+  --accentGlow: rgba(139, 92, 246, 0.3);
+  --bg: #0a0a0b;
+  --bgCard: #111113;
+  --bgInput: #1a1a1d;
+  --border: rgba(139, 92, 246, 0.15);
+  --borderInput: rgba(255, 255, 255, 0.08);
+  --text: #fafafa;
+  --textSecondary: rgba(255, 255, 255, 0.65);
+  --textSubtle: rgba(255, 255, 255, 0.4);
+
+  /* Custom scrollbar variables */
+  --scrollbar-track: var(--bg);
+  --scrollbar-thumb: var(--border);
+  --scrollbar-thumb-hover: var(--accent);
+  --scrollbar-thumb-active: var(--accentHover);
+
+  /* Electron titlebar height */
+  --titlebar-height: 32px;
+}
+
+/* Ensure global theme variables take precedence when set */
+html[style*='--bg'],
+html[style*='--bgCard'] {
+  /* When parent sets theme variables, they override :root */
+}
+
+/* Light theme adjustments */
+[data-theme='light'] {
+  color-scheme: light;
+  --accent: #7c3aed;
+  --accentHover: #6d28d9;
+  --accentLight: #8b5cf6;
+  --accentDark: #5b21b6;
+  --accentGlow: rgba(124, 58, 237, 0.2);
+  --bg: #fafafa;
+  --bgCard: #ffffff;
+  --bgInput: #f4f4f5;
+  --border: rgba(124, 58, 237, 0.15);
+  --borderInput: rgba(0, 0, 0, 0.1);
+  --text: #09090b;
+  --textSecondary: rgba(0, 0, 0, 0.65);
+  --textSubtle: rgba(0, 0, 0, 0.45);
+  --scrollbar-track: #f4f4f5;
+  --scrollbar-thumb: #c4b5fd;
+  --scrollbar-thumb-hover: #a78bfa;
+  --scrollbar-thumb-active: #8b5cf6;
+}
+
+[data-theme='dark'] {
+  /* Legacy support */
+  --scrollbar-track: var(--bg);
+  --scrollbar-thumb: var(--border);
+  --scrollbar-thumb-hover: var(--borderInput);
+  --scrollbar-thumb-active: var(--textSubtle);
+}
+
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+  background-color: var(--bg) !important;
+  color: var(--text) !important;
+}
+
+#root {
+  height: 100%;
+  overflow-y: auto;
+  background-color: var(--bg) !important;
+  color: var(--text) !important;
+}
+
+/* Override Tailwind Preflight's default text color */
+body,
+#root,
+div,
+span,
+label,
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: var(--text);
+}
+
+/* Override Tailwind's hardcoded backgrounds with theme variables */
+.bg-black,
+.bg-black\/80,
+.bg-black\/90,
+.bg-black\/95 {
+  background-color: var(--bg) !important;
+}
+
+.bg-zinc-900,
+.bg-zinc-900\/70 {
+  background-color: var(--bgInput) !important;
+}
+
+.bg-zinc-950,
+.bg-zinc-950\/95 {
+  background-color: var(--bgCard) !important;
+}
+
+/* Input backgrounds */
+.bg-zinc-900\/60,
+.bg-zinc-900 {
+  background-color: var(--bgInput) !important;
+}
+
+/* Modal backgrounds need to be solid, not transparent */
+.fixed.inset-0>div[class*='max-w'] {
+  background-color: #09090b !important;
+}
+
+[data-theme='light'] .fixed.inset-0>div[class*='max-w'] {
+  background-color: #ffffff !important;
+}
+
+/* Dropdown menus need visible background using theme colors */
+.relative>div[class*='absolute'] {
+  background-color: var(--bg) !important;
+  border-color: var(--border) !important;
+}
+
+/* Dropdown menu items */
+.relative>div[class*='absolute'] button {
+  color: var(--text) !important;
+  background-color: transparent !important;
+}
+
+.relative>div[class*='absolute'] button:hover {
+  background-color: var(--bgCard) !important;
+}
+
+/* Selected item in dropdown */
+.relative>div[class*='absolute'] button[class*='bg-zinc-800'] {
+  background-color: var(--bgCard) !important;
+}
+
+/* ThemedSelect button styling */
+.relative>button[class*='border'] {
+  background-color: var(--bgCard) !important;
+  border-color: var(--border) !important;
+  color: var(--text) !important;
+}
+
+.relative>button[class*='border']:hover:not(:disabled) {
+  background-color: var(--bgInput) !important;
+  border-color: var(--accent) !important;
+}
+
+.bg-zinc-800,
+.bg-zinc-700 {
+  background-color: var(--bgInput) !important;
+}
+
+.bg-white,
+.bg-gray-50,
+.bg-gray-100 {
+  background-color: var(--bg) !important;
+}
+
+/* Model rows and cards - all opacity variants */
+.bg-zinc-950\/40,
+.bg-zinc-950\/50,
+.bg-zinc-900\/40,
+.bg-zinc-900\/50,
+.bg-zinc-800\/40,
+.bg-zinc-800\/50,
+.hover\:bg-zinc-800:hover,
+.hover\:bg-zinc-900:hover {
+  background-color: var(--bg) !important;
+}
+
+/* Dark theme text overrides */
+.text-zinc-100,
+.text-zinc-200,
+.text-white {
+  color: var(--text) !important;
+}
+
+.text-zinc-300,
+.text-zinc-400,
+.text-zinc-500,
+.text-gray-600,
+.text-gray-700,
+.text-gray-800 {
+  color: var(--textSecondary) !important;
+}
+
+.text-zinc-600 {
+  color: var(--textSubtle) !important;
+}
+
+/* Light theme overrides */
+[data-theme='light'] .text-zinc-100,
+[data-theme='light'] .text-zinc-200,
+[data-theme='light'] .text-black {
+  color: var(--text) !important;
+}
+
+/* Ensure labels always use theme text color */
+label {
+  color: var(--text) !important;
+}
+
+.border-zinc-800,
+.border-zinc-900,
+.border-zinc-900\/80,
+.border-zinc-200,
+.border-gray-200,
+.border-gray-300 {
+  border-color: var(--border) !important;
+}
+
+.border-zinc-700,
+.border-gray-400,
+.border-gray-500 {
+  border-color: var(--borderInput) !important;
+}
+
+/* Override header and card backgrounds */
+header {
+  background-color: var(--bg) !important;
+  border-color: var(--border) !important;
+}
+
+/* Override section borders in detail panel */
+section {
+  border-color: var(--border) !important;
+}
+
+/* Ensure all borders use theme color */
+.border,
+[class*='border-'] {
+  border-color: var(--border) !important;
+}
+
+/* Override inline styles for borders */
+[style*='borderColor'] {
+  border-color: var(--border) !important;
+}
+
+/* Custom scrollbar styling */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+/* Webkit scrollbar styling for Chrome, Safari, Edge */
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+  border-radius: 4px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+*::-webkit-scrollbar-thumb:active {
+  background: var(--scrollbar-thumb-active);
+}
+
+*::-webkit-scrollbar-corner {
+  background: var(--scrollbar-track);
+}
+
+/* Thin scrollbars for specific components */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  border-radius: 3px;
+}
+
+/* Custom select dropdown styling with arrow */
+select {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='rgba(255,255,255,0.6)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 12px center !important;
+  padding-right: 36px !important;
+}
+
+[data-theme='light'] select {
+  background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='rgba(0,0,0,0.6)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
+}
+
+select option {
+  background-color: var(--bg) !important;
+  color: var(--text) !important;
+}
+
+/* Violet Purple Accent Styling */
+
+/* Primary buttons */
+button[class*='bg-violet'],
+button[class*='bg-purple'],
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accentDark) 100%) !important;
+  color: white !important;
+  border: none !important;
+  box-shadow: 0 4px 14px var(--accentGlow) !important;
+  transition: all 0.2s ease !important;
+}
+
+button[class*='bg-violet']:hover,
+button[class*='bg-purple']:hover,
+.btn-primary:hover {
+  background: linear-gradient(135deg, var(--accentHover) 0%, var(--accent) 100%) !important;
+  box-shadow: 0 6px 20px var(--accentGlow) !important;
+  transform: translateY(-1px);
+}
+
+/* Accent text color */
+.text-accent,
+a:not([class*='text-']):hover {
+  color: var(--accent) !important;
+}
+
+/* Focus ring styling */
+*:focus-visible {
+  outline: 2px solid var(--accent) !important;
+  outline-offset: 2px !important;
+}
+
+/* Checkbox and radio accent */
+input[type='checkbox']:checked,
+input[type='radio']:checked {
+  accent-color: var(--accent) !important;
+  background-color: var(--accent) !important;
+}
+
+/* Progress bar accent */
+progress::-webkit-progress-value {
+  background: linear-gradient(90deg, var(--accentDark), var(--accent), var(--accentHover)) !important;
+}
+
+progress::-moz-progress-bar {
+  background: linear-gradient(90deg, var(--accentDark), var(--accent), var(--accentHover)) !important;
+}
+
+/* Badge styling */
+.badge-accent,
+[class*='bg-violet-'],
+[class*='bg-purple-'] {
+  background-color: var(--accent) !important;
+  color: white !important;
+}
+
+/* Glow effect for important elements */
+.glow-accent {
+  box-shadow: 0 0 20px var(--accentGlow), 0 0 40px var(--accentGlow);
+}
+
+/* Electron-specific styling */
+.electron-titlebar {
+  -webkit-app-region: drag;
+  height: var(--titlebar-height);
+  background: var(--bgCard);
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.electron-titlebar button {
+  -webkit-app-region: no-drag;
+}
+
+/* Smooth transitions for theme switching */
+* {
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+/* Disable transitions for scrolling */
+*::-webkit-scrollbar,
+*::-webkit-scrollbar-thumb,
+*::-webkit-scrollbar-track {
+  transition: none;
+}
+
+/* Better selection colors */
+::selection {
+  background-color: var(--accent);
+  color: white;
+}
+
+::-moz-selection {
+  background-color: var(--accent);
+  color: white;
+}
