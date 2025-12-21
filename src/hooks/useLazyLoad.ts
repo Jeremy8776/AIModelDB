@@ -1,12 +1,46 @@
 import { useState, useEffect, useRef } from 'react';
 
+/**
+ * Options for the useLazyLoad hook
+ */
 interface UseLazyLoadOptions {
+    /** Array of items to lazy load */
     items: any[];
+    /** Initial number of items to display (default: 50) */
     initialCount?: number;
+    /** Number of items to add when scrolling (default: 25) */
     incrementCount?: number;
+    /** Whether lazy loading is enabled (default: true) */
     enabled?: boolean;
 }
 
+/**
+ * Lazy Loading Hook
+ * 
+ * Implements infinite scroll functionality using IntersectionObserver.
+ * Progressively loads items as the user scrolls down, improving performance
+ * for large lists.
+ * 
+ * @param options - Configuration options
+ * @returns Object with visible items, sentinel ref, and loading state
+ * 
+ * @example
+ * ```tsx
+ * const { visibleItems, hasMore, sentinelRef } = useLazyLoad({
+ *   items: allModels,
+ *   initialCount: 50,
+ *   incrementCount: 25,
+ *   enabled: pageSize === null // Enable only when showing "All"
+ * });
+ * 
+ * return (
+ *   <>
+ *     {visibleItems.map(item => <Row key={item.id} {...item} />)}
+ *     {hasMore && <div ref={sentinelRef}>Loading more...</div>}
+ *   </>
+ * );
+ * ```
+ */
 export function useLazyLoad({ items, initialCount = 50, incrementCount = 25, enabled = true }: UseLazyLoadOptions) {
     const [displayCount, setDisplayCount] = useState(initialCount);
     const observerRef = useRef<IntersectionObserver | null>(null);

@@ -32,7 +32,8 @@
     "electron:build:mac": "npm run build && electron-builder --mac",
     "electron:build:linux": "npm run build && electron-builder --linux",
     "electron:start": "cross-env NODE_ENV=production electron .",
-    "electron:publish": "npm run build && electron-builder --publish always"
+    "electron:publish": "npm run build && electron-builder --publish always",
+    "generate-icons": "electron-icon-builder --input=./public/icon-source.png --output=./public"
   },
   "dependencies": {
     "@tanstack/react-virtual": "^3.13.13",
@@ -57,6 +58,7 @@
     "cross-env": "^7.0.3",
     "electron": "^28.1.0",
     "electron-builder": "^24.9.1",
+    "electron-icon-builder": "^2.0.1",
     "electron-squirrel-startup": "^1.0.0",
     "jsdom": "^27.3.0",
     "postcss": "^8.4.35",
@@ -98,22 +100,27 @@
           ]
         }
       ],
-      "icon": "public/icon.ico"
+      "icon": "public/icons/win/icon.ico"
     },
     "mac": {
       "target": [
         "dmg",
         "zip"
       ],
-      "icon": "public/icon.icns",
-      "category": "public.app-category.developer-tools"
+      "icon": "public/icons/mac/icon.icns",
+      "category": "public.app-category.developer-tools",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "electron/entitlements.mac.plist",
+      "entitlementsInherit": "electron/entitlements.mac.plist",
+      "notarize": true
     },
     "linux": {
       "target": [
         "AppImage",
         "deb"
       ],
-      "icon": "public/icon.png",
+      "icon": "public/icons/png",
       "category": "Development"
     },
     "nsis": {
