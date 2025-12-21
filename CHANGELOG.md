@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.7] - 2025-12-21
+
+### Fixed
+- **System Tab Crash**: Resolved a critical error causing the app to crash when clicking the "System" tab.
+    - Added safety checks for `electronAPI` availability to prevent runtime errors.
+    - Disabled webhook polling on non-network protocols (e.g., `file://`) to prevent `net::ERR_FILE_NOT_FOUND` on production builds.
+- **Stability**: Hardened `isElectron` detection utility.
+
 ## [0.3.6] - 2025-12-21
 
 ### Fixed
