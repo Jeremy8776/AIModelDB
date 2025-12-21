@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.4] - 2025-12-21
+
+### Fixed
+- **Toolbar Button Legibility**: Fixed Export, Delete DB, and Validate buttons to be legible across all themes (Sketch, Retro Terminal, Default).
+- **Header Button Heights**: Normalized header action button heights to be consistent across all themes.
+- **Console Button Styling**: Added proper padding and hover effects to Console toggle button.
+- **SVG Icon Transitions**: Fixed SVG icons transitioning slower than other elements on un-hover.
+- **Model Row Click**: Made entire model row clickable to open detail panel, not just the name column.
+- **Export Modal Panel**: Removed grey background from Custom Filters panel for consistency.
+
+### Changed
+- **Import Modal**: Removed ODS from supported formats list.
+
+---
+
 ## [0.3.3] - 2025-12-21
 
 ### Fixed

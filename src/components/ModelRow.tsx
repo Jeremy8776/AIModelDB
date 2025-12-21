@@ -284,10 +284,10 @@ export const ModelRow = React.memo(function ModelRow({ m, onOpen, isSelected, on
   return (
     <div
       onClick={(e) => {
-        // Don't open if clicking on checkbox or favorites
+        // Don't open if clicking on checkbox, favorites button, or interactive elements
         const target = e.target as HTMLElement;
-        if (target.closest('button') || target.closest('input')) return;
-        onOpen(m);
+        if (target.closest('button') || target.closest('input') || target.closest('[role="checkbox"]')) return;
+        onOpen(m, e.currentTarget);
       }}
       className={`group/row grid w-full grid-cols-12 items-center gap-3 rounded-xl border ${rowBg} px-3 py-2 text-left transition cursor-pointer ${isFocused ? 'ring-2 ring-violet-500 z-10' : ''}`}
     >
@@ -317,11 +317,8 @@ export const ModelRow = React.memo(function ModelRow({ m, onOpen, isSelected, on
         )}
       </div>
 
-      {/* Name / Open Button */}
-      <button
-        onClick={(e) => onOpen(m, e.currentTarget)}
-        className="col-span-3 flex min-w-0 items-center gap-2 overflow-hidden text-left focus:outline-none"
-      >
+      {/* Name Column */}
+      <div className="col-span-3 flex min-w-0 items-center gap-2 overflow-hidden text-left">
         <DatabaseZap className={`h-4 w-4 flex-shrink-0 align-middle ${textSecondary}`} />
         <div className="flex min-w-0 flex-col">
           <span className={`truncate text-sm ${textMain}`} title={m.name || 'Unknown Model'}>{(m.name || 'Unknown Model').replace(/^[^/]+\//, '')}</span>
@@ -329,7 +326,7 @@ export const ModelRow = React.memo(function ModelRow({ m, onOpen, isSelected, on
             <span className="truncate">{m.provider || ((m.name || '').includes('/') ? (m.name || '').split('/')[0] : '')}</span> · <Download className="h-3 w-3 flex-shrink-0 align-middle relative top-0.5" /> {kfmt(m.downloads || 0)}
           </span>
         </div>
-      </button>
+      </div>
 
       <div className={`col-span-2 truncate text-sm ${textSecondary}`}>
         {formatDate(m.release_date)}

@@ -353,6 +353,71 @@ input[class*="bg-zinc-900"] {
   cursor: pointer !important;
 }
 
+/* Toolbar Button Styling - Ensure legibility across all themes */
+/* Console toggle button */
+.console-toggle-button {
+  background-color: var(--bgCard) !important;
+  border-color: var(--border) !important;
+  color: var(--text) !important;
+}
+
+.console-toggle-button svg,
+.console-toggle-button svg text {
+  fill: var(--text) !important;
+  transition: fill 0.15s ease-in-out !important;
+}
+
+.console-toggle-button:hover {
+  background-color: var(--accent) !important;
+  border-color: var(--accent) !important;
+  color: var(--bg) !important;
+}
+
+.console-toggle-button:hover *,
+.console-toggle-button:hover svg,
+.console-toggle-button:hover svg text {
+  color: var(--bg) !important;
+  fill: var(--bg) !important;
+}
+
+/* Generic toolbar buttons with inline styles */
+button[style*="--bgCard"]:hover {
+  background-color: var(--accent) !important;
+  border-color: var(--accent) !important;
+  color: var(--bg) !important;
+}
+
+button[style*="--bgCard"]:hover * {
+  color: var(--bg) !important;
+}
+
+/* Header action buttons - consistent sizing across themes */
+.header-action-btn {
+  min-height: 40px !important;
+  max-height: 40px !important;
+  box-sizing: border-box !important;
+}
+
+/* Set explicit stroke on SVGs inside buttons for proper transitions */
+.header-action-btn svg,
+.console-toggle-button svg,
+button[style*="--bgCard"] svg {
+  stroke: var(--text) !important;
+  transition: stroke 0.15s ease-in-out !important;
+}
+
+.header-action-btn:hover {
+  background-color: var(--accent) !important;
+  border-color: var(--accent) !important;
+  color: var(--bg) !important;
+}
+
+.header-action-btn:hover *,
+.header-action-btn:hover svg {
+  color: var(--bg) !important;
+  stroke: var(--bg) !important;
+}
+
 /* Dark theme text overrides */
 .text-zinc-100,
 .text-zinc-200,
@@ -592,7 +657,9 @@ progress::-moz-progress-bar {
 * {
   transition: background-color 0.15s ease-in-out,
     border-color 0.15s ease-in-out,
-    color 0.15s ease-in-out;
+    color 0.15s ease-in-out,
+    stroke 0.15s ease-in-out,
+    fill 0.15s ease-in-out;
 }
 
 /* Disable transitions for scrolling */

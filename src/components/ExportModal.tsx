@@ -156,7 +156,7 @@ export function ExportModal({
                     </div>
 
                     {/* Right Column: Custom Filters (Only if Custom Scope selected) */}
-                    <div className={`w-1/2 p-6 overflow-y-auto bg-zinc-50 dark:bg-zinc-900/50 ${scope !== 'custom' ? 'opacity-50 pointer-events-none grayscale' : ''} transition-all`}>
+                    <div className={`w-1/2 p-6 overflow-y-auto ${scope !== 'custom' ? 'opacity-50 pointer-events-none grayscale' : ''} transition-all`}>
                         <h3 className={`text-sm font-medium mb-4 ${textPrimary}`}>3. Custom Filters</h3>
 
                         <div className="space-y-4">

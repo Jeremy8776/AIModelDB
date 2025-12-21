@@ -78,7 +78,7 @@ export function Header({
                         id="header-update-db-btn"
                         onClick={onSync}
                         disabled={isSyncing}
-                        className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold bg-accent hover:bg-accent-dark hover:text-white disabled:opacity-60`}
+                        className="header-action-btn inline-flex items-center gap-2 rounded-xl px-4 h-10 text-sm font-semibold bg-accent hover:bg-accent-dark hover:text-white disabled:opacity-60"
                         title="Update Database"
                     >
                         <RefreshCw className={`size-4 ${isSyncing ? 'animate-spin' : ''}`} />
@@ -86,21 +86,36 @@ export function Header({
                     </button>
                     <button
                         onClick={onAddModel}
-                        className={`rounded-xl ${bgInput} p-2`}
+                        className="header-action-btn rounded-xl h-10 w-10 flex items-center justify-center border"
+                        style={{
+                            backgroundColor: 'var(--bgCard)',
+                            borderColor: 'var(--border)',
+                            color: 'var(--text)'
+                        }}
                         title="Add Model"
                     >
                         <Plus className="size-4" />
                     </button>
                     <button
                         onClick={onImport}
-                        className={`rounded-xl ${bgInput} p-2`}
+                        className="header-action-btn rounded-xl h-10 w-10 flex items-center justify-center border"
+                        style={{
+                            backgroundColor: 'var(--bgCard)',
+                            borderColor: 'var(--border)',
+                            color: 'var(--text)'
+                        }}
                         title="Import data"
                     >
                         <Upload className="size-4" />
                     </button>
                     <button
                         onClick={onSettings}
-                        className={`rounded-xl ${bgInput} p-2 relative`}
+                        className="header-action-btn rounded-xl h-10 w-10 flex items-center justify-center border relative"
+                        style={{
+                            backgroundColor: 'var(--bgCard)',
+                            borderColor: 'var(--border)',
+                            color: 'var(--text)'
+                        }}
                         title="Settings"
                     >
                         <Wrench className="size-4" />

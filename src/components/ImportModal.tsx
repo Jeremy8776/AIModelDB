@@ -183,7 +183,7 @@ export function ImportModal({ isOpen, onClose, onImport, addConsoleLog }: Import
 
         <div className="space-y-4">
           <p className="mb-4 text-sm text-gray-600 dark:text-gray-400">
-            Import models from multiple sources. Supports CSV, TSV, JSON, XLSX, ODS formats.
+            Import models from multiple sources. Supports CSV, TSV, JSON, XLSX formats.
           </p>
 
           {/* Tab navigation */}
@@ -218,7 +218,7 @@ export function ImportModal({ isOpen, onClose, onImport, addConsoleLog }: Import
                 <input
                   type="file"
                   id="file-upload"
-                  accept=".csv,.tsv,.json,.xlsx,.ods"
+                  accept=".csv,.tsv,.json,.xlsx"
                   onChange={handleFileChange}
                   className="hidden"
                 />
@@ -233,7 +233,7 @@ export function ImportModal({ isOpen, onClose, onImport, addConsoleLog }: Import
                   ) : (
                     <div className={`rounded-lg ${bgInput} p-4 text-center`}>
                       <p className="mb-2">Drag & drop a file here, or click to select</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">CSV, TSV, JSON, XLSX, ODS formats supported</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">CSV, TSV, JSON, XLSX formats supported</p>
                     </div>
                   )}
                 </div>
@@ -383,7 +383,7 @@ export function ImportModal({ isOpen, onClose, onImport, addConsoleLog }: Import
 
         <div className="border-t pt-4 mt-4 flex justify-between border-border">
           <div className="text-sm">
-            <span className="opacity-70">Supported formats:</span> CSV, TSV, JSON, XLSX, ODS
+            <span className="opacity-70">Supported formats:</span> CSV, TSV, JSON, XLSX
           </div>
           <button
             className={`rounded-xl ${bgInput} px-4 py-2 text-sm`}

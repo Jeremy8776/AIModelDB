@@ -141,7 +141,12 @@ export function Toolbar({
                 <button
                     disabled={pageSafe <= 1}
                     onClick={() => onPageChange(Math.max(1, page - 1))}
-                    className={`rounded-xl ${bgInput} px-2 py-1 disabled:opacity-50`}
+                    className="rounded-xl px-2 py-1 disabled:opacity-50 border"
+                    style={{
+                        backgroundColor: 'var(--bgCard)',
+                        borderColor: 'var(--border)',
+                        color: 'var(--text)'
+                    }}
                     title="Prev"
                 >
                     <ChevronLeft className="size-4" />
@@ -150,14 +155,24 @@ export function Toolbar({
                 <button
                     disabled={pageSafe >= totalPages}
                     onClick={() => onPageChange(Math.min(totalPages, page + 1))}
-                    className={`rounded-xl ${bgInput} px-2 py-1 disabled:opacity-50`}
+                    className="rounded-xl px-2 py-1 disabled:opacity-50 border"
+                    style={{
+                        backgroundColor: 'var(--bgCard)',
+                        borderColor: 'var(--border)',
+                        color: 'var(--text)'
+                    }}
                     title="Next"
                 >
                     <ChevronRight className="size-4" />
                 </button>
                 <button
                     onClick={onExport}
-                    className={`inline-flex items-center gap-1 rounded-lg ${bgInput} px-2 py-1 text-xs ml-2 hover:bg-violet-600 hover:text-white hover:border-violet-600 transition-colors`}
+                    className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs ml-2 transition-colors border"
+                    style={{
+                        backgroundColor: 'var(--bgCard)',
+                        borderColor: 'var(--border)',
+                        color: 'var(--text)'
+                    }}
                 >
                     <DownloadIcon className="size-3" />
                     Export
@@ -165,7 +180,12 @@ export function Toolbar({
                 <div className="flex items-center gap-2 ml-2">
                     <button
                         onClick={onDeleteDatabase}
-                        className={`inline-flex items-center gap-1 rounded-lg ${bgInput} px-2 py-1 text-xs`}
+                        className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs transition-colors border"
+                        style={{
+                            backgroundColor: 'var(--bgCard)',
+                            borderColor: 'var(--border)',
+                            color: 'var(--text)'
+                        }}
                         title="Delete DB"
                     >
                         <DatabaseZap className="size-3" />Delete DB
@@ -173,7 +193,12 @@ export function Toolbar({
                 </div>
                 <button
                     onClick={onValidateModels}
-                    className={`inline-flex items-center gap-1 rounded-lg ${bgInput} px-2 py-1 text-xs ml-2`}
+                    className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs ml-2 transition-colors border"
+                    style={{
+                        backgroundColor: 'var(--bgCard)',
+                        borderColor: 'var(--border)',
+                        color: 'var(--text)'
+                    }}
                     title="Validate and enrich model data using LLMs"
                 >
                     <DatabaseZap className="size-3" />Validate Models

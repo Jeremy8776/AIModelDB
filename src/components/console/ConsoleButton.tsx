@@ -37,8 +37,13 @@ export function ConsoleButton({ showConsole, onShowConsole, theme = "dark" }: Co
 
     return (
         <button
-            className="fixed bottom-4 right-4 z-50 flex items-center gap-2 text-white hover:text-accent font-semibold text-base p-0 m-0 bg-transparent border-none shadow-none transition-colors duration-150"
-            style={{ background: 'none', border: 'none' }}
+            className="console-toggle-button fixed bottom-4 right-4 z-50 flex items-center gap-2 font-semibold text-base px-3 py-2 transition-colors duration-150"
+            style={{
+                background: 'var(--bgCard)',
+                border: '1px solid var(--border)',
+                color: 'var(--text)',
+                borderRadius: '8px'
+            }}
             onClick={onShowConsole}
             title="Show API Console"
         >
