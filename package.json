@@ -137,9 +137,7 @@
       ]
     },
     "linux": {
-      "target": [
-        "AppImage"
-      ],
+      "target": "AppImage",
       "icon": "public/icons/png",
       "category": "Development"
     },
