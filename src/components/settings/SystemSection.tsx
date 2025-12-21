@@ -99,10 +99,10 @@ export function SystemSection() {
   const handleDatabaseReset = () => {
     window.dispatchEvent(new CustomEvent('show-confirmation', {
       detail: {
-        title: 'Reset Database',
+        title: 'Delete DB',
         message: 'This will clear all local data including models, settings, and cache. This action cannot be undone.',
         type: 'error',
-        confirmText: 'Reset Database',
+        confirmText: 'Delete DB',
         onConfirm: () => {
           // Clear localStorage
           localStorage.clear();
@@ -241,7 +241,7 @@ export function SystemSection() {
         <div className="space-y-4">
           <div className="p-3 rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20">
             <h5 className="font-medium text-red-800 dark:text-red-200 mb-2">
-              Reset Database
+              Delete DB
             </h5>
             <p className="text-sm text-red-700 dark:text-red-300 mb-3">
               Clear all local data including models, settings, and cache. This will reset
@@ -251,7 +251,7 @@ export function SystemSection() {
               onClick={handleDatabaseReset}
               className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg transition-colors"
             >
-              Reset Database
+              Delete DB
             </button>
           </div>
         </div>

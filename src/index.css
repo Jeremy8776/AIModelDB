@@ -513,10 +513,16 @@ a:not([class*='text-']):hover {
   --tw-ring-color: var(--accent) !important;
 }
 
-/* Fallback outline for elements without Tailwind rings */
-*:focus-visible:not([class*='ring-']) {
-  outline: 2px solid var(--accent) !important;
-  outline-offset: 2px !important;
+/* Remove default outline to prevent double boxes - Tailwind handles focus via rings */
+*:focus,
+*:focus-visible {
+  outline: none !important;
+}
+
+/* For elements that need visible focus but don't have Tailwind ring classes */
+button:focus-visible:not([class*='ring-']),
+a:focus-visible:not([class*='ring-']) {
+  box-shadow: 0 0 0 2px var(--accent) !important;
 }
 
 /* Checkbox and radio accent */

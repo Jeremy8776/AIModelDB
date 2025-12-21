@@ -8,6 +8,7 @@
  */
 
 import React from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { Model } from '../../types';
 import { SortKey } from '../../hooks/useUIState';
 import { ModelRow } from '../ModelRow';
@@ -28,20 +29,14 @@ export interface ModelTableProps {
     displayCount: number;
     totalCount: number;
     theme: 'light' | 'dark';
+
+    // Selection
+    selectedIds?: Set<string>;
+    onSelect?: (model: Model, selected: boolean) => void;
+    onSelectAll?: (selected: boolean) => void;
+    onToggleFavorite?: (model: Model) => void;
 }
 
-/**
- * Model table component with sortable header and lazy loading.
- * 
- * Features:
- * - Sortable column headers
- * - Model rows with click to open detail
- * - Lazy loading with intersection observer
- * - Theme-aware styling
- * 
- * @param props - ModelTable component props
- * @returns JSX.Element
- */
 export function ModelTable({
     models,
     sortKey,
@@ -52,10 +47,102 @@ export function ModelTable({
     sentinelRef,
     displayCount,
     totalCount,
-    theme
+    theme,
+    selectedIds,
+    onSelect,
+    onSelectAll,
+    onToggleFavorite
 }: ModelTableProps) {
     // Styling based on theme
     const bgCard = theme === 'dark' ? 'border-zinc-800 bg-black' : 'border-gray-400 bg-white shadow-sm';
+
+    // Ref for the table body container to measure offset
+    const parentRef = React.useRef<HTMLDivElement>(null);
+    const [offsetTop, setOffsetTop] = React.useState(0);
+
+    // Measure the offset of the table relative to the scroll container (#root)
+    React.useLayoutEffect(() => {
+        const updateOffset = () => {
+            if (parentRef.current) {
+                const scrollEl = document.getElementById('root');
+                if (scrollEl) {
+                    const rect = parentRef.current.getBoundingClientRect();
+                    setOffsetTop(rect.top + scrollEl.scrollTop);
+                }
+            }
+        };
+
+        updateOffset();
+        window.addEventListener('resize', updateOffset);
+        return () => window.removeEventListener('resize', updateOffset);
+    }, []);
+
+    // Virtualizer
+    const rowVirtualizer = useVirtualizer({
+        count: models.length,
+        getScrollElement: () => document.getElementById('root'),
+        estimateSize: () => 64, // Estimated row height + gap
+        overscan: 10,
+        scrollMargin: offsetTop,
+    });
+
+    const totalSize = rowVirtualizer.getTotalSize();
+    const virtualItems = rowVirtualizer.getVirtualItems();
+
+    // Keyboard Navigation
+    const [focusedIndex, setFocusedIndex] = React.useState<number>(-1);
+
+    // Reset focus when models change significantly (e.g. filtering)
+    React.useEffect(() => {
+        setFocusedIndex(-1);
+    }, [models.length]); // Reset on length change
+
+    React.useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            const activeTag = document.activeElement?.tagName.toLowerCase();
+            if (['input', 'textarea', 'select'].includes(activeTag || '')) return;
+
+            if (e.key === 'ArrowDown' || e.key.toLowerCase() === 'j') {
+                e.preventDefault();
+                setFocusedIndex(current => {
+                    const next = Math.min(current + 1, models.length - 1);
+                    rowVirtualizer.scrollToIndex(next, { align: 'auto' });
+                    return next;
+                });
+            } else if (e.key === 'ArrowUp' || e.key.toLowerCase() === 'k') {
+                e.preventDefault();
+                setFocusedIndex(current => {
+                    const next = Math.max(current - 1, 0);
+                    rowVirtualizer.scrollToIndex(next, { align: 'auto' });
+                    return next;
+                });
+            } else if (e.key === 'Enter') {
+                setFocusedIndex(current => {
+                    if (current >= 0 && current < models.length) {
+                        e.preventDefault();
+                        const el = parentRef.current?.querySelector(`[data-index="${current}"]`) as HTMLElement;
+                        onModelOpen(models[current], el);
+                    }
+                    return current;
+                });
+            } else if (e.key === ' ' || e.key.toLowerCase() === 'x') {
+                setFocusedIndex(current => {
+                    if (current >= 0 && current < models.length && onSelect && selectedIds) {
+                        e.preventDefault();
+                        const m = models[current];
+                        onSelect(m, !selectedIds.has(m.id));
+                    }
+                    return current;
+                });
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [models, rowVirtualizer, onModelOpen, onSelect, selectedIds]);
+
+    // Check if all visible models are selected
+    const isAllSelected = models.length > 0 && selectedIds && models.every(m => selectedIds.has(m.id));
 
     return (
         <div className={`rounded-2xl border ${bgCard}`}>
@@ -65,33 +152,67 @@ export function ModelTable({
                 sortDirection={sortDirection}
                 onSortChange={onSortChange}
                 theme={theme}
+                isAllSelected={!!isAllSelected}
+                onSelectAll={onSelectAll}
             />
 
-            {/* Table Body */}
-            <div className="p-2 space-y-2">
-                {models.map((m, idx) => (
-                    <div key={`${m.source}-${m.id}-${idx}`}>
-                        <ModelRow
-                            m={m}
-                            onOpen={(model, element) => {
-                                if (element) {
-                                    onModelOpen(model, element);
-                                }
-                            }}
-                        />
-                    </div>
-                ))}
+            {/* Table Body - Virtualized */}
+            <div
+                ref={parentRef}
+                className="p-2 relative mt-4"
+                style={{
+                    height: `${totalSize - offsetTop}px`,
+                }}
+            >
+                {virtualItems.map((virtualRow) => {
+                    const m = models[virtualRow.index];
+                    const isSelected = selectedIds?.has(m.id);
 
-                {/* Lazy load sentinel - triggers loading more items */}
-                {hasMore && (
+                    return (
+                        <div
+                            key={`${m.source}-${m.id}-${virtualRow.index}`}
+                            data-index={virtualRow.index}
+                            ref={rowVirtualizer.measureElement}
+                            style={{
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                width: '100%',
+                                paddingLeft: '0.5rem', // Match p-2 (0.5rem) from container
+                                paddingRight: '0.5rem',
+                                transform: `translateY(${virtualRow.start - offsetTop}px)`,
+                            }}
+                        >
+                            <div className="pb-2">
+                                <ModelRow
+                                    m={m}
+                                    onOpen={(model, element) => {
+                                        if (element) {
+                                            onModelOpen(model, element);
+                                        }
+                                    }}
+                                    isSelected={isSelected}
+                                    onSelect={onSelect}
+                                    isFocused={focusedIndex === virtualRow.index}
+                                    onToggleFavorite={onToggleFavorite}
+                                />
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+
+            {/* Lazy load sentinel - placed after the virtual list */}
+            {hasMore && (
+                <div className="p-2 border-t border-transparent">
                     <LazyLoadSentinel
                         sentinelRef={sentinelRef}
                         displayCount={displayCount}
                         totalCount={totalCount}
                         theme={theme}
                     />
-                )}
-            </div>
+                </div>
+            )}
         </div>
     );
 }

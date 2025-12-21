@@ -14,7 +14,10 @@ import { FiltersSidebar } from './FiltersSidebar';
 import { ModelTable } from '../table/ModelTable';
 import { DetailPanel } from '../DetailPanel';
 import { SkeletonRow } from '../ModelRow';
-import { DatabaseZap, Plus } from 'lucide-react';
+import { DatabaseZap, Plus, Trash2, Download, X } from 'lucide-react';
+import { ComparisonView } from '../ComparisonView';
+import { ErrorBoundary } from '../ErrorBoundary';
+
 
 /**
  * Props for the MainLayout component
@@ -33,6 +36,8 @@ export interface MainLayoutProps {
     onIncludeTagsChange: (tags: string[]) => void;
     excludeTags: string[];
     onExcludeTagsChange: (tags: string[]) => void;
+    favoritesOnly: boolean;
+    onFavoritesOnlyChange: (enabled: boolean) => void;
     onClearFilters: () => void;
 
     // Table state
@@ -62,6 +67,14 @@ export interface MainLayoutProps {
 
     // Theme
     theme: 'light' | 'dark';
+
+    // Bulk Actions
+    selectedIds?: Set<string>;
+    onSelect?: (model: Model, selected: boolean) => void;
+    onSelectAll?: (selected: boolean) => void;
+    onBulkDelete?: () => void;
+    onBulkExport?: () => void;
+    onToggleFavorite?: (model: Model) => void;
 }
 
 /**
@@ -74,6 +87,7 @@ export interface MainLayoutProps {
  * - Loading state with skeleton rows
  * - Smooth transitions when detail panel opens/closes
  * - Theme-aware styling
+ * - Bulk actions toolbar
  * 
  * @param props - MainLayout component props
  * @returns JSX.Element
@@ -91,6 +105,8 @@ export function MainLayout({
     onIncludeTagsChange,
     excludeTags,
     onExcludeTagsChange,
+    favoritesOnly,
+    onFavoritesOnlyChange,
     onClearFilters,
     models,
     sortKey,
@@ -109,7 +125,13 @@ export function MainLayout({
     filteredCount,
     onShowOnboarding,
     onShowImport,
-    theme
+    theme,
+    selectedIds,
+    onSelect,
+    onSelectAll,
+    onBulkDelete,
+    onBulkExport,
+    onToggleFavorite
 }: MainLayoutProps) {
     // Styling based on theme
     const bgCard = theme === 'dark' ? 'border-zinc-800 bg-black' : 'border-gray-400 bg-white shadow-sm';
@@ -117,84 +139,168 @@ export function MainLayout({
         ? 'border-zinc-700 bg-zinc-900/70 text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-violet-500'
         : 'border-gray-500 bg-white text-black placeholder:text-gray-700 focus:outline-none focus:ring-2 focus:ring-violet-500';
 
+    // Bulk Actions Toolbar
+    const hasSelection = selectedIds && selectedIds.size > 0;
+    const floatingBarBg = theme === 'dark' ? 'bg-zinc-900 border-zinc-700 text-zinc-100' : 'bg-white border-gray-200 text-gray-800 shadow-lg';
+
+    // Comparison State
+    const [isComparing, setIsComparing] = React.useState(false);
+
+    // Get full model objects for selection
+    const selectedModels = React.useMemo(() => {
+        if (!selectedIds) return [];
+        return models.filter(m => selectedIds.has(m.id));
+    }, [models, selectedIds]);
+
+    const canCompare = selectedModels.length >= 2 && selectedModels.length <= 4;
+
     return (
         <main className="w-full px-4 pb-4">
             <div className="flex flex-col lg:flex-row gap-5">
                 {/* Left Filters Panel */}
-                <FiltersSidebar
-                    domainPick={domainPick}
-                    onDomainChange={onDomainChange}
-                    minDownloads={minDownloads}
-                    onMinDownloadsChange={onMinDownloadsChange}
-                    licenseTypes={licenseTypes}
-                    onLicenseTypesChange={onLicenseTypesChange}
-                    commercialAllowed={commercialAllowed}
-                    onCommercialAllowedChange={onCommercialAllowedChange}
-                    includeTags={includeTags}
-                    onIncludeTagsChange={onIncludeTagsChange}
-                    excludeTags={excludeTags}
-                    onExcludeTagsChange={onExcludeTagsChange}
-                    onClearFilters={onClearFilters}
-                    theme={theme}
-                />
+                <ErrorBoundary name="Filters">
+                    <FiltersSidebar
+                        domainPick={domainPick}
+                        onDomainChange={onDomainChange}
+                        minDownloads={minDownloads}
+                        onMinDownloadsChange={onMinDownloadsChange}
+                        licenseTypes={licenseTypes}
+                        onLicenseTypesChange={onLicenseTypesChange}
+                        commercialAllowed={commercialAllowed}
+                        onCommercialAllowedChange={onCommercialAllowedChange}
+                        includeTags={includeTags}
+                        onIncludeTagsChange={onIncludeTagsChange}
+                        excludeTags={excludeTags}
+                        onExcludeTagsChange={onExcludeTagsChange}
+                        favoritesOnly={favoritesOnly}
+                        onFavoritesOnlyChange={onFavoritesOnlyChange}
+                        onClearFilters={onClearFilters}
+                        theme={theme}
+                    />
+                </ErrorBoundary>
 
                 {/* Main Table */}
-                <div className={`flex-1 transition-all duration-500 ease-out pl-0 ${openModel ? 'lg:w-3/5' : 'w-full'}`}>
-                    {isSyncing && filteredCount === 0 ? (
-                        <div className="space-y-2">
-                            {Array.from({ length: 8 }).map((_, i) => <SkeletonRow key={i} />)}
-                        </div>
-                    ) : filteredCount === 0 ? (
-                        <div className={`mt-16 rounded-2xl border p-10 text-center ${bgCard}`}>
-                            <DatabaseZap size={64} className="mx-auto mb-4 text-zinc-600" />
-                            <h3 className="text-xl font-semibold mb-2">Welcome to Model Database</h3>
-                            <p className="text-zinc-500 mb-6">Get started by adding models from various data sources</p>
-                            <div className="mt-4 flex justify-center gap-2">
-                                <button
-                                    onClick={onShowOnboarding}
-                                    className="rounded-xl px-6 py-3 text-sm font-semibold bg-accent hover:bg-accent-dark text-white flex items-center gap-2"
-                                    title="Set up data sources"
-                                >
-                                    <Plus size={16} />
-                                    Add Models
-                                </button>
-                                <button
-                                    onClick={onShowImport}
-                                    className={`rounded-xl ${bgInput} px-4 py-2 text-sm`}
-                                    title="Import models from file"
-                                >
-                                    Import from File
-                                </button>
+                <div className={`flex-1 transition-all duration-500 ease-out pl-0 relative ${openModel ? 'lg:w-3/5' : 'w-full'}`}>
+                    <ErrorBoundary name="Model Table">
+                        {isSyncing && filteredCount === 0 ? (
+                            <div className="space-y-2">
+                                {Array.from({ length: 8 }).map((_, i) => <SkeletonRow key={i} />)}
                             </div>
-                        </div>
-                    ) : (
-                        <ModelTable
-                            models={models}
-                            sortKey={sortKey}
-                            sortDirection={sortDirection}
-                            onSortChange={onSortChange}
-                            onModelOpen={onModelOpen}
-                            hasMore={hasMore}
-                            sentinelRef={sentinelRef}
-                            displayCount={displayCount}
-                            totalCount={totalCount}
-                            theme={theme}
-                        />
-                    )}
+                        ) : filteredCount === 0 ? (
+                            <div className={`mt-16 rounded-2xl border p-10 text-center ${bgCard}`}>
+                                <DatabaseZap size={64} className="mx-auto mb-4 text-zinc-600" />
+                                <h3 className="text-xl font-semibold mb-2">Welcome to Model Database</h3>
+                                <p className="text-zinc-500 mb-6">Get started by adding models from various data sources</p>
+                                <div className="mt-4 flex justify-center gap-2">
+                                    <button
+                                        onClick={onShowOnboarding}
+                                        className="rounded-xl px-6 py-3 text-sm font-semibold bg-accent hover:bg-accent-dark text-white flex items-center gap-2"
+                                        title="Set up data sources"
+                                    >
+                                        <Plus size={16} />
+                                        Add Models
+                                    </button>
+                                    <button
+                                        onClick={onShowImport}
+                                        className={`rounded-xl ${bgInput} px-4 py-2 text-sm`}
+                                        title="Import models from file"
+                                    >
+                                        Import from File
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            <>
+
+                                <ModelTable
+                                    models={models}
+                                    sortKey={sortKey}
+                                    sortDirection={sortDirection}
+                                    onSortChange={onSortChange}
+                                    onModelOpen={onModelOpen}
+                                    hasMore={hasMore}
+                                    sentinelRef={sentinelRef}
+                                    displayCount={displayCount}
+                                    totalCount={totalCount}
+                                    theme={theme}
+                                    selectedIds={selectedIds}
+                                    onSelect={onSelect}
+                                    onSelectAll={onSelectAll}
+                                    onToggleFavorite={onToggleFavorite}
+                                />
+
+                                {/* Floating Bulk Actions Toolbar */}
+                                <div className={`fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 transition-all duration-300 ${hasSelection ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0 pointer-events-none'}`}>
+                                    <div className={`flex items-center gap-4 px-6 py-3 rounded-full border ${floatingBarBg}`}>
+                                        <span className="font-medium text-sm whitespace-nowrap px-2">
+                                            {selectedIds?.size} selected
+                                        </span>
+
+                                        {canCompare && (
+                                            <>
+                                                <div className="h-4 w-px bg-current opacity-20"></div>
+                                                <button
+                                                    onClick={() => setIsComparing(true)}
+                                                    className="px-3 py-1.5 rounded-full bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold transition-colors shadow-lg shadow-violet-500/20"
+                                                >
+                                                    Compare ({selectedModels.length})
+                                                </button>
+                                            </>
+                                        )}
+
+                                        <div className="h-4 w-px bg-current opacity-20"></div>
+                                        <button
+                                            onClick={onBulkExport}
+                                            className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                                            title="Export selected"
+                                        >
+                                            <Download size={18} />
+                                        </button>
+                                        <button
+                                            onClick={onBulkDelete}
+                                            className="p-2 rounded-full hover:bg-red-500/10 text-red-500 transition-colors"
+                                            title="Delete selected"
+                                        >
+                                            <Trash2 size={18} />
+                                        </button>
+                                        <div className="h-4 w-px bg-current opacity-20"></div>
+                                        <button
+                                            onClick={() => onSelectAll && onSelectAll(false)}
+                                            className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                                            title="Clear selection"
+                                        >
+                                            <X size={18} />
+                                        </button>
+                                    </div>
+                                </div>
+                            </>
+                        )}
+                    </ErrorBoundary>
                 </div>
 
                 {/* Detail Panel */}
                 {openModel && (
                     <div className="lg:w-2/5 relative transition-all duration-500 ease-out">
-                        <DetailPanel
-                            model={openModel}
-                            onClose={onCloseDetail}
-                            onDelete={onDeleteModel}
-                            triggerElement={triggerElement}
-                        />
+                        <ErrorBoundary name="Detail Panel" onReset={onCloseDetail}>
+                            <DetailPanel
+                                model={openModel}
+                                onClose={onCloseDetail}
+                                onDelete={onDeleteModel}
+                                triggerElement={triggerElement}
+                            />
+                        </ErrorBoundary>
                     </div>
                 )}
             </div>
+
+            {/* Comparison View Modal */}
+            {isComparing && (
+                <ComparisonView
+                    models={selectedModels}
+                    onClose={() => setIsComparing(false)}
+                    theme={theme}
+                />
+            )}
         </main>
     );
 }

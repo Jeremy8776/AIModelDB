@@ -99,6 +99,9 @@ export function APIConfigSection() {
   const [customProviderProtocol, setCustomProviderProtocol] = useState<'openai' | 'anthropic' | 'google' | 'ollama'>('openai');
   const [customProviderHeaders, setCustomProviderHeaders] = useState('');
 
+  // Local state for API keys (buffered before save)
+  const [localApiKeys, setLocalApiKeys] = useState<Record<string, string>>({});
+
   // Merge static and custom providers
   const allProviders = [...apiProviders];
   if (settings.apiConfig) {
@@ -212,12 +215,15 @@ export function APIConfigSection() {
     return config?.enabled && hasLocalKey(provider.key);
   });
 
-  const fetchModels = async (providerKey: string) => {
+  const fetchModels = async (providerKey: string, newApiKey?: string) => {
     const config = settings.apiConfig?.[providerKey as keyof typeof settings.apiConfig];
     if (!config) return;
 
+    // Use provided key or stored key
+    const apiKeyToUse = newApiKey !== undefined ? newApiKey : config.apiKey;
+
     // Check key unless protocol allows none
-    if (!config.apiKey && config.protocol !== 'ollama' && providerKey !== 'ollama') {
+    if (!apiKeyToUse && config.protocol !== 'ollama' && providerKey !== 'ollama') {
       setFetchError(prev => ({ ...prev, [providerKey]: 'API Key required' }));
       return;
     }
@@ -244,7 +250,7 @@ export function APIConfigSection() {
       let allModels: any[] = [];
 
       if (protocol === 'anthropic') {
-        headers['x-api-key'] = config.apiKey || '';
+        headers['x-api-key'] = apiKeyToUse || '';
         headers['anthropic-version'] = '2023-06-01';
         const params = new URLSearchParams();
         params.append('limit', '100');
@@ -255,7 +261,7 @@ export function APIConfigSection() {
 
       } else if (protocol === 'google') {
         const params = new URLSearchParams();
-        if (config.apiKey) params.append('key', config.apiKey);
+        if (apiKeyToUse) params.append('key', apiKeyToUse);
         params.append('pageSize', '100');
         const url = `${baseUrl}/models?${params.toString()}`;
         const googleHeaders = { ...headers }; // Ensure no auth header from other protocols
@@ -273,7 +279,7 @@ export function APIConfigSection() {
 
       } else {
         // OpenAI Compatible (default)
-        if (config.apiKey) headers['Authorization'] = `Bearer ${config.apiKey}`;
+        if (apiKeyToUse) headers['Authorization'] = `Bearer ${apiKeyToUse}`;
         const url = `${baseUrl}/models`;
         const result = await window.electronAPI?.proxyRequest?.({ url, method: 'GET', headers });
         if (!result?.success) throw new Error(result?.error || 'Fetch failed');
@@ -323,7 +329,8 @@ export function APIConfigSection() {
             ...settings.apiConfig,
             [providerKey]: {
               ...config,
-              cachedModels: modelList
+              cachedModels: modelList,
+              apiKey: apiKeyToUse // Save the key if verification succeeded
             }
           }
         });
@@ -338,7 +345,39 @@ export function APIConfigSection() {
       setFetchError(prev => ({ ...prev, [providerKey]: err.message || 'Error fetching models' }));
     } finally {
       setFetchingModels(prev => ({ ...prev, [providerKey]: false }));
+      // Clear local key state if successful (it's now in settings) 
+      // or keep it if failed? Actually, keep it so user can edit. 
+      // If success, we sync from settings, so local state is redundant if we clear it.
+      // But we need to know whether to show local or settings.
+      // If we clear local, UI reverts to settings. Perfect.
+      if (newApiKey !== undefined) {
+        // Only clear if no error?
+        // We can't easily know here if we threw, because catch block handles it.
+        // But saveSettings happened inside try.
+        // Let's rely on the fact that if we saved, settings updated.
+      }
     }
+  };
+
+  const handleApiKeyChange = (key: string, value: string) => {
+    setLocalApiKeys(prev => ({ ...prev, [key]: value }));
+    // Clear error when typing
+    if (fetchError[key]) setFetchError(prev => ({ ...prev, [key]: '' }));
+  };
+
+  const handleSaveApiKey = (key: string) => {
+    const val = localApiKeys[key];
+    if (val === undefined) return;
+    fetchModels(key, val)
+      .then(() => {
+        // On success, clear local state so input falls back to saved settings
+        setLocalApiKeys(prev => {
+          const next = { ...prev };
+          delete next[key];
+          return next;
+        });
+      })
+      .catch(() => { }); // Error handled in fetchModels
   };
 
   return (
@@ -435,18 +474,33 @@ export function APIConfigSection() {
                   <div className="relative">
                     <input
                       type={showKey ? 'text' : 'password'}
-                      value={config?.apiKey || ''}
-                      onChange={(e) => updateApiConfig(provider.key, 'apiKey', e.target.value)}
+                      value={localApiKeys[provider.key] !== undefined ? localApiKeys[provider.key] : (config?.apiKey || '')}
+                      onChange={(e) => handleApiKeyChange(provider.key, e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleSaveApiKey(provider.key);
+                      }}
                       placeholder={`Enter ${provider.name} API key`}
-                      className={`w-full rounded-lg border ${bgInput} px-3 py-2 pr-12 text-sm`}
+                      className={`w-full rounded-lg border ${bgInput} px-3 py-2 pr-24 text-sm ${localApiKeys[provider.key] !== undefined ? 'border-violet-500 ring-1 ring-violet-500' : ''}`}
                     />
-                    <button
-                      type="button"
-                      onClick={() => toggleApiKeyVisibility(provider.key)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors"
-                    >
-                      {showKey ? <EyeOff size={16} /> : <Eye size={16} />}
-                    </button>
+                    <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                      {localApiKeys[provider.key] !== undefined && (
+                        <button
+                          type="button"
+                          onClick={() => handleSaveApiKey(provider.key)}
+                          disabled={fetchingModels[provider.key]}
+                          className="px-2 py-1 text-xs bg-violet-600 hover:bg-violet-700 text-white rounded shadow-sm mr-1 disabled:opacity-50"
+                        >
+                          {fetchingModels[provider.key] ? 'Verifying...' : 'Save'}
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => toggleApiKeyVisibility(provider.key)}
+                        className="text-zinc-500 hover:text-zinc-300 transition-colors p-1"
+                      >
+                        {showKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -470,13 +524,21 @@ export function APIConfigSection() {
                       </datalist>
                     </div>
                     <button
-                      onClick={() => fetchModels(provider.key)}
-                      disabled={fetchingModels[provider.key] || (!config?.apiKey && protocol !== 'ollama')}
+                      onClick={() => {
+                        // This effectively validates and saves the key if a new one is typed
+                        const localKey = localApiKeys[provider.key];
+                        if (localKey !== undefined) {
+                          handleSaveApiKey(provider.key);
+                        } else {
+                          fetchModels(provider.key);
+                        }
+                      }}
+                      disabled={fetchingModels[provider.key] || ((!config?.apiKey && !localApiKeys[provider.key]) && protocol !== 'ollama')}
                       className={`px-3 rounded-lg border flex items-center gap-2 transition-colors ${fetchingModels[provider.key]
                         ? 'bg-zinc-800 text-zinc-500 border-zinc-800'
                         : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border-zinc-700'
                         }`}
-                      title="Fetch available models from API"
+                      title="Fetch available models from API (also validates and saves API Key)"
                     >
                       <RefreshCw size={16} className={fetchingModels[provider.key] ? 'animate-spin' : ''} />
                     </button>

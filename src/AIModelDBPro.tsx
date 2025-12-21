@@ -15,6 +15,8 @@ import { OnboardingWizard } from "./components/OnboardingWizard";
 import { ValidationProgress } from "./components/ValidationProgress";
 import { ModelEditor } from "./components/ModelEditor";
 import { SimpleValidationModal } from "./components/SimpleValidationModal";
+import { ExportModal } from "./components/ExportModal";
+import { filterModels } from "./utils/filterLogic";
 import { ConfirmationToast } from "./components/ConfirmationToast";
 import { dedupe } from "./utils/format";
 import { syncAllSources, syncWithLiveOptions } from "./services/syncService";
@@ -26,10 +28,13 @@ import { useModalState } from "./hooks/useModalState";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import { useWindowEvents } from "./hooks/useWindowEvents";
 import { useConsoleLogging } from "./hooks/useConsoleLogging";
+import { useOnlineStatus } from "./hooks/useOnlineStatus";
+import { useSyncHistory } from "./hooks/useSyncHistory";
 import { Header } from "./components/layout/Header";
 import { Toolbar } from "./components/layout/Toolbar";
 import { MainLayout } from "./components/layout/MainLayout";
 import { ToastContainer } from "./components/toasts/ToastContainer";
+import { UndoToast } from "./components/toasts/UndoToast";
 import { ConsoleButton } from "./components/console/ConsoleButton";
 /**
  * Main content component for the AI Model Database Pro application.
@@ -45,6 +50,8 @@ function AIModelDBProContent() {
   const validationState = useValidationState();
   const modalState = useModalState();
   const consoleLogging = useConsoleLogging();
+  const isOnline = useOnlineStatus();
+  const syncHistory = useSyncHistory();
 
   // Track if API keys are available
   const [hasApiProvider, setHasApiProvider] = useState(false);
@@ -98,7 +105,8 @@ function AIModelDBProContent() {
     licenseTypes: uiState.licenseTypes,
     commercialAllowed: uiState.commercialAllowed,
     includeTags: uiState.includeTags,
-    excludeTags: uiState.excludeTags
+    excludeTags: uiState.excludeTags,
+    favoritesOnly: uiState.favoritesOnly
   });
 
   // Lazy loading for "All" mode
@@ -189,6 +197,12 @@ function AIModelDBProContent() {
     try {
       if (showSpinner) syncState.setIsSyncing(true);
       setLastMergeStats(null);
+
+      // Save a snapshot before sync (for rollback)
+      if (models.length > 0) {
+        syncHistory.saveSnapshot(models, `Pre-sync backup (${models.length} models)`);
+        consoleLogging.addConsoleLog("Created pre-sync snapshot for rollback");
+      }
 
       const result = await syncAllSources(
         {
@@ -342,6 +356,67 @@ function AIModelDBProContent() {
     modalState.setFlaggedModels(modalState.flaggedModels.map((m: Model) => m.id === model.id ? model : m));
   };
 
+  // Selection state
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  const handleSelect = (model: Model, selected: boolean) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (selected) next.add(model.id);
+      else next.delete(model.id);
+      return next;
+    });
+  };
+
+  const handleSelectAll = (selected: boolean) => {
+    if (selected) {
+      // Select all currently filtered/visible items
+      setSelectedIds(new Set(pageItems.map(m => m.id)));
+    } else {
+      setSelectedIds(new Set());
+    }
+  };
+
+  const handleUndoableDelete = (modelsToDelete: Model[]) => {
+    // 1. Remove from UI
+    const idsToDelete = new Set(modelsToDelete.map(m => m.id));
+    setModels(prev => prev.filter(m => !idsToDelete.has(m.id)));
+
+    // Clear selection if any of the deleted items were selected
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      for (const id of idsToDelete) next.delete(id);
+      return next;
+    });
+
+    // 2. Show Undo Toast
+    const count = modelsToDelete.length;
+    modalState.setUndoToast({
+      message: `Deleted ${count} model${count !== 1 ? 's' : ''}`,
+      onUndo: () => {
+        // Restore models
+        setModels(prev => dedupe([...prev, ...modelsToDelete]));
+        // Note: we don't restore selection to avoid confusion, or we could?
+        // Let's keep it simple.
+      },
+      duration: 5000
+    });
+  };
+
+  const handleBulkDelete = () => {
+    if (window.confirm(`Are you sure you want to delete ${selectedIds.size} models?`)) {
+      const modelsToDelete = models.filter(m => selectedIds.has(m.id));
+      handleUndoableDelete(modelsToDelete);
+      consoleLogging.addConsoleLog(`Bulk deleted ${selectedIds.size} models.`);
+    }
+  };
+
+  const handleBulkExport = () => {
+    const modelsToExport = models.filter(m => selectedIds.has(m.id));
+    exportModels({ format: 'json', models: modelsToExport });
+    consoleLogging.addConsoleLog(`Exported ${modelsToExport.length} models.`);
+  };
+
   const bgRoot = theme === "dark" ? "bg-black text-zinc-100" : "bg-white text-black";
 
   // Loading screen
@@ -376,6 +451,11 @@ function AIModelDBProContent() {
 
   return (
     <div className={`min-h-screen ${bgRoot}`}>
+      {!isOnline && (
+        <div className="bg-amber-500/90 backdrop-blur text-white text-xs font-bold text-center py-1 sticky top-0 z-50">
+          ⚠️ OFFLINE MODE - Network features disabled
+        </div>
+      )}
       <Header
         query={uiState.query}
         onQueryChange={uiState.setQuery}
@@ -404,7 +484,8 @@ function AIModelDBProContent() {
           page={page}
           totalPages={totalPages}
           onPageChange={setPage}
-          onExport={(format) => exportModels({ format, models: filtered })}
+          totalModels={models.length}
+          onExport={() => modalState.setShowExportModal(true)}
           onDeleteDatabase={() => {
             modalState.setConfirmationToast({
               title: 'Delete Database',
@@ -437,6 +518,8 @@ function AIModelDBProContent() {
         onIncludeTagsChange={uiState.setIncludeTags}
         excludeTags={uiState.excludeTags}
         onExcludeTagsChange={uiState.setExcludeTags}
+        favoritesOnly={uiState.favoritesOnly}
+        onFavoritesOnlyChange={uiState.setFavoritesOnly}
         onClearFilters={() => {
           uiState.setLicenseTypes([]);
           uiState.setCommercialAllowed(null);
@@ -444,6 +527,7 @@ function AIModelDBProContent() {
           uiState.setExcludeTags([]);
           uiState.setMinDownloads(0);
           uiState.setDomainPick('All');
+          uiState.setFavoritesOnly(false);
         }}
         models={visibleItems}
         sortKey={uiState.sortKey}
@@ -471,7 +555,8 @@ function AIModelDBProContent() {
           uiState.setTriggerElement(null);
         }}
         onDeleteModel={(id) => {
-          setModels(prev => prev.filter(m => m.id === id ? false : true));
+          const m = models.find(m => m.id === id);
+          if (m) handleUndoableDelete([m]);
         }}
         triggerElement={uiState.triggerElement}
         isSyncing={syncState.isSyncing}
@@ -479,6 +564,14 @@ function AIModelDBProContent() {
         onShowOnboarding={() => modalState.setShowOnboarding(true)}
         onShowImport={() => modalState.setShowImport(true)}
         theme={theme}
+        selectedIds={selectedIds}
+        onSelect={handleSelect}
+        onSelectAll={handleSelectAll}
+        onBulkDelete={handleBulkDelete}
+        onBulkExport={handleBulkExport}
+        onToggleFavorite={(model) => {
+          setModels(prev => prev.map(m => m.id === model.id ? { ...m, isFavorite: !m.isFavorite } : m));
+        }}
       />
 
       <OnboardingWizard
@@ -510,6 +603,11 @@ function AIModelDBProContent() {
         onClose={() => modalState.setShowSync(false)}
         onSync={handleLiveSync}
         addConsoleLog={consoleLogging.addConsoleLog}
+        currentModels={models}
+        onRestore={(restored) => {
+          setModels(restored);
+          consoleLogging.addConsoleLog(`Restored ${restored.length} models from snapshot`);
+        }}
       />
 
       <FlaggedModelsModal
@@ -527,6 +625,49 @@ function AIModelDBProContent() {
         isOpen={showModelEditor}
         onClose={closeModelEditor}
         onSave={saveModelEdit}
+      />
+
+      <ExportModal
+        isOpen={modalState.showExportModal}
+        onClose={() => modalState.setShowExportModal(false)}
+        onExport={(format, scope, customCriteria) => {
+          // If models are manually selected, prefer export of selection
+          // NOTE: 'filtered' scope is removed from UI, but we keep this check for safety if selectedIds > 0
+          // Actually, scope type is now 'all' | 'custom', so 'filtered' logic is dead.
+          // We should just support simple export.
+
+          if (scope === 'custom' && customCriteria) {
+            // Use custom criteria to filter models
+            const fullCriteria = {
+              query: '',
+              domainPick: 'All',
+              sortKey: 'recent',
+              sortDirection: 'asc' as const,
+              minDownloads: 0,
+              pageSize: null,
+              ...customCriteria
+            } as any;
+
+            const customFiltered = filterModels(models, fullCriteria);
+            exportModels({ format, models: customFiltered });
+            consoleLogging.addConsoleLog(`Exported ${customFiltered.length} models (Custom Filter).`);
+          } else {
+            // 'all' scope
+            exportModels({ format, models: models });
+            consoleLogging.addConsoleLog(`Exported ${models.length} models (Entire DB).`);
+          }
+        }}
+        totalModels={models.length}
+        currentFilters={{
+          domainPick: uiState.domainPick,
+          favoritesOnly: uiState.favoritesOnly,
+          minDownloads: uiState.minDownloads,
+          licenseTypes: uiState.licenseTypes,
+          commercialAllowed: uiState.commercialAllowed,
+          includeTags: uiState.includeTags,
+          excludeTags: uiState.excludeTags
+        }}
+        theme={theme}
       />
 
       <SimpleValidationModal
@@ -563,6 +704,11 @@ function AIModelDBProContent() {
         validationToast={validationState.validationToast}
         onDismissValidation={() => validationState.setValidationToast(null)}
         theme={theme}
+      />
+
+      <UndoToast
+        data={modalState.undoToast}
+        onClose={() => modalState.setUndoToast(null)}
       />
 
       <ConfirmationToast

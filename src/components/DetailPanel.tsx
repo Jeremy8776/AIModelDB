@@ -117,7 +117,7 @@ export function DetailPanel({ model, onClose, onDelete, triggerElement }: Detail
               <span>· {kfmt(model.downloads || 0)} downloads</span>
             </div>
             {model.description && (
-              <p className={`mt-2 text-sm ${textSubtle}`}>{model.description}</p>
+              <p className={`mt-2 text-sm ${textSubtle} whitespace-pre-wrap`}>{model.description}</p>
             )}
 
             {/* CivitasBay Details */}

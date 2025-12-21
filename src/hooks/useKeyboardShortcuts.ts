@@ -16,6 +16,11 @@ export function useKeyboardShortcuts(
 ): void {
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => {
+            // Ignore shortcuts if user is typing in an input/textarea
+            const activeTag = document.activeElement?.tagName.toLowerCase();
+            const isInput = activeTag === 'input' || activeTag === 'textarea' || activeTag === 'select';
+            if (isInput) return;
+
             // "/" key - Focus search input
             if (e.key === "/") {
                 e.preventDefault();

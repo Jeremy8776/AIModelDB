@@ -8,6 +8,7 @@
 
 import { useState } from 'react';
 import { Model } from '../types';
+import { UndoToastData } from '../components/toasts/UndoToast';
 
 /**
  * Data structure for import toast notifications
@@ -46,6 +47,8 @@ export interface ModalState {
     setShowFlaggedModal: (show: boolean) => void;
     showEditModal: boolean;
     setShowEditModal: (show: boolean) => void;
+    showExportModal: boolean;
+    setShowExportModal: (show: boolean) => void;
 
     // Model editing state
     editingModel: Model | null;
@@ -60,6 +63,8 @@ export interface ModalState {
     setImportToast: (toast: ImportToastData | null) => void;
     confirmationToast: ConfirmationToastData | null;
     setConfirmationToast: (toast: ConfirmationToastData | null) => void;
+    undoToast: UndoToastData | null;
+    setUndoToast: (toast: UndoToastData | null) => void;
 }
 
 /**
@@ -96,6 +101,7 @@ export function useModalState(): ModalState {
     const [showOnboarding, setShowOnboarding] = useState(false);
     const [showFlaggedModal, setShowFlaggedModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
+    const [showExportModal, setShowExportModal] = useState(false);
 
     // Model editing state
     const [editingModel, setEditingModel] = useState<Model | null>(null);
@@ -106,6 +112,7 @@ export function useModalState(): ModalState {
     // Toast states
     const [importToast, setImportToast] = useState<ImportToastData | null>(null);
     const [confirmationToast, setConfirmationToast] = useState<ConfirmationToastData | null>(null);
+    const [undoToast, setUndoToast] = useState<UndoToastData | null>(null);
 
     return {
         showAddModel,
@@ -120,6 +127,8 @@ export function useModalState(): ModalState {
         setShowFlaggedModal,
         showEditModal,
         setShowEditModal,
+        showExportModal,
+        setShowExportModal,
         editingModel,
         setEditingModel,
         flaggedModels,
@@ -128,5 +137,7 @@ export function useModalState(): ModalState {
         setImportToast,
         confirmationToast,
         setConfirmationToast,
+        undoToast,
+        setUndoToast,
     };
 }

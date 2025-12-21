@@ -1,8 +1,9 @@
 import React, { useContext } from 'react';
-import { DatabaseZap, Download, AlertTriangle, CheckCircle } from 'lucide-react';
+import { DatabaseZap, Download, AlertTriangle, CheckCircle, Star } from 'lucide-react';
 import ThemeContext from '../context/ThemeContext';
 import { useSettings } from '../context/SettingsContext';
 import { Model } from '../types';
+import { RoundCheckbox } from './RoundCheckbox';
 import { DomainIcon } from './UI';
 import { kfmt } from '../utils/format';
 import { formatCurrency, convertCurrency, detectCurrency, validateModelCost, factCheckModelCost, CurrencyCode } from '../utils/currency';
@@ -10,9 +11,13 @@ import { formatCurrency, convertCurrency, detectCurrency, validateModelCost, fac
 interface ModelRowProps {
   m: Model;
   onOpen: (m: Model, element?: HTMLElement) => void;
+  isSelected?: boolean;
+  onSelect?: (m: Model, selected: boolean) => void;
+  isFocused?: boolean;
+  onToggleFavorite?: (m: Model) => void;
 }
 
-export const ModelRow = React.memo(function ModelRow({ m, onOpen }: ModelRowProps) {
+export const ModelRow = React.memo(function ModelRow({ m, onOpen, isSelected, onSelect, isFocused, onToggleFavorite }: ModelRowProps) {
   const { theme } = useContext(ThemeContext);
   const { settings } = useSettings();
 
@@ -32,9 +37,9 @@ export const ModelRow = React.memo(function ModelRow({ m, onOpen }: ModelRowProp
     ? 'hover:border-zinc-700'
     : 'hover:border-gray-600';
 
-  const focusRing = theme === 'dark'
-    ? 'focus:ring-zinc-600/40'
-    : 'focus:ring-gray-500/60';
+  // Checkbox style
+  const checkboxBorder = theme === 'dark' ? 'border-zinc-700 bg-zinc-900' : 'border-gray-300 bg-white';
+  const checkboxChecked = 'bg-violet-600 border-violet-600';
 
   const subtleText = theme === 'dark'
     ? 'text-zinc-500'
@@ -47,7 +52,12 @@ export const ModelRow = React.memo(function ModelRow({ m, onOpen }: ModelRowProp
     return date.toLocaleDateString("en-US", { year: 'numeric', month: 'short', day: 'numeric' });
   };
 
-  // Get cost display for the model with currency conversion and validation
+  // (getCostDisplay function remains the same, omitted for brevity in prompt but kept in file via tool)
+  // ... Paste getCostDisplay logic here if replacing full file, but using replace_file_content so assume omitted sections are safe if not touched.
+  // Actually, I need to include the full internal function or use a targeted replace.
+  // The 'replace_file_content' replaces the CHUNK proper. I can't easily skip the middle of a function.
+  // I will re-include getCostDisplay. See below.
+
   const getCostDisplay = (model: Model): JSX.Element => {
     // Check if model is open-source
     const isOpenSource = (model.license?.type === 'OSI' || model.license?.type === 'Copyleft') && model.license?.name && model.license.name !== 'Proprietary';
@@ -274,11 +284,40 @@ export const ModelRow = React.memo(function ModelRow({ m, onOpen }: ModelRowProp
   };
 
   return (
-    <button
-      onClick={(e) => onOpen(m, e.currentTarget)}
-      className={`grid w-full grid-cols-12 items-center gap-3 rounded-xl border ${rowBg} px-3 py-2 text-left transition ${hoverBorder} focus:outline-none focus:ring-2 ${focusRing}`}
+    <div
+      className={`group/row grid w-full grid-cols-12 items-center gap-3 rounded-xl border ${rowBg} px-3 py-2 text-left transition ${hoverBorder} ${isFocused ? 'ring-2 ring-violet-500 z-10' : ''}`}
     >
-      <div className="col-span-3 flex min-w-0 items-center gap-2 overflow-hidden">
+      {/* Checkbox Column */}
+      <div className="col-span-1 flex justify-center items-center gap-2">
+        <RoundCheckbox
+          checked={!!isSelected}
+          onChange={(checked) => onSelect && onSelect(m, checked)}
+          size="sm"
+          ariaLabel={`Select ${m.name}`}
+        />
+        {onToggleFavorite && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onToggleFavorite(m); }}
+            className={`group p-1.5 rounded-full transition-all duration-300
+              ${m.isFavorite
+                ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-500 scale-100 opacity-100'
+                : 'text-zinc-300 dark:text-zinc-600 hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 scale-90 hover:scale-100 opacity-0 group-hover/row:opacity-100'
+              }`}
+            title={m.isFavorite ? "Remove from favorites" : "Add to favorites"}
+          >
+            <Star
+              className={`w-3.5 h-3.5 transition-transform duration-300 ${m.isFavorite ? 'fill-current' : 'group-hover:fill-current'}`}
+              strokeWidth={m.isFavorite ? 1.5 : 2}
+            />
+          </button>
+        )}
+      </div>
+
+      {/* Name / Open Button */}
+      <button
+        onClick={(e) => onOpen(m, e.currentTarget)}
+        className="col-span-3 flex min-w-0 items-center gap-2 overflow-hidden text-left focus:outline-none"
+      >
         <DatabaseZap className={`h-4 w-4 flex-shrink-0 align-middle ${textSecondary}`} />
         <div className="flex min-w-0 flex-col">
           <span className={`truncate text-sm ${textMain}`} title={m.name || 'Unknown Model'}>{(m.name || 'Unknown Model').replace(/^[^/]+\//, '')}</span>
@@ -286,7 +325,8 @@ export const ModelRow = React.memo(function ModelRow({ m, onOpen }: ModelRowProp
             <span className="truncate">{m.provider || ((m.name || '').includes('/') ? (m.name || '').split('/')[0] : '')}</span> · <Download className="h-3 w-3 flex-shrink-0 align-middle relative top-0.5" /> {kfmt(m.downloads || 0)}
           </span>
         </div>
-      </div>
+      </button>
+
       <div className={`col-span-2 truncate text-sm ${textSecondary}`}>
         {formatDate(m.release_date)}
       </div>
@@ -297,8 +337,8 @@ export const ModelRow = React.memo(function ModelRow({ m, onOpen }: ModelRowProp
       <div className={`col-span-2 text-sm ${textSecondary}`} title={getCostSummary(m)}>
         {getCostDisplay(m)}
       </div>
-      <div className={`col-span-3 truncate text-sm ${textSecondary}`} title={m.license?.name || 'Unknown'}>{m.license?.name || 'Unknown'}</div>
-    </button>
+      <div className={`col-span-2 truncate text-sm ${textSecondary}`} title={m.license?.name || 'Unknown'}>{m.license?.name || 'Unknown'}</div>
+    </div>
   );
 });
 
@@ -311,11 +351,12 @@ export function SkeletonRow() {
 
   return (
     <div className={`grid w-full grid-cols-12 items-center gap-3 rounded-xl border ${border} ${bg} px-3 py-3`}>
+      <div className={`col-span-1 h-4 rounded w-4 mx-auto ${shimmer}`} />
       <div className={`col-span-3 h-4 rounded ${shimmer}`} />
       <div className={`col-span-2 h-4 rounded ${shimmer}`} />
       <div className={`col-span-2 h-4 rounded ${shimmer}`} />
       <div className={`col-span-2 h-4 rounded ${shimmer}`} />
-      <div className={`col-span-3 h-4 rounded ${shimmer}`} />
+      <div className={`col-span-2 h-4 rounded ${shimmer}`} />
     </div>
   );
 }

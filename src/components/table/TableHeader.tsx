@@ -10,6 +10,7 @@
 import React from 'react';
 import { ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
 import { SortKey } from '../../hooks/useUIState';
+import { RoundCheckbox } from '../RoundCheckbox';
 
 /**
  * Props for the TableHeader component
@@ -19,34 +20,21 @@ export interface TableHeaderProps {
     sortDirection: 'asc' | 'desc';
     onSortChange: (key: SortKey, direction: 'asc' | 'desc') => void;
     theme: 'light' | 'dark';
+    isAllSelected?: boolean;
+    onSelectAll?: (selected: boolean) => void;
 }
 
-/**
- * Table header component with sortable columns.
- * 
- * Features:
- * - Clickable column headers
- * - Sort direction indicators (up/down arrows)
- * - Active column highlighting
- * - Theme-aware styling
- * 
- * Columns:
- * - Model (name)
- * - Released (release_date)
- * - Domain
- * - Costs (parameters)
- * - License
- * 
- * @param props - TableHeader component props
- * @returns JSX.Element
- */
 export function TableHeader({
     sortKey,
     sortDirection,
     onSortChange,
-    theme
+    theme,
+    isAllSelected,
+    onSelectAll
 }: TableHeaderProps) {
     const textSubtle = theme === 'dark' ? 'text-zinc-400' : 'text-gray-800';
+    const checkboxBorder = theme === 'dark' ? 'border-zinc-700 bg-zinc-900' : 'border-gray-300 bg-white';
+    const checkboxChecked = 'bg-violet-600 border-violet-600';
 
     // Helper function to handle sort button clicks
     const handleSortClick = (key: SortKey) => {
@@ -81,12 +69,22 @@ export function TableHeader({
     };
 
     return (
-        <div className={`grid grid-cols-12 gap-3 px-3 py-2 text-xs ${textSubtle} border-b`}>
+        <div className={`grid grid-cols-12 gap-3 px-3 py-2 text-xs ${textSubtle} border-b items-center`}>
+            {/* Checkbox Column */}
+            <div className="col-span-1 flex justify-center">
+                <RoundCheckbox
+                    checked={!!isAllSelected}
+                    onChange={(checked) => onSelectAll && onSelectAll(checked)}
+                    size="sm"
+                    ariaLabel="Select all models"
+                />
+            </div>
+
             {renderSortButton('name', 'Model', 'col-span-3')}
             {renderSortButton('release_date', 'Released', 'col-span-2')}
             {renderSortButton('domain', 'Domain', 'col-span-2')}
             {renderSortButton('parameters', 'Costs/1M Tokens', 'col-span-2')}
-            {renderSortButton('license', 'License', 'col-span-3')}
+            {renderSortButton('license', 'License', 'col-span-2')}
         </div>
     );
 }

@@ -1,7 +1,8 @@
 import { useContext, useRef, useState, useMemo, useEffect } from 'react';
-import { Palette, Sun, Moon, Check, Upload, RotateCcw, Trash2, Edit2, Save, Download, AlertTriangle } from 'lucide-react';
+import { Palette, Check, Upload, RotateCcw, Trash2, Edit2, Save, Download, AlertTriangle } from 'lucide-react';
 import ThemeContext, { ThemePreset } from '../../context/ThemeContext';
 import { useSettings } from '../../context/SettingsContext';
+import { RoundCheckbox } from '../RoundCheckbox';
 import { ThemedSelect } from '../ThemedSelect';
 import { CURRENCY_NAMES, CurrencyCode } from '../../utils/currency';
 
@@ -181,48 +182,7 @@ export function DisplaySection() {
         </p>
       </div>
 
-      {/* Theme Selection */}
-      <div className={`rounded-xl border p-4 ${bgCard}`}>
-        <h4 className="font-medium mb-4">Theme</h4>
-        <div className="flex items-center gap-4">
-          {activePresetId && activePresetId !== 'none' ? (
-            <>
-              <div className="flex items-center gap-2 px-4 py-2 rounded-lg border border-zinc-700 bg-zinc-800/50 text-zinc-500 opacity-60">
-                <Moon size={16} />
-                Theme Override Active
-              </div>
-              <span className="text-sm text-zinc-500">
-                Preset "{activePreset.name}" controls the theme
-              </span>
-            </>
-          ) : (
-            <>
-              <button
-                onClick={toggleTheme}
-                className={`flex items - center gap - 2 px - 4 py - 2 rounded - lg border transition - colors ${theme === 'dark'
-                  ? 'border-zinc-700 bg-zinc-800 text-white'
-                  : 'border-zinc-300 bg-white text-zinc-900'
-                  } `}
-              >
-                {theme === 'dark' ? (
-                  <>
-                    <Moon size={16} />
-                    Dark Mode
-                  </>
-                ) : (
-                  <>
-                    <Sun size={16} />
-                    Light Mode
-                  </>
-                )}
-              </button>
-              <span className="text-sm text-zinc-600 dark:text-zinc-400">
-                Current theme: {theme === 'dark' ? 'Dark' : 'Light'}
-              </span>
-            </>
-          )}
-        </div>
-      </div>
+
 
       {/* UI Customization */}
       <div className={`rounded-xl border p-4 ${bgCard}`}>
@@ -406,21 +366,12 @@ export function DisplaySection() {
           </div>
 
           <label htmlFor="showCostValidation" className="flex items-center gap-3 cursor-pointer group select-none">
-            <div className="relative flex items-center justify-center">
-              <input
-                type="checkbox"
-                id="showCostValidation"
-                checked={settings.showCostValidation ?? true}
-                onChange={(e) => saveSettings({ showCostValidation: e.target.checked })}
-                className="sr-only"
-              />
-              <div className={`w - 6 h - 6 rounded - full border - 2 flex items - center justify - center transition - all ${(settings.showCostValidation ?? true)
-                ? 'bg-accent border-accent'
-                : 'border-zinc-600 group-hover:border-zinc-500'
-                } `}>
-                {(settings.showCostValidation ?? true) && <Check size={14} strokeWidth={3} className="text-white" />}
-              </div>
-            </div>
+            <RoundCheckbox
+              checked={settings.showCostValidation ?? true}
+              onChange={(checked) => saveSettings({ showCostValidation: checked })}
+              size="lg"
+              ariaLabel="Show cost validation"
+            />
             <span className="text-sm">
               Show cost validation and estimates
             </span>
@@ -435,19 +386,12 @@ export function DisplaySection() {
           {displayOptions.map((option) => (
             <label key={option.key} htmlFor={option.key} className="flex items-start gap-3 cursor-pointer group select-none">
               <div className="relative mt-0.5">
-                <input
-                  type="checkbox"
-                  id={option.key}
+                <RoundCheckbox
                   checked={Boolean(settings[option.key as keyof typeof settings]) ?? true}
-                  onChange={(e) => saveSettings({ [option.key]: e.target.checked })}
-                  className="sr-only"
+                  onChange={(checked) => saveSettings({ [option.key]: checked })}
+                  size="lg"
+                  ariaLabel={option.label}
                 />
-                <div className={`w - 6 h - 6 rounded - full border - 2 flex items - center justify - center transition - all ${(Boolean(settings[option.key as keyof typeof settings]) ?? true)
-                  ? 'bg-accent border-accent'
-                  : 'border-zinc-600 group-hover:border-zinc-500'
-                  } `}>
-                  {(Boolean(settings[option.key as keyof typeof settings]) ?? true) && <Check size={14} strokeWidth={3} className="text-white" />}
-                </div>
               </div>
               <div className="flex-1">
                 <div className="font-medium text-sm">

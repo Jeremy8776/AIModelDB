@@ -8,6 +8,7 @@
  */
 
 import { ThemedSelect } from "../ThemedSelect";
+import { RoundCheckbox } from "../RoundCheckbox";
 import { Domain } from "../../types";
 
 /**
@@ -31,26 +32,12 @@ export interface FiltersSidebarProps {
     onIncludeTagsChange: (tags: string[]) => void;
     excludeTags: string[];
     onExcludeTagsChange: (tags: string[]) => void;
+    favoritesOnly: boolean;
+    onFavoritesOnlyChange: (enabled: boolean) => void;
     onClearFilters: () => void;
     theme: "light" | "dark";
 }
 
-/**
- * Filters sidebar component with all filter controls.
- * 
- * Features:
- * - Domain filter dropdown
- * - Minimum downloads input
- * - License type filter
- * - Commercial use filter
- * - Include/exclude tags inputs
- * - Clear all filters button
- * - Theme-aware styling
- * - Sticky positioning on desktop
- * 
- * @param props - FiltersSidebar component props
- * @returns JSX.Element
- */
 export function FiltersSidebar({
     domainPick,
     onDomainChange,
@@ -65,6 +52,8 @@ export function FiltersSidebar({
     excludeTags,
     onExcludeTagsChange,
     onClearFilters,
+    favoritesOnly,
+    onFavoritesOnlyChange,
     theme
 }: FiltersSidebarProps) {
     // Available domains - consolidate Vision under VLM for selection (Vision kept for legacy data but hidden here)
@@ -84,6 +73,19 @@ export function FiltersSidebar({
             <div className={`rounded-2xl border p-4 ${bgCard}`}>
                 <div className="text-lg font-semibold mb-4 text-center">Filters</div>
 
+                {/* Favorites Filter */}
+                <div className="mb-4">
+                    <label className="flex items-center gap-3 cursor-pointer select-none group">
+                        <RoundCheckbox
+                            checked={favoritesOnly}
+                            onChange={(checked) => onFavoritesOnlyChange(checked)}
+                        />
+                        <span className={`text-sm font-medium ${theme === 'dark' ? 'text-zinc-200 group-hover:text-white' : 'text-gray-700 group-hover:text-black'} transition-colors`}>
+                            Favorites Only
+                        </span>
+                    </label>
+                </div>
+
                 {/* Domain Filter */}
                 <div className="mb-4">
                     <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text)' }}>Domain</label>
@@ -93,7 +95,6 @@ export function FiltersSidebar({
                         options={DOMAINS as any}
                     />
                 </div>
-
                 {/* Downloads Filter */}
                 <div className="mb-4">
                     <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text)' }}>Min Downloads</label>

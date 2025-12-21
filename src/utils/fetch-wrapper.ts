@@ -3,6 +3,8 @@
  * Uses regular fetch - Electron will use its built-in network handling
  */
 
+import { globalRateLimiter } from '../services/rateLimiter';
+
 /**
  * Fetch wrapper that automatically handles proxy routes
  * @param url URL to fetch (can be relative like '/aa-api/...' or absolute)
@@ -28,6 +30,7 @@ export async function fetchWrapper(url: string, options?: RequestInit): Promise<
         }
     }
 
-    // Use regular fetch
+    // Use regular fetch with rate limiting
+    await globalRateLimiter.waitForSlot();
     return fetch(targetUrl, options);
 }

@@ -10,7 +10,6 @@
 import React from "react";
 import { RefreshCw, ChevronLeft, ChevronRight, Download as DownloadIcon, DatabaseZap } from "lucide-react";
 import { ThemedSelect } from "../ThemedSelect";
-import { DownloadDropdown } from "../DownloadDropdown";
 import { Model } from "../../types";
 import { ExportFormat } from "../../services/exportService";
 
@@ -29,7 +28,8 @@ export interface ToolbarProps {
     page: number;
     totalPages: number;
     onPageChange: (page: number) => void;
-    onExport: (format: ExportFormat) => void;
+    totalModels?: number;
+    onExport: () => void;
     onDeleteDatabase: () => void;
     onValidateModels: () => void;
     theme: "light" | "dark";
@@ -63,6 +63,7 @@ export function Toolbar({
     page,
     totalPages,
     onPageChange,
+    totalModels,
     onExport,
     onDeleteDatabase,
     onValidateModels,
@@ -154,41 +155,13 @@ export function Toolbar({
                 >
                     <ChevronRight className="size-4" />
                 </button>
-                <DownloadDropdown
-                    className="ml-2"
-                    options={[
-                        {
-                            label: 'JSON Format',
-                            value: 'json',
-                            action: () => onExport('json')
-                        },
-                        {
-                            label: 'CSV Format',
-                            value: 'csv',
-                            action: () => onExport('csv')
-                        },
-                        {
-                            label: 'TSV Format',
-                            value: 'tsv',
-                            action: () => onExport('tsv')
-                        },
-                        {
-                            label: 'YAML Format',
-                            value: 'yaml',
-                            action: () => onExport('yaml')
-                        },
-                        {
-                            label: 'XML Format',
-                            value: 'xml',
-                            action: () => onExport('xml')
-                        },
-                        {
-                            label: 'Markdown Table',
-                            value: 'md',
-                            action: () => onExport('md')
-                        }
-                    ]}
-                />
+                <button
+                    onClick={onExport}
+                    className={`inline-flex items-center gap-1 rounded-lg ${bgInput} px-2 py-1 text-xs ml-2 hover:bg-violet-600 hover:text-white hover:border-violet-600 transition-colors`}
+                >
+                    <DownloadIcon className="size-3" />
+                    Export
+                </button>
                 <div className="flex items-center gap-2 ml-2">
                     <button
                         onClick={onDeleteDatabase}

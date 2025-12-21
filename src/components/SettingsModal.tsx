@@ -1,5 +1,5 @@
 import React, { useContext, useState } from 'react';
-import { X, Settings, Database, Shield, Zap, Palette, Info } from 'lucide-react';
+import { X, Settings, Database, Shield, Zap, Palette, Info, History } from 'lucide-react';
 import ThemeContext from '../context/ThemeContext';
 import { useSettings } from '../context/SettingsContext';
 import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
@@ -11,14 +11,19 @@ import { ValidationSection } from './settings/ValidationSection';
 import { DisplaySection } from './settings/DisplaySection';
 import { SecuritySection } from './settings/SecuritySection';
 import { SystemSection } from './settings/SystemSection';
+import { HistorySection } from './settings/HistorySection';
+import { Model } from '../types';
+
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSync: (options?: any) => void;
   addConsoleLog: (msg: string) => void;
+  currentModels: Model[];
+  onRestore: (models: Model[]) => void;
 }
 
-export function SettingsModal({ isOpen, onClose, onSync, addConsoleLog }: SettingsModalProps) {
+export function SettingsModal({ isOpen, onClose, onSync, addConsoleLog, currentModels, onRestore }: SettingsModalProps) {
   const { theme } = useContext(ThemeContext);
   const { settings } = useSettings();
   const [activeTab, setActiveTab] = useState('data-sources');
@@ -34,6 +39,7 @@ export function SettingsModal({ isOpen, onClose, onSync, addConsoleLog }: Settin
 
   const tabs = [
     { id: 'data-sources', label: 'Data Sources', icon: Database },
+    { id: 'history', label: 'History & Rollback', icon: History },
     { id: 'api-config', label: 'API Config', icon: Zap },
     { id: 'validation', label: 'Validation', icon: Shield },
     { id: 'display', label: 'Display', icon: Palette },
@@ -45,6 +51,8 @@ export function SettingsModal({ isOpen, onClose, onSync, addConsoleLog }: Settin
     switch (activeTab) {
       case 'data-sources':
         return <DataSourcesSection onSync={onSync} addConsoleLog={addConsoleLog} />;
+      case 'history':
+        return <HistorySection currentModels={currentModels} onRestore={onRestore} addConsoleLog={addConsoleLog} />;
       case 'api-config':
         return <APIConfigSection />;
       case 'validation':

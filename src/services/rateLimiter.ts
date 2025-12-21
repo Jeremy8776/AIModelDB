@@ -13,15 +13,15 @@ export class RateLimiter {
 
   async waitForSlot(): Promise<void> {
     const now = Date.now();
-    
+
     // Remove old requests outside the time window
     this.requests = this.requests.filter(time => now - time < this.timeWindow);
-    
+
     // Check if we're at the limit
     if (this.requests.length >= this.maxRequests) {
       const oldestRequest = Math.min(...this.requests);
       const waitTime = this.timeWindow - (now - oldestRequest) + 1000; // +1s buffer
-      console.log(`Rate limit protection: waiting ${Math.round(waitTime/1000)}s before next request`);
+      console.log(`Rate limit protection: waiting ${Math.round(waitTime / 1000)}s before next request`);
       await this.wait(waitTime);
       return this.waitForSlot(); // Recursive check
     }
@@ -30,10 +30,10 @@ export class RateLimiter {
     if (this.requests.length > 0) {
       const lastRequest = Math.max(...this.requests);
       const timeSinceLastRequest = now - lastRequest;
-      
+
       if (timeSinceLastRequest < this.minInterval) {
         const waitTime = this.minInterval - timeSinceLastRequest;
-        console.log(`Rate limit protection: waiting ${Math.round(waitTime/1000)}s between requests`);
+        console.log(`Rate limit protection: waiting ${Math.round(waitTime / 1000)}s between requests`);
         await this.wait(waitTime);
       }
     }
@@ -49,12 +49,12 @@ export class RateLimiter {
   getStatus(): { remaining: number; resetIn: number } {
     const now = Date.now();
     this.requests = this.requests.filter(time => now - time < this.timeWindow);
-    
+
     const remaining = Math.max(0, this.maxRequests - this.requests.length);
-    const resetIn = this.requests.length > 0 
+    const resetIn = this.requests.length > 0
       ? Math.max(0, this.timeWindow - (now - Math.min(...this.requests)))
       : 0;
-    
+
     return { remaining, resetIn };
   }
 
@@ -79,5 +79,5 @@ export const createRateLimiter = (tier: 'free' | 'tier1' | 'tier2' | 'tier3' = '
   }
 };
 
-// Global rate limiter instance
-export const globalRateLimiter = createRateLimiter('free');
+// Global rate limiter instance - using Tier 2 (50 req/min) for better responsiveness
+export const globalRateLimiter = createRateLimiter('tier2');

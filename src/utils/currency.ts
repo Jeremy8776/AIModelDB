@@ -1,4 +1,5 @@
 // Currency utilities for model pricing display
+import { Pricing } from '../types';
 
 export type CurrencyCode = 'USD' | 'EUR' | 'GBP' | 'JPY' | 'CNY' | 'INR' | 'CAD' | 'AUD' | 'CHF' | 'KRW';
 
@@ -48,37 +49,37 @@ export const EXCHANGE_RATES: Record<CurrencyCode, number> = {
 // Get currency symbol from currency code or string
 export function getCurrencySymbol(currency?: string | null): string {
   if (!currency) return '$'; // Default to USD
-  
+
   const code = currency.toUpperCase() as CurrencyCode;
   return CURRENCY_SYMBOLS[code] || currency;
 }
 
 // Convert amount between currencies
 export function convertCurrency(
-  amount: number | string, 
-  fromCurrency: CurrencyCode, 
+  amount: number | string,
+  fromCurrency: CurrencyCode,
   toCurrency: CurrencyCode
 ): number {
   const n = Number(amount);
   if (!isFinite(n)) return NaN;
   if (fromCurrency === toCurrency) return n;
-  
+
   // Convert to USD first, then to target currency
   const usdAmount = n / EXCHANGE_RATES[fromCurrency];
   const convertedAmount = usdAmount * EXCHANGE_RATES[toCurrency];
-  
+
   return Math.round(convertedAmount * 10000) / 10000; // Round to 4 decimal places
 }
 
 // Format currency amount with proper symbol and precision
 export function formatCurrency(
-  amount: number | null | undefined, 
+  amount: number | null | undefined,
   currency: CurrencyCode = 'USD'
 ): string {
   if (amount == null || Number.isNaN(amount)) return '—';
-  
+
   const symbol = CURRENCY_SYMBOLS[currency];
-  
+
   // Different precision for different currencies
   if (currency === 'JPY' || currency === 'KRW') {
     // Yen and Won don't use decimal places
@@ -96,14 +97,14 @@ export function formatCurrency(
 }
 
 // Detect currency from pricing string or model data
-export function detectCurrency(pricing: any): CurrencyCode {
+export function detectCurrency(pricing: Pricing | null | undefined): CurrencyCode {
   if (pricing?.currency) {
     const normalized = pricing.currency.toUpperCase().replace(/[^A-Z]/g, '');
     if (normalized in CURRENCY_SYMBOLS) {
       return normalized as CurrencyCode;
     }
   }
-  
+
   // Default fallback
   return 'USD';
 }
@@ -117,8 +118,8 @@ export interface CostValidation {
 }
 
 export function validateModelCost(
-  pricing: any, 
-  modelName: string, 
+  pricing: Pricing | null | undefined,
+  modelName: string,
   domain: string
 ): CostValidation {
   const validation: CostValidation = {
@@ -135,7 +136,7 @@ export function validateModelCost(
   }
 
   const currency = detectCurrency(pricing);
-  
+
   // Convert to USD for validation
   let usdAmount = 0;
   if (pricing.flat) {
@@ -188,7 +189,7 @@ export function validateModelCost(
 }
 
 // Fact-check pricing against known model costs
-export function factCheckModelCost(modelName: string, pricing: any): CostValidation {
+export function factCheckModelCost(modelName: string, pricing: Pricing | null | undefined): CostValidation {
   const knownPricing: Record<string, { input?: number; output?: number; flat?: number; currency: CurrencyCode }> = {
     'gpt-4': { input: 0.03, output: 0.06, currency: 'USD' },
     'gpt-4-turbo': { input: 0.01, output: 0.03, currency: 'USD' },
@@ -220,12 +221,12 @@ export function factCheckModelCost(modelName: string, pricing: any): CostValidat
   }
 
   const currency = detectCurrency(pricing);
-  
+
   // Compare input costs
   if (known.input && pricing.input) {
     const actualUSD = convertCurrency(pricing.input, currency, 'USD');
     const difference = Math.abs(actualUSD - known.input) / known.input;
-    
+
     if (difference > 0.5) { // More than 50% difference
       validation.isValid = false;
       validation.confidence = 'low';
@@ -240,7 +241,7 @@ export function factCheckModelCost(modelName: string, pricing: any): CostValidat
   if (known.output && pricing.output) {
     const actualUSD = convertCurrency(pricing.output, currency, 'USD');
     const difference = Math.abs(actualUSD - known.output) / known.output;
-    
+
     if (difference > 0.5) {
       validation.isValid = false;
       validation.confidence = 'low';

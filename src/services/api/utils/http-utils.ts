@@ -2,6 +2,8 @@
  * HTTP utility functions for safe fetching with timeout and error handling
  */
 
+import { globalRateLimiter, RateLimiter } from '../../rateLimiter';
+
 /**
  * Safe fetch with timeout and error handling
  * Returns null on error instead of throwing
@@ -26,4 +28,18 @@ export async function safeFetch(url: string, options: RequestInit = {}, timeoutM
         }
         return null;
     }
+}
+
+/**
+ * Rate limited safe fetch
+ * Wraps safeFetch with a rate limiter
+ */
+export async function rateLimitedFetch(
+    url: string,
+    options: RequestInit = {},
+    limiter: RateLimiter = globalRateLimiter,
+    timeoutMs: number = 10000
+): Promise<Response | null> {
+    await limiter.waitForSlot();
+    return safeFetch(url, options, timeoutMs);
 }

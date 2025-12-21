@@ -10,9 +10,8 @@
 import { useState } from 'react';
 import { Domain, Model } from '../types';
 
-/**
- * Available sort keys for model table
- */
+// export type SortKey = 'recent' | 'name' | 'provider' | 'downloads' | 'release_date' | 'domain' | 'parameters' | 'license';
+// (Redundant if implied, but keep for clarity if needed, or import from types if moved there)
 export type SortKey = 'recent' | 'name' | 'provider' | 'downloads' | 'release_date' | 'domain' | 'parameters' | 'license';
 
 /**
@@ -51,6 +50,8 @@ export interface UIState {
     setIncludeTags: (tags: string[]) => void;
     excludeTags: string[];
     setExcludeTags: (tags: string[]) => void;
+    favoritesOnly: boolean;
+    setFavoritesOnly: (enabled: boolean) => void;
 
     // Detail panel
     open: Model | null;
@@ -101,6 +102,7 @@ export function useUIState(): UIState {
     const [commercialAllowed, setCommercialAllowed] = useState<boolean | null>(null);
     const [includeTags, setIncludeTags] = useState<string[]>([]);
     const [excludeTags, setExcludeTags] = useState<string[]>([]);
+    const [favoritesOnly, setFavoritesOnly] = useState<boolean>(false);
 
     // Detail panel state
     const [open, setOpen] = useState<Model | null>(null);
@@ -127,6 +129,8 @@ export function useUIState(): UIState {
         setIncludeTags,
         excludeTags,
         setExcludeTags,
+        favoritesOnly,
+        setFavoritesOnly,
         open,
         setOpen,
         triggerElement,
