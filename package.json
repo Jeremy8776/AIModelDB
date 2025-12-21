@@ -124,7 +124,15 @@
         "deb"
       ],
       "icon": "public/icons/png",
-      "category": "Development"
+      "category": "Development",
+      "maintainer": "AI Model DB Pro <support@aimodeldb.pro>"
+    },
+    "deb": {
+      "depends": [
+        "libnotify4",
+        "libxtst6",
+        "libnss3"
+      ]
     },
     "nsis": {
       "oneClick": false,
