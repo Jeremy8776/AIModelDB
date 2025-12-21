@@ -4,7 +4,10 @@
   "private": true,
   "version": "0.3.1",
   "description": "A comprehensive database for tracking and managing AI models across multiple providers",
-  "author": "AI Model DB Pro",
+  "author": {
+    "name": "AI Model DB Pro",
+    "email": "support@aimodeldb.pro"
+  },
   "license": "MIT",
   "main": "electron/main.js",
   "repository": {
