@@ -97,7 +97,6 @@
 Enable any of these sources in Settings:
 - **Hugging Face** - 10,000+ open-source models
 - **Civitai** - Image generation models and LoRAs  
-- **TensorArt** - Creative AI models
 - **OpenModelDB** - Upscaler models
 - **Artificial Analysis** - LLM benchmarks and pricing
 - And more...
