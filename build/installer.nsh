@@ -2,7 +2,7 @@
   ; Check active instance
   
   ; Check if already installed (Standard uninstall key)
-  ReadRegStr $R0 HKCOR "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_GUID}" "UninstallString"
+  ReadRegStr $R0 SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_GUID}" "UninstallString"
   ${If} $R0 != ""
     ; Detected existing installation
     MessageBox MB_YESNO|MB_ICONEXCLAMATION "An existing version of ${PRODUCT_NAME} was found.$\n$\nDo you want to uninstall it before continuing?$\n(Recommended for a clean install)" IDYES uninstall IDNO proceed
