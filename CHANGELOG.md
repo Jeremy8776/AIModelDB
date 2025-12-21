@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.6] - 2025-12-21
+
+### Fixed
+- **Build**: Fixed syntax error in `package.json` that caused v0.3.5 build to fail.
+
 ## [0.3.5] - 2025-12-21
 
 ### Fixed
