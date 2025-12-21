@@ -38,6 +38,7 @@
   "dependencies": {
     "@tanstack/react-virtual": "^3.13.13",
     "cheerio": "^1.0.0-rc.12",
+    "electron-squirrel-startup": "^1.0.1",
     "electron-updater": "^6.6.2",
     "express": "^4.19.2",
     "http-proxy-middleware": "^2.0.6",
@@ -59,7 +60,6 @@
     "electron": "^28.1.0",
     "electron-builder": "^24.9.1",
     "electron-icon-builder": "^2.0.1",
-    "electron-squirrel-startup": "^1.0.1",
     "jsdom": "^27.3.0",
     "postcss": "^8.4.35",
     "puppeteer": "^24.16.1",
