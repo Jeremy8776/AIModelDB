@@ -223,33 +223,19 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   };
 
   const applyPreset = (id: string) => {
-    // Check saved presets first
-    const preset = savedPresets.find(p => p.id === id);
-    // Can also check system presets passed from outside? 
-    // Ideally component handles finding the preset object, but context applies it.
-    // For now, let's assume the component will pass the DATA to setCustom* if it's a system preset,
-    // and use this for user presets. 
-    // WAIT: `applyPreset` needs to know about system presets to work by ID alone.
-    // I'll make `applyPreset` accept the full object or ID? 
-    // Let's keep ID for state tracking, but maybe we need a registry.
-
-    // Actually, to support "system presets" that aren't in `savedPresets`, 
-    // we should probably just rely on the component to set CSS/Colors directly 
-    // and `setActivePresetId(id)`.
+    // Track the active preset ID
     setActivePresetId(id);
     localStorage.setItem(ACTIVE_PRESET_KEY, id);
 
+    // Check saved presets first
+    const preset = savedPresets.find(p => p.id === id);
     if (preset) {
       setCustomCss(preset.css);
       if (preset.colors) setCustomColors(preset.colors);
+      if (preset.mode) setTheme(preset.mode);
     }
-  };
-
-  // applyPreset just tracks the ID - the component handles applying CSS/Colors
-  // because the component has access to both system and saved presets
-  const setActivePreset = (id: string) => {
-    setActivePresetId(id);
-    localStorage.setItem(ACTIVE_PRESET_KEY, id);
+    // System presets are applied by the component that calls this
+    // since it has access to SYSTEM_PRESETS
   };
 
   const resetColors = () => {
@@ -269,7 +255,7 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       customCss, setCustomCss,
       customColors, setCustomColors, resetColors,
       savedPresets, addPreset, updatePreset, deletePreset,
-      activePresetId, applyPreset: setActivePreset
+      activePresetId, applyPreset
     }}>
       {children}
     </ThemeContext.Provider>

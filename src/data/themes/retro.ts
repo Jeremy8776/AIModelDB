@@ -170,18 +170,24 @@ button {
   letter-spacing: 1px !important;
 }
 
-/* Model row hover - only grid buttons (table rows) */
+/* Model row hover - grid divs (table rows) */
+div.group\\/row:hover,
+.group\\/row:hover,
 button.grid:hover,
 button[class*='grid-cols']:hover {
   background-color: var(--accent) !important;
 }
 
+div.group\\/row:hover *,
+.group\\/row:hover *,
 button.grid:hover *,
 button[class*='grid-cols']:hover * {
   color: var(--bg) !important;
   background-color: transparent !important;
 }
 
+div.group\\/row:hover svg,
+.group\\/row:hover svg,
 button.grid:hover svg,
 button[class*='grid-cols']:hover svg {
   stroke: var(--bg) !important;

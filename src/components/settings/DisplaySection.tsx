@@ -85,6 +85,7 @@ export function DisplaySection() {
     applyPreset(id);
     setCustomCss(preset.css);
     if (preset.colors) setCustomColors(preset.colors);
+    if (preset.mode) setTheme(preset.mode);
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {

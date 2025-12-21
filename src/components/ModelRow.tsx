@@ -33,9 +33,7 @@ export const ModelRow = React.memo(function ModelRow({ m, onOpen, isSelected, on
     ? 'text-zinc-300'
     : 'text-gray-800';
 
-  const hoverBorder = theme === 'dark'
-    ? 'hover:border-zinc-700'
-    : 'hover:border-gray-600';
+  // Hover is now handled by CSS targeting .group/row
 
   // Checkbox style
   const checkboxBorder = theme === 'dark' ? 'border-zinc-700 bg-zinc-900' : 'border-gray-300 bg-white';
@@ -285,7 +283,13 @@ export const ModelRow = React.memo(function ModelRow({ m, onOpen, isSelected, on
 
   return (
     <div
-      className={`group/row grid w-full grid-cols-12 items-center gap-3 rounded-xl border ${rowBg} px-3 py-2 text-left transition ${hoverBorder} ${isFocused ? 'ring-2 ring-violet-500 z-10' : ''}`}
+      onClick={(e) => {
+        // Don't open if clicking on checkbox or favorites
+        const target = e.target as HTMLElement;
+        if (target.closest('button') || target.closest('input')) return;
+        onOpen(m);
+      }}
+      className={`group/row grid w-full grid-cols-12 items-center gap-3 rounded-xl border ${rowBg} px-3 py-2 text-left transition cursor-pointer ${isFocused ? 'ring-2 ring-violet-500 z-10' : ''}`}
     >
       {/* Checkbox Column */}
       <div className="col-span-1 flex justify-center items-center gap-2">

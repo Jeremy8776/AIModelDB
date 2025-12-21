@@ -322,16 +322,35 @@ input[class*="bg-zinc-900"] {
   background-color: var(--bg) !important;
 }
 
-/* Model rows and cards - all opacity variants */
+/* Model rows and cards - base opacity variants */
 .bg-zinc-950\/40,
 .bg-zinc-950\/50,
 .bg-zinc-900\/40,
 .bg-zinc-900\/50,
 .bg-zinc-800\/40,
-.bg-zinc-800\/50,
-.hover\:bg-zinc-800:hover,
-.hover\:bg-zinc-900:hover {
+.bg-zinc-800\/50 {
   background-color: var(--bg) !important;
+}
+
+/* Model Row Hover Styling - Per Theme */
+/* Dark theme row hover */
+.group\/row:hover,
+[class*="group/row"]:hover {
+  background-color: var(--bgElevated, rgba(255, 255, 255, 0.03)) !important;
+  border-color: var(--accent) !important;
+}
+
+/* Light theme row hover */
+[data-theme='light'] .group\/row:hover,
+[data-theme='light'] [class*="group/row"]:hover {
+  background-color: var(--bgInput, #f4f4f5) !important;
+  border-color: var(--accent) !important;
+}
+
+/* Ensure rows are clickable */
+.group\/row,
+[class*="group/row"] {
+  cursor: pointer !important;
 }
 
 /* Dark theme text overrides */
