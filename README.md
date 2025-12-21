@@ -9,13 +9,13 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/Jeremy8776/AIModelDB/releases/latest">
+  <a href="https://github.com/Jeremy8776/AIModelDB/releases/latest/download/AI-Model-DB-Pro-Setup.exe">
     <img src="https://img.shields.io/badge/Windows-Download-0078D6?style=for-the-badge&logo=windows&logoColor=white" alt="Download for Windows">
   </a>
-  <a href="https://github.com/Jeremy8776/AIModelDB/releases/latest">
+  <a href="https://github.com/Jeremy8776/AIModelDB/releases/latest/download/AI-Model-DB-Pro.dmg">
     <img src="https://img.shields.io/badge/macOS-Download-000000?style=for-the-badge&logo=apple&logoColor=white" alt="Download for macOS">
   </a>
-  <a href="https://github.com/Jeremy8776/AIModelDB/releases/latest">
+  <a href="https://github.com/Jeremy8776/AIModelDB/releases/latest/download/AI-Model-DB-Pro.AppImage">
     <img src="https://img.shields.io/badge/Linux-Download-FCC624?style=for-the-badge&logo=linux&logoColor=black" alt="Download for Linux">
   </a>
 </p>
