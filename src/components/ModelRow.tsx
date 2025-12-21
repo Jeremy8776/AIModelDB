@@ -80,9 +80,9 @@ export const ModelRow = React.memo(function ModelRow({ m, onOpen }: ModelRowProp
       if (outputCost !== null) {
         // Show blended cost (3:1 ratio input:output is typical)
         const blendedCost = (inputCost * 3 + outputCost) / 4;
-        return formatCurrency(blendedCost, currency);
+        return formatCurrency(blendedCost, currency as any);
       }
-      return formatCurrency(inputCost, currency);
+      return formatCurrency(inputCost, currency as any);
     };
 
     const toPerMillion = (amount: number, unit?: string | null): number => {

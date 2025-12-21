@@ -110,14 +110,16 @@ export function Toolbar({
                         )}
                     </div>
                 ) : (
-                    <span className="inline-flex items-center gap-1">Idle</span>
+                    <>
+                        <span className="inline-flex items-center gap-1">Idle</span>
+                        {lastSync && (
+                            <span>
+                                Updated: {new Date(lastSync).toLocaleDateString()} {new Date(lastSync).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                        )}
+                        <span>Showing {pageItems.length} of {total} (web ≥{minDownloads} <DownloadIcon className="inline h-3 w-3 relative" style={{ top: '-1px' }} />; imports bypass)</span>
+                    </>
                 )}
-                {lastSync && (
-                    <span>
-                        Updated: {new Date(lastSync).toLocaleDateString()} {new Date(lastSync).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </span>
-                )}
-                <span>Showing {pageItems.length} of {total} (web ≥{minDownloads} <DownloadIcon className="inline h-3 w-3 relative" style={{ top: '-1px' }} />; imports bypass)</span>
             </div>
             <div className="flex items-center gap-2">
                 <label className="mr-1" style={{ color: 'var(--text)' }}>Per page</label>

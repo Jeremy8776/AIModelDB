@@ -128,13 +128,13 @@ test(
 
 test(
     'Theme change message handling',
-    checkFileContains(themeContextPath, "event.data?.type === 'optikka-theme-change'"),
+    checkFileContains(themeContextPath, "event.data?.type === 'app-theme-change'"),
     'Check ThemeContext.tsx for theme change handling'
 );
 
 test(
     'Parent window theme request',
-    checkFileContains(themeContextPath, "window.parent.postMessage({ type: 'optikka-request-theme' }"),
+    checkFileContains(themeContextPath, "window.parent.postMessage({ type: 'app-request-theme' }"),
     'Check ThemeContext.tsx for theme request'
 );
 

@@ -34,20 +34,38 @@ export interface ImportToastProps {
 export function ImportToast({ importToast, onDismiss, theme }: ImportToastProps) {
     return (
         <div
-            className={`fixed top-20 left-1/2 transform -translate-x-1/2 z-50 rounded-xl border px-3 py-2 shadow-lg flex items-start gap-2 ${theme === 'dark'
+            className={`fixed bottom-8 left-1/2 transform -translate-x-1/2 z-[100] rounded-xl border px-3 py-3 shadow-lg flex items-start gap-3 ${theme === 'dark'
                 ? 'border-zinc-800 bg-black text-zinc-100'
                 : 'border-zinc-200 bg-white text-zinc-900'
                 }`}
         >
             <Check className="h-4 w-4 text-green-500 mt-0.5" />
-            <div className="text-sm leading-tight">
-                <div>
+            <div className="text-sm leading-tight w-48">
+                <div className="mb-2">
                     <span className="font-medium">Discovery complete</span>
                 </div>
-                <div className="text-xs opacity-80 mt-0.5">
-                    Found {importToast.found} models • {importToast.updated} updated •{' '}
-                    {importToast.added} new
-                    {importToast.flagged ? ` • ${importToast.flagged} flagged` : ''}
+                <div className="space-y-1.5 text-xs opacity-90">
+                    <div className="flex items-center justify-between">
+                        <span className="opacity-70">Found</span>
+                        <span className="font-medium">{importToast.found}</span>
+                    </div>
+                    <div className="h-px bg-current opacity-10 my-1" />
+                    <div className="flex items-center justify-between text-yellow-500/90">
+                        <span>Duplicates</span>
+                        <span className="font-medium">{importToast.duplicates ?? 0}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-red-500/90">
+                        <span>Blocked</span>
+                        <span className="font-medium">{importToast.flagged ?? 0}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-green-500/90">
+                        <span>New</span>
+                        <span className="font-medium">{importToast.added}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-blue-500/90">
+                        <span>Updated</span>
+                        <span className="font-medium">{importToast.updated}</span>
+                    </div>
                 </div>
             </div>
             <button

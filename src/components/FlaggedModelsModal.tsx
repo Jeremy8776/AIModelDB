@@ -99,10 +99,10 @@ export const FlaggedModelsModal: React.FC<FlaggedModelsModalProps> = ({ flagged,
 	if (!isOpen) return null;
 
 	// Theme-aware styling
-	const bgInput = theme === "dark" ? "border-zinc-800 bg-zinc-900/60" : "border-zinc-300 bg-white";
-	const bgCard = theme === "dark" ? "border-zinc-800 bg-zinc-950/40" : "border-zinc-200 bg-white";
-	const textSubtle = theme === "dark" ? "text-zinc-400" : "text-zinc-600";
-	const textMain = theme === "dark" ? "text-zinc-100" : "text-zinc-900";
+	const bgInput = "border border-border bg-input text-text";
+	const bgCard = "border border-border bg-card text-text";
+	const textSubtle = "text-text-secondary";
+	const textMain = "text-text";
 
 	const handleEditChange = (field: keyof Model, value: any) => {
 		setEditData((prev: Partial<Model>) => ({ ...prev, [field]: value }));
@@ -119,11 +119,11 @@ export const FlaggedModelsModal: React.FC<FlaggedModelsModalProps> = ({ flagged,
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
 			<div
-				className={`w-full max-w-6xl h-[90vh] rounded-2xl border ${theme === "dark" ? "border-zinc-800 bg-zinc-950" : "border-zinc-200 bg-white"} shadow-2xl flex flex-col`}
+				className={`w-full max-w-6xl h-[90vh] rounded-2xl border border-border bg-bg text-text shadow-2xl flex flex-col`}
 				onClick={(e) => e.stopPropagation()}
 			>
 				{/* Header */}
-				<div className="flex items-center justify-between p-6 border-b" style={{ borderColor: theme === 'dark' ? '#27272a' : '#e4e4e7' }}>
+				<div className="flex items-center justify-between p-6 border-b border-border">
 					<div className="flex items-center gap-3">
 						<AlertTriangle className="size-6 text-violet-500" />
 						<h2 className={`text-xl font-semibold ${textMain}`}>
@@ -188,7 +188,7 @@ export const FlaggedModelsModal: React.FC<FlaggedModelsModalProps> = ({ flagged,
 													<h3 className={`text-lg font-medium ${textMain} truncate`} title={model.name}>
 														{model.name || "Unnamed Model"}
 													</h3>
-													<span className={`px-2 py-1 rounded-full text-xs font-medium text-orange-700 dark:bg-orange-900/30 dark:text-orange-400`}>
+													<span className={`px-2 py-1 rounded-full text-xs font-medium text-violet-700 dark:bg-violet-900/30 dark:text-violet-400`}>
 														{model.source}
 													</span>
 												</div>
@@ -292,7 +292,7 @@ export const FlaggedModelsModal: React.FC<FlaggedModelsModalProps> = ({ flagged,
 
 				{/* Edit Panel */}
 				{editingModel && (
-					<div className="flex-shrink-0 border-t p-6" style={{ borderColor: theme === 'dark' ? '#27272a' : '#e4e4e7' }}>
+					<div className="flex-shrink-0 border-t p-6 border-border">
 						<h3 className={`text-lg font-semibold ${textMain} mb-4`}>Edit Model Details</h3>
 						<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 							<div>

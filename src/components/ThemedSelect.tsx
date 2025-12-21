@@ -37,12 +37,8 @@ export function ThemedSelect({
 
   const selected = normalized.find(o => o.value === value);
 
-  // Use theme-aware classes that will be overridden by CSS
-  const inputBase = "border-zinc-700 bg-zinc-900/70 text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-accent";
-  const menuBg = 'bg-zinc-900 border-zinc-700';
-  const itemBase = 'text-zinc-100 hover:bg-zinc-800';
-
-  // Note: These classes are overridden by CSS in index.css to use theme variables
+  // Use theme-aware styles - these use CSS variables from ThemeContext
+  // The actual colors come from --bg, --bgCard, --text, --border, --accent variables
 
   // Close when clicking outside
   React.useEffect(() => {
@@ -82,28 +78,28 @@ export function ThemedSelect({
   };
 
   return (
-    <div className="relative" ref={rootRef} aria-label={ariaLabel}>
+    <div className="relative themed-select" ref={rootRef} aria-label={ariaLabel}>
       <button
         type="button"
         disabled={disabled}
-        className={`w-full rounded-xl border px-3 py-2 text-sm flex items-center justify-between ${inputBase} ${disabled ? 'opacity-60 cursor-not-allowed' : ''} ${buttonClassName || ''}`}
+        className={`themed-select-button w-full rounded-xl border px-3 py-2 text-sm flex items-center justify-between focus:outline-none focus:ring-2 ${disabled ? 'opacity-60 cursor-not-allowed' : ''} ${buttonClassName || ''}`}
         onClick={() => setIsOpen(v => !v)}
       >
-        <span className="text-white">
+        <span className="themed-select-text">
           {selected?.label || placeholder || 'Select'}
         </span>
-        <svg className="w-4 h-4 opacity-70" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.939l3.71-3.71a.75.75 0 111.06 1.061l-4.24 4.24a.75.75 0 01-1.06 0L5.25 8.29a.75.75 0 01-.02-1.08z" clipRule="evenodd" /></svg>
+        <svg className="themed-select-icon w-4 h-4 opacity-70" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.939l3.71-3.71a.75.75 0 111.06 1.061l-4.24 4.24a.75.75 0 01-1.06 0L5.25 8.29a.75.75 0 01-.02-1.08z" clipRule="evenodd" /></svg>
       </button>
       {isOpen && (
         <div
-          className={`absolute left-0 right-0 mt-1 max-h-64 overflow-auto rounded-xl border ${menuBg} shadow-lg z-30 ${menuClassName || ''}`}
+          className={`themed-select-menu absolute left-0 right-0 mt-1 max-h-64 overflow-auto rounded-xl border shadow-lg z-30 ${menuClassName || ''}`}
           onMouseEnter={handleMenuMouseEnter}
           onMouseLeave={handleMenuMouseLeave}
         >
           {normalized.map(opt => (
             <button
               key={opt.value}
-              className={`w-full text-left px-3 py-2 text-sm ${itemBase} ${opt.value === value ? 'bg-zinc-800' : ''}`}
+              className={`themed-select-item w-full text-left px-3 py-2 text-sm ${opt.value === value ? 'themed-select-item-selected' : ''}`}
               onClick={() => { onChange(opt.value); setIsOpen(false); }}
             >
               {opt.label}

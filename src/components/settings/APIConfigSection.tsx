@@ -1,5 +1,5 @@
-import React, { useContext, useState } from 'react';
-import { Zap, Eye, EyeOff } from 'lucide-react';
+import React, { useContext, useState, useEffect } from 'react';
+import { Zap, Eye, EyeOff, RefreshCw, CheckCircle, AlertCircle, Check } from 'lucide-react';
 import ThemeContext from '../../context/ThemeContext';
 import { useSettings } from '../../context/SettingsContext';
 import { ThemedSelect } from '../ThemedSelect';
@@ -7,51 +7,165 @@ import { ThemedSelect } from '../ThemedSelect';
 export function APIConfigSection() {
   const { theme } = useContext(ThemeContext);
   const { settings, saveSettings } = useSettings();
-  const [showApiKeys, setShowApiKeys] = useState<Record<string, boolean>>({});
-
-  const bgCard = 'border-zinc-800 bg-black';
-  const bgInput = 'border-zinc-700 bg-zinc-900/60';
 
   const apiProviders = [
     {
       key: 'anthropic',
       name: 'Anthropic',
       models: [
-        { value: 'claude-sonnet-4-5', label: 'Claude Sonnet 4.5' },
-        { value: 'claude-haiku-4-5', label: 'Claude Haiku 4.5' },
-        { value: 'claude-opus-4-1', label: 'Claude Opus 4.1' },
-      ]
+        { value: 'claude-3-5-sonnet-20240620', label: 'Claude 3.5 Sonnet' },
+        { value: 'claude-3-opus-20240229', label: 'Claude 3 Opus' },
+        { value: 'claude-3-sonnet-20240229', label: 'Claude 3 Sonnet' },
+        { value: 'claude-3-haiku-20240307', label: 'Claude 3 Haiku' },
+      ],
+      showBaseUrl: false,
+      defaultBaseUrl: 'https://api.anthropic.com/v1'
     },
     {
       key: 'openai',
       name: 'OpenAI',
       models: [
         { value: 'gpt-4o', label: 'GPT-4o (Multimodal)' },
-        { value: 'gpt-4o-mini', label: 'GPT-4o Mini (Fast & Affordable)' },
+        { value: 'gpt-4o-mini', label: 'GPT-4o Mini' },
         { value: 'gpt-4-turbo', label: 'GPT-4 Turbo' },
         { value: 'gpt-4', label: 'GPT-4' },
-        { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo' },
-      ]
+      ],
+      showBaseUrl: true,
+      defaultBaseUrl: 'https://api.openai.com/v1'
     },
     {
       key: 'google',
       name: 'Google',
       models: [
-        { value: 'gemini-2.0-flash-exp', label: 'Gemini 2.0 Flash (Experimental)' },
         { value: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro' },
         { value: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash' },
         { value: 'gemini-1.0-pro', label: 'Gemini 1.0 Pro' },
-      ]
+      ],
+      showBaseUrl: false,
+      defaultBaseUrl: 'https://generativelanguage.googleapis.com/v1beta'
     },
     {
       key: 'deepseek',
       name: 'DeepSeek',
       models: [
         { value: 'deepseek-chat', label: 'DeepSeek Chat' },
-        { value: 'deepseek-reasoner', label: 'DeepSeek Reasoner' },
-      ]
+        { value: 'deepseek-coder', label: 'DeepSeek Coder' },
+      ],
+      showBaseUrl: true,
+      defaultBaseUrl: 'https://api.deepseek.com/v1'
+    },
+    {
+      key: 'perplexity',
+      name: 'Perplexity',
+      models: [
+        { value: 'llama-3-sonar-large-32k-online', label: 'Llama 3 Sonar Large 32k' },
+        { value: 'llama-3-sonar-small-32k-online', label: 'Llama 3 Sonar Small 32k' },
+        { value: 'mixtral-8x7b-instruct', label: 'Mixtral 8x7b Instruct' },
+      ],
+      showBaseUrl: true,
+      defaultBaseUrl: 'https://api.perplexity.ai'
+    },
+    {
+      key: 'openrouter',
+      name: 'OpenRouter',
+      models: [
+        { value: 'openai/gpt-4o', label: 'OpenAI GPT-4o' },
+        { value: 'anthropic/claude-3.5-sonnet', label: 'Anthropic Claude 3.5 Sonnet' },
+        { value: 'meta-llama/llama-3-70b-instruct', label: 'Meta Llama 3 70B' },
+      ],
+      showBaseUrl: true,
+      defaultBaseUrl: 'https://openrouter.ai/api/v1'
+    },
+    {
+      key: 'cohere',
+      name: 'Cohere',
+      models: [
+        { value: 'command-r-plus', label: 'Command R+' },
+        { value: 'command-r', label: 'Command R' },
+        { value: 'command', label: 'Command' },
+      ],
+      showBaseUrl: false, // Cohere has specific endpoints but usually fixed
+      defaultBaseUrl: 'https://api.cohere.ai/v1'
     }
   ];
+
+
+  const [showApiKeys, setShowApiKeys] = useState<Record<string, boolean>>({});
+  const [fetchingModels, setFetchingModels] = useState<Record<string, boolean>>({});
+  const [fetchError, setFetchError] = useState<Record<string, string>>({});
+  const [fetchedModels, setFetchedModels] = useState<Record<string, { value: string; label: string }[]>>({});
+  const [customProviderName, setCustomProviderName] = useState('');
+  const [customProviderBaseUrl, setCustomProviderBaseUrl] = useState('');
+  const [customProviderProtocol, setCustomProviderProtocol] = useState<'openai' | 'anthropic' | 'google' | 'ollama'>('openai');
+  const [customProviderHeaders, setCustomProviderHeaders] = useState('');
+
+  // Merge static and custom providers
+  const allProviders = [...apiProviders];
+  if (settings.apiConfig) {
+    Object.entries(settings.apiConfig).forEach(([key, config]) => {
+      if ((config as any).isCustom && !apiProviders.find(p => p.key === key)) {
+        allProviders.push({
+          key,
+          name: (config as any).name || key,
+          models: [],
+          showBaseUrl: true,
+          defaultBaseUrl: (config as any).baseUrl || ''
+        });
+      }
+    });
+  }
+
+  const handleAddCustomProvider = () => {
+    if (!customProviderName) return;
+    const key = customProviderName.toLowerCase().replace(/\s+/g, '_');
+
+    if (settings.apiConfig?.[key]) {
+      alert('Provider already exists!');
+      return;
+    }
+
+    let parsedHeaders = {};
+    try {
+      if (customProviderHeaders) {
+        parsedHeaders = JSON.parse(customProviderHeaders);
+      }
+    } catch (e) {
+      alert('Invalid JSON format for Headers. Please check syntax.');
+      return;
+    }
+
+    saveSettings({
+      apiConfig: {
+        ...settings.apiConfig,
+        [key]: {
+          enabled: true,
+          name: customProviderName,
+          baseUrl: customProviderBaseUrl,
+          isCustom: true,
+          protocol: customProviderProtocol,
+          headers: parsedHeaders,
+          apiKey: '',
+          model: '',
+          cachedModels: []
+        }
+      }
+    });
+    setCustomProviderName('');
+    setCustomProviderBaseUrl('');
+    setCustomProviderProtocol('openai');
+    setCustomProviderHeaders('');
+  };
+
+  const handleDeleteCustomProvider = (key: string) => {
+    const newConfig = { ...settings.apiConfig };
+    delete newConfig[key];
+    saveSettings({ apiConfig: newConfig });
+  };
+
+  const bgCard = 'border-border bg-card text-text';
+  const bgInput = 'border-border bg-input text-text';
+
+
 
   const toggleApiKeyVisibility = (provider: string) => {
     setShowApiKeys(prev => ({
@@ -72,16 +186,160 @@ export function APIConfigSection() {
     });
   };
 
+  // Initialize fetched models from settings
+  useEffect(() => {
+    if (settings.apiConfig) {
+      const initialModels: Record<string, { value: string; label: string }[]> = {};
+      Object.entries(settings.apiConfig).forEach(([key, config]) => {
+        if ((config as any).cachedModels) {
+          initialModels[key] = (config as any).cachedModels;
+        }
+      });
+      setFetchedModels(prev => ({ ...prev, ...initialModels }));
+    }
+  }, [settings.apiConfig]);
+
   const hasLocalKey = (provider: string) => {
     const config = settings.apiConfig?.[provider as keyof typeof settings.apiConfig];
+    // Ollama doesn't strictly need a key, so we can relax this for 'ollama' protocol
+    if (config?.protocol === 'ollama') return true;
     return !!(config?.apiKey && config.apiKey.trim() !== '');
   };
 
-  // Get list of providers with valid API keys
-  const availableProviders = apiProviders.filter(provider => {
+  // Get list of providers with valid API keys (or no key needed)
+  const availableProviders = allProviders.filter(provider => {
     const config = settings.apiConfig?.[provider.key as keyof typeof settings.apiConfig];
-    return hasLocalKey(provider.key) && config?.enabled;
+    return config?.enabled && hasLocalKey(provider.key);
   });
+
+  const fetchModels = async (providerKey: string) => {
+    const config = settings.apiConfig?.[providerKey as keyof typeof settings.apiConfig];
+    if (!config) return;
+
+    // Check key unless protocol allows none
+    if (!config.apiKey && config.protocol !== 'ollama' && providerKey !== 'ollama') {
+      setFetchError(prev => ({ ...prev, [providerKey]: 'API Key required' }));
+      return;
+    }
+
+    setFetchingModels(prev => ({ ...prev, [providerKey]: true }));
+    setFetchError(prev => ({ ...prev, [providerKey]: '' }));
+
+    try {
+      const providerInfo = apiProviders.find(p => p.key === providerKey);
+      let baseUrl = config.baseUrl || providerInfo?.defaultBaseUrl || '';
+      // Ensure no trailing slash for consistent appending
+      if (baseUrl.endsWith('/')) baseUrl = baseUrl.slice(0, -1);
+
+      let headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        ...(config.headers || {})
+      };
+
+      // Determine protocol
+      // Default to 'openai' if 'other' is selected, as it's the most common "custom" format
+      let protocol = config.protocol || (['anthropic', 'google'].includes(providerKey) ? providerKey : 'openai');
+      if (protocol === 'other') protocol = 'openai';
+
+      let allModels: any[] = [];
+
+      if (protocol === 'anthropic') {
+        headers['x-api-key'] = config.apiKey || '';
+        headers['anthropic-version'] = '2023-06-01';
+        const params = new URLSearchParams();
+        params.append('limit', '100');
+        const url = `${baseUrl}/models?${params.toString()}`;
+        const result = await window.electronAPI?.proxyRequest?.({ url, method: 'GET', headers });
+        if (!result?.success) throw new Error(result?.error || 'Fetch failed');
+        if (result.data.data) allModels = result.data.data;
+
+      } else if (protocol === 'google') {
+        const params = new URLSearchParams();
+        if (config.apiKey) params.append('key', config.apiKey);
+        params.append('pageSize', '100');
+        const url = `${baseUrl}/models?${params.toString()}`;
+        const googleHeaders = { ...headers }; // Ensure no auth header from other protocols
+        const result = await window.electronAPI?.proxyRequest?.({ url, method: 'GET', headers: googleHeaders });
+        if (!result?.success) throw new Error(result?.error || 'Fetch failed');
+        if (result.data.models) allModels = result.data.models;
+
+      } else if (protocol === 'ollama') {
+        // Ollama native API
+        const url = `${baseUrl}/api/tags`; // Standard Ollama endpoint
+        const result = await window.electronAPI?.proxyRequest?.({ url, method: 'GET', headers });
+        if (!result?.success) throw new Error(result?.error || 'Fetch failed');
+        // Response: { models: [ { name: 'llama2', ... } ] }
+        if (result.data.models) allModels = result.data.models;
+
+      } else {
+        // OpenAI Compatible (default)
+        if (config.apiKey) headers['Authorization'] = `Bearer ${config.apiKey}`;
+        const url = `${baseUrl}/models`;
+        const result = await window.electronAPI?.proxyRequest?.({ url, method: 'GET', headers });
+        if (!result?.success) throw new Error(result?.error || 'Fetch failed');
+
+        if (Array.isArray(result.data)) {
+          allModels = result.data;
+        } else if (result.data.data && Array.isArray(result.data.data)) {
+          allModels = result.data.data;
+        } else {
+          // Fallback for some proxies that might return { models: [...] }
+          allModels = result.data.models || [];
+          console.warn('Unexpected response format:', result.data);
+        }
+      }
+
+      // Normalize to { value, label }
+      let modelList = allModels.map(m => {
+        // Anthropic: id, display_name
+        // Google: name (models/...), display_name
+        // OpenAI: id
+        // Ollama: name
+        let id = m.id || m.name;
+        // Clean Google ids
+        if (id && id.startsWith('models/')) id = id.replace('models/', '');
+
+        return {
+          value: id,
+          label: m.display_name || m.displayName || id // Fallback to ID if no name
+        };
+      });
+
+      // Filter out empty IDs
+      modelList = modelList.filter(m => m.value);
+
+      // Unique by value
+      modelList = Array.from(new Map(modelList.map(item => [item.value, item])).values());
+
+      // Sort
+      modelList.sort((a, b) => a.label.localeCompare(b.label));
+
+      if (modelList.length > 0) {
+        setFetchedModels(prev => ({ ...prev, [providerKey]: modelList }));
+
+        // Save to settings for persistence
+        saveSettings({
+          apiConfig: {
+            ...settings.apiConfig,
+            [providerKey]: {
+              ...config,
+              cachedModels: modelList
+            }
+          }
+        });
+
+        console.log(`[API] Successfully fetched and cached ${modelList.length} models for ${providerKey}`);
+      } else {
+        throw new Error('No models found in response');
+      }
+
+    } catch (err: any) {
+      console.error(`Error fetching models for ${providerKey}:`, err);
+      setFetchError(prev => ({ ...prev, [providerKey]: err.message || 'Error fetching models' }));
+    } finally {
+      setFetchingModels(prev => ({ ...prev, [providerKey]: false }));
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -89,9 +347,10 @@ export function APIConfigSection() {
         <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
           <Zap size={20} className="text-zinc-500" />
           API Configuration
+          <span className="px-2 py-0.5 text-[10px] font-bold bg-amber-500/20 text-amber-400 rounded-full uppercase">Alpha</span>
         </h3>
         <p className="text-sm text-zinc-700 dark:text-zinc-400">
-          Configure your API keys for LLM providers. These are used for model validation and enrichment.
+          Configure LLM API keys for AI-powered validation and enrichment.
         </p>
       </div>
 
@@ -100,45 +359,79 @@ export function APIConfigSection() {
         <div className={`rounded-xl border p-4 ${bgCard}`}>
           <div className="mb-3">
             <h4 className="font-medium mb-1">Preferred Model Provider</h4>
-            <p className="text-xs text-zinc-500">
-              Select which provider to use for model validation and enrichment when multiple API keys are configured.
-            </p>
+            <div className="text-xs text-zinc-500 mb-2">
+              Select which provider to use for automated validation.
+            </div>
+            <ThemedSelect
+              value={settings.preferredModelProvider || availableProviders[0]?.key || ''}
+              onChange={(value) => saveSettings({ preferredModelProvider: value })}
+              options={availableProviders.map(p => ({
+                value: p.key,
+                label: p.name
+              }))}
+              ariaLabel="Preferred model provider"
+            />
           </div>
-          <ThemedSelect
-            value={settings.preferredModelProvider || availableProviders[0]?.key || ''}
-            onChange={(value) => saveSettings({ preferredModelProvider: value })}
-            options={availableProviders.map(p => ({
-              value: p.key,
-              label: p.name
-            }))}
-            ariaLabel="Preferred model provider"
-          />
         </div>
       )}
 
-      {apiProviders.map((provider) => {
+
+      {allProviders.map((provider) => {
         const config = settings.apiConfig?.[provider.key as keyof typeof settings.apiConfig];
         const isEnabled = config?.enabled ?? false;
         const showKey = showApiKeys[provider.key] ?? false;
+        const modelsList = fetchedModels[provider.key] || provider.models;
+        const isCustom = (config as any)?.isCustom;
+        const protocol = (config as any)?.protocol || 'openai';
 
         return (
           <div key={provider.key} className={`rounded-xl border p-4 ${bgCard}`}>
             <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <h4 className="font-medium">{provider.name}</h4>
-                <input
-                  type="checkbox"
-                  checked={isEnabled}
-                  onChange={(e) => updateApiConfig(provider.key, 'enabled', e.target.checked)}
-                  className="rounded"
-                />
-              </div>
+              <label
+                htmlFor={`enable-${provider.key}`}
+                className="flex items-center gap-3 cursor-pointer flex-1 select-none group"
+              >
+                <div className="relative flex items-center justify-center">
+                  <input
+                    type="checkbox"
+                    id={`enable-${provider.key}`}
+                    checked={isEnabled}
+                    onChange={(e) => updateApiConfig(provider.key, 'enabled', e.target.checked)}
+                    className="sr-only"
+                  />
+                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${isEnabled
+                    ? 'bg-accent border-accent'
+                    : 'border-zinc-600 group-hover:border-zinc-500'
+                    }`}>
+                    {isEnabled && <Check size={14} strokeWidth={3} className="text-white" />}
+                  </div>
+                </div>
+                <div>
+                  <h4 className={`font-medium text-lg transition-colors ${isEnabled ? 'text-white' : 'text-zinc-400'}`}>
+                    {provider.name}
+                    {isCustom && <span className="ml-2 text-xs bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded">Custom</span>}
+                  </h4>
+                  {isCustom && <div className="text-xs text-zinc-500 uppercase tracking-wider font-bold mt-0.5">{protocol}</div>}
+                </div>
+              </label>
+              {isCustom && (
+                <button
+                  onClick={() => handleDeleteCustomProvider(provider.key)}
+                  className="text-red-500 hover:text-red-400 text-sm px-3 py-1"
+                >
+                  Delete
+                </button>
+              )}
             </div>
 
             {isEnabled && (
               <div className="space-y-4">
+                {/* ... API Key input ... */}
                 <div>
-                  <label className="block text-sm font-medium mb-2">API Key</label>
+                  <label className="block text-sm font-medium mb-2">
+                    API Key
+                    {protocol === 'ollama' && <span className="text-zinc-500 font-normal ml-2">(Optional for Ollama)</span>}
+                  </label>
                   <div className="relative">
                     <input
                       type={showKey ? 'text' : 'password'}
@@ -157,24 +450,61 @@ export function APIConfigSection() {
                   </div>
                 </div>
 
+                {/* ... Model input ... */}
                 <div>
                   <label className="block text-sm font-medium mb-2">Model</label>
-                  <ThemedSelect
-                    value={config?.model || provider.models[0]?.value || ''}
-                    onChange={(value) => updateApiConfig(provider.key, 'model', value)}
-                    options={provider.models}
-                    ariaLabel={`${provider.name} model`}
-                  />
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <input
+                        type="text"
+                        list={`models-${provider.key}`}
+                        value={config?.model || ''}
+                        onChange={(e) => updateApiConfig(provider.key, 'model', e.target.value)}
+                        placeholder="Enter model name"
+                        className={`w-full rounded-lg border ${bgInput} px-3 py-2 text-sm placeholder:text-zinc-600`}
+                      />
+                      <datalist id={`models-${provider.key}`}>
+                        {modelsList?.map((m) => (
+                          <option key={m.value} value={m.value}>{m.label}</option>
+                        ))}
+                      </datalist>
+                    </div>
+                    <button
+                      onClick={() => fetchModels(provider.key)}
+                      disabled={fetchingModels[provider.key] || (!config?.apiKey && protocol !== 'ollama')}
+                      className={`px-3 rounded-lg border flex items-center gap-2 transition-colors ${fetchingModels[provider.key]
+                        ? 'bg-zinc-800 text-zinc-500 border-zinc-800'
+                        : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border-zinc-700'
+                        }`}
+                      title="Fetch available models from API"
+                    >
+                      <RefreshCw size={16} className={fetchingModels[provider.key] ? 'animate-spin' : ''} />
+                    </button>
+                  </div>
+                  {/* ... Fetch status ... */}
+                  {fetchError[provider.key] && (
+                    <div className="mt-1 flex items-center gap-1 text-red-500 text-xs">
+                      <AlertCircle size={12} />
+                      <span>{fetchError[provider.key]}</span>
+                    </div>
+                  )}
+                  {fetchedModels[provider.key] && !fetchError[provider.key] && (
+                    <div className="mt-1 flex items-center gap-1 text-green-500 text-xs">
+                      <CheckCircle size={12} />
+                      <span>Fetched {fetchedModels[provider.key].length} models</span>
+                    </div>
+                  )}
                 </div>
 
-                {provider.key === 'openai' && (
+                {/* ... Base URL input ... */}
+                {((provider as any).showBaseUrl || isCustom) && (
                   <div>
                     <label className="block text-sm font-medium mb-2">Base URL</label>
                     <input
                       type="text"
-                      value={config?.baseUrl || 'https://api.openai.com/v1'}
+                      value={config?.baseUrl || (provider as any).defaultBaseUrl}
                       onChange={(e) => updateApiConfig(provider.key, 'baseUrl', e.target.value)}
-                      placeholder="https://api.openai.com/v1"
+                      placeholder={(provider as any).defaultBaseUrl || "https://api.example.com/v1"}
                       className={`w-full rounded-lg border ${bgInput} px-3 py-2 text-sm`}
                     />
                   </div>
@@ -184,6 +514,74 @@ export function APIConfigSection() {
           </div>
         );
       })}
+
+      {/* Add Custom Provider Form */}
+      <div className={`rounded-xl border p-4 ${bgCard} border-dashed border-zinc-700`}>
+        <div className="mb-4">
+          <h4 className="font-medium flex items-center gap-2 mb-1">
+            <Zap size={16} /> Add Unlisted or Custom Provider
+          </h4>
+          <p className="text-xs text-zinc-500">
+            Don't see your provider listed? Connect to any other compatible API or your own local/private server (e.g. Ollama, LocalAI).
+          </p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div>
+            <label className="block text-sm font-medium mb-1">Provider Name</label>
+            <input
+              type="text"
+              value={customProviderName}
+              onChange={(e) => setCustomProviderName(e.target.value)}
+              placeholder="e.g. LocalAI, Ollama"
+              className={`w-full rounded-lg border ${bgInput} px-3 py-2 text-sm`}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Protocol / API Format</label>
+            <ThemedSelect
+              value={customProviderProtocol}
+              onChange={(val) => setCustomProviderProtocol(val as any)}
+              options={[
+                { value: 'openai', label: 'Standard / OpenAI Compatible' },
+                { value: 'anthropic', label: 'Anthropic Compatible' },
+                { value: 'ollama', label: 'Ollama Native' },
+                { value: 'google', label: 'Google Gemini' },
+                { value: 'other', label: 'Other / Custom (Generic)' }
+              ]}
+              ariaLabel="Protocol"
+            />
+          </div>
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium mb-1">Base URL</label>
+            <input
+              type="text"
+              value={customProviderBaseUrl}
+              onChange={(e) => setCustomProviderBaseUrl(e.target.value)}
+              placeholder="https://api.example.com/v1"
+              className={`w-full rounded-lg border ${bgInput} px-3 py-2 text-sm`}
+            />
+          </div>
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium mb-1">
+              Custom Headers <span className="text-zinc-500 font-normal text-xs">(Optional JSON)</span>
+            </label>
+            <textarea
+              value={customProviderHeaders}
+              onChange={(e) => setCustomProviderHeaders(e.target.value)}
+              placeholder={'{\n  "X-Custom-Auth": "secret",\n  "Organization": "my-org"\n}'}
+              className={`w-full rounded-lg border ${bgInput} px-3 py-2 text-sm font-mono h-16`}
+            />
+          </div>
+        </div>
+        <button
+          onClick={handleAddCustomProvider}
+          disabled={!customProviderName}
+          className="w-full py-2 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-50 text-white rounded-lg transition-colors font-medium border border-zinc-700"
+        >
+          Add Custom Provider
+        </button>
+      </div>
+
     </div>
   );
 }

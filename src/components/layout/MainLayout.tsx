@@ -139,7 +139,7 @@ export function MainLayout({
                 />
 
                 {/* Main Table */}
-                <div className={`flex-1 transition-all duration-500 ease-out ${openModel ? 'lg:w-3/5' : 'w-full'}`}>
+                <div className={`flex-1 transition-all duration-500 ease-out pl-0 ${openModel ? 'lg:w-3/5' : 'w-full'}`}>
                     {isSyncing && filteredCount === 0 ? (
                         <div className="space-y-2">
                             {Array.from({ length: 8 }).map((_, i) => <SkeletonRow key={i} />)}

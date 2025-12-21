@@ -1,8 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <style>
+    :root {
+      --icon-bg: var(--bgCard, #0a0a0b);
+      --icon-accent: var(--accent, #8b5cf6);
+    }
+  </style>
   <defs>
     <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#8b5cf6;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#7c3aed;stop-opacity:1" />
+      <stop offset="0%" style="stop-color:var(--icon-accent);stop-opacity:1" />
+      <stop offset="100%" style="stop-color:var(--icon-accent);stop-opacity:0.8" />
     </linearGradient>
     <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
       <feGaussianBlur in="SourceGraphic" stdDeviation="8" result="blur"/>
@@ -12,7 +18,7 @@
       </feMerge>
     </filter>
   </defs>
-  <rect width="512" height="512" rx="96" fill="#0a0a0b"/>
+  <rect width="512" height="512" rx="96" fill="var(--icon-bg, #0a0a0b)"/>
   <g filter="url(#glow)">
     <path d="M128 160h256M128 256h192M128 352h128" stroke="url(#gradient)" stroke-width="32" stroke-linecap="round"/>
     <circle cx="384" cy="352" r="48" fill="url(#gradient)"/>

@@ -37,7 +37,7 @@ export {
 // Core platform fetchers
 export {
     fetchHuggingFaceRecent,
-    fetchGitHubPopular,
+    fetchPopularGenerativeRepos,
     fetchArtificialAnalysisIndex
 } from './fetchers';
 

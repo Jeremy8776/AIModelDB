@@ -44,7 +44,7 @@ export function AddModelModal({ isOpen, onClose, onAddModel, domains, addConsole
 
   if (!isOpen) return null;
 
-  const bgInput = "border border-zinc-700 bg-zinc-900/60";
+  const bgInput = "border border-border bg-input text-text";
 
   function handleAddModel() {
     const modelToAdd: Model = {
@@ -107,7 +107,7 @@ export function AddModelModal({ isOpen, onClose, onAddModel, domains, addConsole
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-2 sm:p-4">
-      <div className={`w-full max-w-3xl max-h-[85vh] overflow-y-auto rounded-2xl border p-4 ${theme === "dark" ? "border-zinc-800 bg-black" : "border-zinc-200 bg-white"}`}>
+      <div className="w-full max-w-3xl max-h-[85vh] overflow-y-auto rounded-2xl border p-4 border-border bg-bg text-text">
         <div className="mb-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <DatabaseZap className="size-5" />
@@ -118,7 +118,7 @@ export function AddModelModal({ isOpen, onClose, onAddModel, domains, addConsole
 
         <div className="space-y-4">
           {/* Basic Information */}
-          <div className={`rounded-xl border p-4 ${theme === "dark" ? "border-zinc-800 bg-black/40" : "border-zinc-200 bg-zinc-50"}`}>
+          <div className="rounded-xl border p-4 border-border bg-card">
             <h4 className="mb-3 font-medium">Basic Information</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -165,7 +165,7 @@ export function AddModelModal({ isOpen, onClose, onAddModel, domains, addConsole
           </div>
 
           {/* URLs & Resources */}
-          <div className={`rounded-xl border p-4 ${theme === "dark" ? "border-zinc-800 bg-black/40" : "border-zinc-200 bg-zinc-50"}`}>
+          <div className="rounded-xl border p-4 border-border bg-card">
             <h4 className="mb-3 font-medium">URLs & Resources</h4>
             <div className="grid grid-cols-1 gap-4">
               <div>
@@ -190,7 +190,7 @@ export function AddModelModal({ isOpen, onClose, onAddModel, domains, addConsole
           </div>
 
           {/* License Information */}
-          <div className={`rounded-xl border p-4 ${theme === "dark" ? "border-zinc-800 bg-black/40" : "border-zinc-200 bg-zinc-50"}`}>
+          <div className="rounded-xl border p-4 border-border bg-card">
             <h4 className="mb-3 font-medium">License Information</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -355,7 +355,7 @@ export function AddModelModal({ isOpen, onClose, onAddModel, domains, addConsole
           </div>
 
           {/* Hosting & Availability */}
-          <div className={`rounded-xl border p-4 ${theme === "dark" ? "border-zinc-800 bg-black/40" : "border-zinc-200 bg-zinc-50"}`}>
+          <div className="rounded-xl border p-4 border-border bg-card">
             <h4 className="mb-3 font-medium">Hosting & Availability</h4>
             <div className="grid grid-cols-1 gap-2">
               <label className="flex items-center text-xs">
@@ -428,7 +428,7 @@ export function AddModelModal({ isOpen, onClose, onAddModel, domains, addConsole
           </div>
 
           {/* Dates & Additional Info */}
-          <div className={`rounded-xl border p-4 ${theme === "dark" ? "border-zinc-800 bg-black/40" : "border-zinc-200 bg-zinc-50"}`}>
+          <div className="rounded-xl border p-4 border-border bg-card">
             <h4 className="mb-3 font-medium">Additional Information</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>

@@ -8,7 +8,7 @@
 
 // Core platform fetchers
 export { fetchHuggingFaceRecent } from './huggingface';
-export { fetchGitHubPopular } from './github';
+export { fetchPopularGenerativeRepos } from './github';
 export { fetchArtificialAnalysisIndex } from './artificial-analysis';
 
 // Image generation platform fetchers

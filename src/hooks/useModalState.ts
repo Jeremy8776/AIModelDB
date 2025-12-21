@@ -17,6 +17,7 @@ export interface ImportToastData {
     added: number;
     updated: number;
     flagged: number;
+    duplicates?: number;
 }
 
 export interface ConfirmationToastData {

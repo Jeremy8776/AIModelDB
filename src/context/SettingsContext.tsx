@@ -28,6 +28,7 @@ interface Settings {
   // Data source preferences
   dataSources: {
     huggingface: boolean;
+    github: boolean;
     artificialanalysis: boolean;
     llmDiscovery: boolean;
     roboflow: boolean;
@@ -90,6 +91,7 @@ const defaultSettings: Settings = {
   // Data source preferences  
   dataSources: {
     huggingface: true,
+    github: true,
     artificialanalysis: true,
     llmDiscovery: true,
     roboflow: true,
@@ -132,57 +134,82 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   // Load settings from localStorage on initial mount
   useEffect(() => {
-    try {
-      const savedSettings = localStorage.getItem('aiModelDBPro_settings');
-      if (savedSettings) {
-        // Parse and decrypt if necessary
-        const parsedSettings = JSON.parse(savedSettings);
+    const loadSettings = async () => {
+      try {
+        const savedSettings = localStorage.getItem('aiModelDBPro_settings');
+        if (savedSettings) {
+          const parsedSettings = JSON.parse(savedSettings);
 
-        // For security, we need to decrypt API keys
-        // This is a simple example - in a real app, you'd use a more secure encryption
-        const decryptedSettings = {
-          ...parsedSettings,
-          apiConfig: Object.entries(parsedSettings.apiConfig).reduce((acc, [key, value]) => {
-            const config = value as any;
-            return {
-              ...acc,
-              [key]: {
-                ...config,
-                apiKey: config.apiKey ? atob(config.apiKey) : "",
+          // Deep copy to avoid mutating the parsed object directly
+          const decryptedSettings = { ...parsedSettings };
+
+          // Decrypt API keys in apiConfig
+          if (decryptedSettings.apiConfig) {
+            const apiConfig = { ...decryptedSettings.apiConfig };
+            for (const [key, config] of Object.entries(apiConfig) as [keyof ApiDir, any][]) {
+              if (config.apiKey && window.electronAPI?.decryptString) {
+                const decryptedKey = await window.electronAPI.decryptString(config.apiKey);
+                apiConfig[key] = {
+                  ...config,
+                  apiKey: decryptedKey || "" // specific fallback if decryption fails (e.g. machine change)
+                };
               }
-            };
-          }, {} as ApiDir),
-        };
+            }
+            decryptedSettings.apiConfig = apiConfig;
+          }
 
-        setSettings(decryptedSettings);
+          // Decrypt standalone keys
+          if (decryptedSettings.artificialAnalysisApiKey && window.electronAPI?.decryptString) {
+            decryptedSettings.artificialAnalysisApiKey = await window.electronAPI.decryptString(decryptedSettings.artificialAnalysisApiKey) || "";
+          }
+          if (decryptedSettings.gitHubToken && window.electronAPI?.decryptString) {
+            decryptedSettings.gitHubToken = await window.electronAPI.decryptString(decryptedSettings.gitHubToken) || "";
+          }
+
+          setSettings(decryptedSettings);
+        }
+      } catch (error) {
+        console.error('Error loading settings from localStorage:', error);
       }
-    } catch (error) {
-      console.error('Error loading settings from localStorage:', error);
-    }
+    };
+
+    loadSettings();
   }, []);
 
   // Save settings to localStorage whenever they change
-  const saveSettings = (newSettings: Partial<Settings>) => {
+  const saveSettings = async (newSettings: Partial<Settings>) => {
     try {
-      const updatedSettings = { ...settings, ...newSettings };
+      // 1. Update state immediately for UI responsiveness
+      const nextSettings = { ...settings, ...newSettings };
+      setSettings(nextSettings);
 
-      // For security, we need to encrypt API keys before storing
-      // This is a simple example - in a real app, you'd use a more secure encryption
-      const encryptedSettings = {
-        ...updatedSettings,
-        apiConfig: Object.entries(updatedSettings.apiConfig).reduce((acc, [key, value]) => {
-          return {
-            ...acc,
-            [key]: {
-              ...value,
-              apiKey: value.apiKey ? btoa(value.apiKey) : "",
-            }
-          };
-        }, {} as ApiDir),
-      };
+      // 2. Prepare for storage (encryption)
+      const storageSettings = { ...nextSettings };
 
-      localStorage.setItem('aiModelDBPro_settings', JSON.stringify(encryptedSettings));
-      setSettings(updatedSettings);
+      // Encrypt API keys in apiConfig
+      if (storageSettings.apiConfig) {
+        const apiConfig = { ...storageSettings.apiConfig };
+        for (const [key, config] of Object.entries(apiConfig) as [keyof ApiDir, any][]) {
+          if (config.apiKey && window.electronAPI?.encryptString) {
+            const encryptedKey = await window.electronAPI.encryptString(config.apiKey);
+            apiConfig[key] = {
+              ...config,
+              apiKey: encryptedKey || ""
+            };
+          }
+        }
+        storageSettings.apiConfig = apiConfig;
+      }
+
+      // Encrypt standalone keys
+      if (storageSettings.artificialAnalysisApiKey && window.electronAPI?.encryptString) {
+        storageSettings.artificialAnalysisApiKey = await window.electronAPI.encryptString(storageSettings.artificialAnalysisApiKey) || "";
+      }
+      if (storageSettings.gitHubToken && window.electronAPI?.encryptString) {
+        storageSettings.gitHubToken = await window.electronAPI.encryptString(storageSettings.gitHubToken) || "";
+      }
+
+      localStorage.setItem('aiModelDBPro_settings', JSON.stringify(storageSettings));
     } catch (error) {
       console.error('Error saving settings to localStorage:', error);
     }

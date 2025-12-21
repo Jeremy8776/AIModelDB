@@ -48,6 +48,21 @@
     border-color: var(--accent) !important;
   }
 
+  /* Clean input reset */
+  .search-input-reset {
+    outline: none !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  .search-input-reset:focus {
+    outline: none !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+
+
   .border-accent-dark {
     border-color: var(--accentDark) !important;
   }
@@ -82,14 +97,21 @@
   --accentLight: #c4b5fd;
   --accentDark: #7c3aed;
   --accentGlow: rgba(139, 92, 246, 0.3);
-  --bg: #0a0a0b;
-  --bgCard: #111113;
-  --bgInput: #1a1a1d;
-  --border: rgba(139, 92, 246, 0.15);
-  --borderInput: rgba(255, 255, 255, 0.08);
+  --accentFaint: rgba(139, 92, 246, 0.15);
+  --accentMuted: rgba(139, 92, 246, 0.25);
+  --accentSoft: rgba(139, 92, 246, 0.4);
+  --bg: #000000;
+  --bgCard: #000000;
+  --bgInput: #000000;
+  --bgElevated: #0a0a0b;
+  --border: rgba(255, 255, 255, 0.15);
+  --borderInput: rgba(255, 255, 255, 0.15);
+  --borderSubtle: rgba(255, 255, 255, 0.08);
+  --borderFaint: rgba(255, 255, 255, 0.04);
   --text: #fafafa;
   --textSecondary: rgba(255, 255, 255, 0.65);
   --textSubtle: rgba(255, 255, 255, 0.4);
+  --textMuted: rgba(255, 255, 255, 0.5);
 
   /* Custom scrollbar variables */
   --scrollbar-track: var(--bg);
@@ -102,10 +124,7 @@
 }
 
 /* Ensure global theme variables take precedence when set */
-html[style*='--bg'],
-html[style*='--bgCard'] {
-  /* When parent sets theme variables, they override :root */
-}
+
 
 /* Light theme adjustments */
 [data-theme='light'] {
@@ -192,13 +211,34 @@ h6 {
   background-color: var(--bgInput) !important;
 }
 
+/* All text inputs, number inputs, and textareas should use pure black */
+input[type="text"],
+input[type="number"],
+input[type="search"],
+input[type="email"],
+input[type="password"],
+input[type="url"],
+input[type="tel"],
+input:not([type]),
+textarea {
+  background-color: var(--bg) !important;
+  color: var(--text) !important;
+  border-color: var(--border) !important;
+}
+
+/* Override specific Tailwind background classes on inputs */
+input.bg-zinc-900\/70,
+input[class*="bg-zinc-900"] {
+  background-color: var(--bg) !important;
+}
+
 /* Modal backgrounds need to be solid, not transparent */
 .fixed.inset-0>div[class*='max-w'] {
-  background-color: #09090b !important;
+  background-color: var(--bg) !important;
 }
 
 [data-theme='light'] .fixed.inset-0>div[class*='max-w'] {
-  background-color: #ffffff !important;
+  background-color: var(--bg) !important;
 }
 
 /* Dropdown menus need visible background using theme colors */
@@ -213,8 +253,10 @@ h6 {
   background-color: transparent !important;
 }
 
-.relative>div[class*='absolute'] button:hover {
-  background-color: var(--bgCard) !important;
+.relative>div[class*='absolute'] button:hover,
+.themed-select-item:hover {
+  background-color: var(--accent) !important;
+  color: var(--bg) !important;
 }
 
 /* Selected item in dropdown */
@@ -222,14 +264,49 @@ h6 {
   background-color: var(--bgCard) !important;
 }
 
-/* ThemedSelect button styling */
-.relative>button[class*='border'] {
+/* ThemedSelect component styling */
+.themed-select-button {
+  background-color: var(--bg) !important;
+  border-color: var(--border) !important;
+  color: var(--text) !important;
+}
+
+.themed-select-text {
+  color: var(--text) !important;
+}
+
+.themed-select-icon {
+  fill: var(--text) !important;
+}
+
+.themed-select-menu {
+  background-color: var(--bg) !important;
+  border-color: var(--border) !important;
+}
+
+.themed-select-item {
+  background-color: var(--bg) !important;
+  color: var(--text) !important;
+}
+
+.themed-select-item:hover {
+  background-color: var(--accent) !important;
+  color: var(--bg) !important;
+}
+
+.themed-select-item-selected {
+  background-color: var(--accent) !important;
+  color: var(--bg) !important;
+}
+
+/* ThemedSelect button styling - only when not using custom themed classes */
+.relative>button[class*='border']:not(.themed-select-button) {
   background-color: var(--bgCard) !important;
   border-color: var(--border) !important;
   color: var(--text) !important;
 }
 
-.relative>button[class*='border']:hover:not(:disabled) {
+.relative>button[class*='border']:not(.themed-select-button):hover:not(:disabled) {
   background-color: var(--bgInput) !important;
   border-color: var(--accent) !important;
 }
@@ -418,8 +495,26 @@ a:not([class*='text-']):hover {
   color: var(--accent) !important;
 }
 
-/* Focus ring styling */
-*:focus-visible {
+/* Override ALL focus ring colors to use theme accent */
+*:focus,
+*:focus-visible,
+*:focus-within {
+  --tw-ring-color: var(--accent) !important;
+}
+
+/* Specifically target Tailwind ring utility classes */
+.ring-violet-500,
+.ring-blue-500,
+.ring-accent,
+[class*='ring-violet'],
+[class*='ring-blue'],
+[class*='focus:ring-'],
+[class*='focus-within:ring-'] {
+  --tw-ring-color: var(--accent) !important;
+}
+
+/* Fallback outline for elements without Tailwind rings */
+*:focus-visible:not([class*='ring-']) {
   outline: 2px solid var(--accent) !important;
   outline-offset: 2px !important;
 }
@@ -468,9 +563,11 @@ progress::-moz-progress-bar {
   -webkit-app-region: no-drag;
 }
 
-/* Smooth transitions for theme switching */
+/* Smooth transitions for theme switching - kept short for performance */
 * {
-  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  transition: background-color 0.15s ease-in-out,
+    border-color 0.15s ease-in-out,
+    color 0.15s ease-in-out;
 }
 
 /* Disable transitions for scrolling */
@@ -489,4 +586,53 @@ progress::-moz-progress-bar {
 ::-moz-selection {
   background-color: var(--accent);
   color: white;
+}
+
+/* Color input styling - make the color swatch fill the entire input */
+/* Must use !important to work across all themes */
+input[type="color"] {
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  appearance: none !important;
+  border: none !important;
+  padding: 0 !important;
+  cursor: pointer !important;
+  background: transparent !important;
+}
+
+input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 0 !important;
+  border: none !important;
+}
+
+input[type="color"]::-webkit-color-swatch {
+  border: none !important;
+  border-radius: 8px !important;
+}
+
+input[type="color"]::-moz-color-swatch {
+  border: none !important;
+  border-radius: 8px !important;
+}
+
+/* Global Fixes for Theme Consistency */
+/* Ensure App Header & Titlebar matches the global background variable */
+.app-header,
+header,
+.settings-modal-header,
+.settings-modal-sidebar,
+.app-titlebar {
+  background-color: var(--bg) !important;
+  backdrop-filter: none !important;
+  border-bottom-color: var(--border) !important;
+}
+
+.app-titlebar {
+  color: var(--textSecondary) !important;
+}
+
+/* Ensure Search Bar and rounded containers use the Card background variable */
+/* This overrides default white/dark classes to match the theme */
+.rounded-2xl {
+  background-color: var(--bgCard) !important;
 }

@@ -18,21 +18,18 @@ export function OnboardingWizard({ isOpen, onClose, onComplete }: OnboardingWiza
     const [step, setStep] = useState(1);
     const [selectedSources, setSelectedSources] = useState<Record<string, boolean>>({
         huggingface: true,
+        github: true,
         artificialanalysis: true,
-        roboflow: true,
-        kaggle: true,
-        tensorart: true,
         civitai: true,
-        prompthero: true,
-        liblib: true,
-        shakker: true,
         openmodeldb: true,
         civitasbay: true,
         llmDiscovery: true,
     });
     const [apiKeys, setApiKeys] = useState({
         artificialAnalysisApiKey: '',
+        gitHubToken: '',
     });
+    const [llmApiKeys, setLlmApiKeys] = useState<Record<string, string>>({});
     const [availableLLMProviders, setAvailableLLMProviders] = useState<Array<{ key: string; name: string; model: string }>>([]);
     const [selectedLLMProvider, setSelectedLLMProvider] = useState<string>('');
 
@@ -70,26 +67,43 @@ export function OnboardingWizard({ isOpen, onClose, onComplete }: OnboardingWiza
 
     if (!isOpen) return null;
 
-    const bgModal = 'border-zinc-800 bg-black';
-    const bgCard = 'border-zinc-800 bg-black';
-    const bgInput = 'border-zinc-700 bg-zinc-900/60';
+    const bgModal = 'border-border bg-bg text-text';
+    const bgCard = 'border-border bg-card text-text';
+    const bgInput = 'border-border bg-input text-text';
 
     const dataSources = [
         { key: 'huggingface', label: 'HuggingFace', description: 'Popular open-source models', requiresKey: false },
-        { key: 'artificialanalysis', label: 'Artificial Analysis', description: 'Model performance benchmarks', requiresKey: true, keyUrl: 'https://artificialanalysis.ai/documentation' },
+        { key: 'github', label: 'GitHub', description: 'AI repositories and projects', requiresKey: true, keyUrl: 'https://github.com/settings/tokens' },
+        { key: 'artificialanalysis', label: 'Artificial Analysis', description: 'Model benchmarks', requiresKey: true, keyUrl: 'https://artificialanalysis.ai/documentation' },
         { key: 'civitai', label: 'Civitai', description: 'Community AI models', requiresKey: false },
         { key: 'openmodeldb', label: 'OpenModelDB', description: 'Open model database', requiresKey: false },
         { key: 'civitasbay', label: 'CivitasBay', description: 'AI model marketplace', requiresKey: false },
-        { key: 'llmDiscovery', label: 'LLM Discovery', description: 'AI-powered model discovery', requiresKey: false },
+        { key: 'llmDiscovery', label: 'LLM Discovery', description: 'AI-powered discovery', requiresKey: false },
     ];
 
     const sourcesRequiringKeys = dataSources.filter(s => s.requiresKey && selectedSources[s.key]);
 
     const handleComplete = () => {
-        // Save selected data sources
+        // Build updated apiConfig with any new LLM keys
+        const updatedApiConfig = { ...settings.apiConfig };
+
+        Object.entries(llmApiKeys).forEach(([provider, apiKey]) => {
+            if (apiKey) {
+                const existing = updatedApiConfig[provider as keyof typeof updatedApiConfig] || {};
+                (updatedApiConfig as any)[provider] = {
+                    ...existing,
+                    apiKey,
+                    enabled: true,
+                };
+            }
+        });
+
+        // Save selected data sources and API keys
         saveSettings({
             dataSources: selectedSources as any,
             artificialAnalysisApiKey: apiKeys.artificialAnalysisApiKey,
+            gitHubToken: apiKeys.gitHubToken,
+            apiConfig: updatedApiConfig,
         });
         onComplete();
     };
@@ -103,7 +117,7 @@ export function OnboardingWizard({ isOpen, onClose, onComplete }: OnboardingWiza
             <div className={`w-full max-w-3xl max-h-[90vh] overflow-hidden rounded-2xl border ${bgModal} shadow-2xl`} onClick={(e) => e.stopPropagation()}>
 
                 {/* Header */}
-                <div className="flex items-center justify-between p-6 border-b border-zinc-800">
+                <div className="flex items-center justify-between p-6 border-b border-border">
                     <div className="flex items-center gap-3">
                         <Database size={24} className="text-accent" />
                         <div>
@@ -121,28 +135,38 @@ export function OnboardingWizard({ isOpen, onClose, onComplete }: OnboardingWiza
 
                 {/* Progress Indicator */}
                 <div className="px-6 pt-4">
-                    <div className="flex items-center justify-center gap-2">
-                        <div className={`flex items-center justify-center w-8 h-8 rounded-full ${step >= 1 ? 'bg-accent text-white' : 'bg-zinc-800 text-zinc-500'}`}>
-                            1
+                    <div className="flex items-center justify-center">
+                        {/* Step 1 */}
+                        <div className="flex flex-col items-center">
+                            <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${step >= 1 ? 'bg-accent text-white' : 'bg-zinc-800 text-zinc-500'}`}>
+                                1
+                            </div>
+                            <span className="text-xs text-zinc-500 mt-2">Sources</span>
                         </div>
-                        <div className={`h-1 w-12 ${step >= 2 ? 'bg-accent' : 'bg-zinc-800'}`} />
-                        <div className={`flex items-center justify-center w-8 h-8 rounded-full ${step >= 2 ? 'bg-accent text-white' : 'bg-zinc-800 text-zinc-500'}`}>
-                            2
+                        <div className={`h-1 w-12 mx-2 ${step >= 2 ? 'bg-accent' : 'bg-zinc-800'}`} />
+                        {/* Step 2 */}
+                        <div className="flex flex-col items-center">
+                            <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${step >= 2 ? 'bg-accent text-white' : 'bg-zinc-800 text-zinc-500'}`}>
+                                2
+                            </div>
+                            <span className="text-xs text-zinc-500 mt-2">API Keys</span>
                         </div>
-                        <div className={`h-1 w-12 ${step >= 3 ? 'bg-accent' : 'bg-zinc-800'}`} />
-                        <div className={`flex items-center justify-center w-8 h-8 rounded-full ${step >= 3 ? 'bg-accent text-white' : 'bg-zinc-800 text-zinc-500'}`}>
-                            3
+                        <div className={`h-1 w-12 mx-2 ${step >= 3 ? 'bg-accent' : 'bg-zinc-800'}`} />
+                        {/* Step 3 */}
+                        <div className="flex flex-col items-center">
+                            <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${step >= 3 ? 'bg-accent text-white' : 'bg-zinc-800 text-zinc-500'}`}>
+                                3
+                            </div>
+                            <span className="text-xs text-zinc-500 mt-2">LLM</span>
                         </div>
-                        <div className={`h-1 w-12 ${step >= 4 ? 'bg-accent' : 'bg-zinc-800'}`} />
-                        <div className={`flex items-center justify-center w-8 h-8 rounded-full ${step >= 4 ? 'bg-accent text-white' : 'bg-zinc-800 text-zinc-500'}`}>
-                            4
+                        <div className={`h-1 w-12 mx-2 ${step >= 4 ? 'bg-accent' : 'bg-zinc-800'}`} />
+                        {/* Step 4 */}
+                        <div className="flex flex-col items-center">
+                            <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${step >= 4 ? 'bg-accent text-white' : 'bg-zinc-800 text-zinc-500'}`}>
+                                4
+                            </div>
+                            <span className="text-xs text-zinc-500 mt-2">Done</span>
                         </div>
-                    </div>
-                    <div className="flex justify-between text-xs text-zinc-500 mt-2 px-2">
-                        <span>Sources</span>
-                        <span>API Keys</span>
-                        <span>LLM</span>
-                        <span>Done</span>
                     </div>
                 </div>
 
@@ -166,25 +190,25 @@ export function OnboardingWizard({ isOpen, onClose, onComplete }: OnboardingWiza
                                             key={source.key}
                                             onClick={() => toggleSource(source.key)}
                                             className={`p-4 rounded-lg border-2 text-left transition-all duration-200 ${isSelected
-                                                ? 'border-accent bg-violet-50 dark:bg-violet-950/20'
-                                                : 'border-zinc-700 hover:border-zinc-600'
+                                                ? 'border-accent bg-accent/10'
+                                                : 'border-zinc-700 hover:border-zinc-500 bg-zinc-900/50'
                                                 }`}
                                         >
                                             <div className="flex items-start justify-between">
                                                 <div className="flex-1 min-w-0">
-                                                    <div className={`font-medium text-sm flex items-center gap-2 ${isSelected ? 'text-accent' : ''}`}>
+                                                    <div className={`font-semibold text-sm flex items-center gap-2 ${isSelected ? 'text-white' : 'text-zinc-200'}`}>
                                                         {source.label}
                                                         {source.requiresKey && (
-                                                            <Key size={12} className="text-zinc-500" />
+                                                            <span className="text-[10px] text-zinc-500">(optional key)</span>
                                                         )}
                                                     </div>
-                                                    <div className="text-xs text-zinc-500 mt-1">
+                                                    <div className={`text-xs mt-1 ${isSelected ? 'text-zinc-300' : 'text-zinc-500'}`}>
                                                         {source.description}
                                                     </div>
                                                 </div>
                                                 <div className={`ml-3 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${isSelected
                                                     ? 'border-accent bg-accent'
-                                                    : 'border-zinc-600'
+                                                    : 'border-zinc-500'
                                                     }`}>
                                                     {isSelected && (
                                                         <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
@@ -200,15 +224,15 @@ export function OnboardingWizard({ isOpen, onClose, onComplete }: OnboardingWiza
                         </div>
                     )}
 
-                    {/* Step 2: API Keys */}
+                    {/* Step 2: API Keys (Optional) */}
                     {step === 2 && (
                         <div className="space-y-4">
                             <div>
-                                <h3 className="text-lg font-semibold mb-2">API Keys Required</h3>
+                                <h3 className="text-lg font-semibold mb-2">API Keys (Optional)</h3>
                                 <p className="text-sm text-zinc-500 mb-4">
                                     {sourcesRequiringKeys.length > 0
-                                        ? 'Some data sources require API keys to access their data. Enter them below:'
-                                        : 'None of your selected sources require API keys. Click Next to continue.'}
+                                        ? 'These sources work without keys but API tokens can increase rate limits. You can skip this step.'
+                                        : 'None of your selected sources need API keys. Click Next to continue.'}
                                 </p>
                             </div>
 
@@ -226,6 +250,28 @@ export function OnboardingWizard({ isOpen, onClose, onComplete }: OnboardingWiza
                                                 </div>
                                             </div>
 
+                                            {source.key === 'github' && (
+                                                <>
+                                                    <input
+                                                        type="password"
+                                                        value={apiKeys.gitHubToken}
+                                                        onChange={(e) => setApiKeys({ ...apiKeys, gitHubToken: e.target.value })}
+                                                        placeholder="ghp_..."
+                                                        className={`w-full rounded-lg border ${bgInput} px-3 py-2 text-sm font-mono mb-2`}
+                                                    />
+                                                    <p className="text-xs text-zinc-500">
+                                                        Optional - increases rate limit from 60 to 5000 requests/hour.{' '}
+                                                        <a
+                                                            href={source.keyUrl}
+                                                            onClick={(e) => handleExternalLink(e, source.keyUrl!)}
+                                                            className="text-accent hover:underline cursor-pointer"
+                                                        >
+                                                            Get token
+                                                        </a>
+                                                    </p>
+                                                </>
+                                            )}
+
                                             {source.key === 'artificialanalysis' && (
                                                 <>
                                                     <input
@@ -236,13 +282,13 @@ export function OnboardingWizard({ isOpen, onClose, onComplete }: OnboardingWiza
                                                         className={`w-full rounded-lg border ${bgInput} px-3 py-2 text-sm font-mono mb-2`}
                                                     />
                                                     <p className="text-xs text-zinc-500">
-                                                        Get your free API key from{' '}
+                                                        Optional - enables benchmark data.{' '}
                                                         <a
                                                             href={source.keyUrl}
                                                             onClick={(e) => handleExternalLink(e, source.keyUrl!)}
                                                             className="text-accent hover:underline cursor-pointer"
                                                         >
-                                                            Artificial Analysis Documentation
+                                                            Get free key
                                                         </a>
                                                     </p>
                                                 </>
@@ -254,80 +300,68 @@ export function OnboardingWizard({ isOpen, onClose, onComplete }: OnboardingWiza
                                 <div className={`rounded-xl border p-6 ${bgCard} text-center`}>
                                     <CheckCircle size={48} className="text-green-500 mx-auto mb-3" />
                                     <p className="text-sm text-zinc-500">
-                                        All selected sources are ready to use without API keys!
+                                        All selected sources are ready to use!
                                     </p>
                                 </div>
                             )}
                         </div>
                     )}
 
-                    {/* Step 3: LLM Validation Model */}
+                    {/* Step 3: AI Validation - LLM API Keys */}
                     {step === 3 && (
                         <div className="space-y-4">
                             <div>
-                                <h3 className="text-lg font-semibold mb-2">LLM Validation Model</h3>
+                                <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
+                                    AI Validation
+                                    <span className="px-2 py-0.5 text-[10px] font-bold bg-amber-500/20 text-amber-400 rounded-full uppercase">Alpha</span>
+                                </h3>
                                 <p className="text-sm text-zinc-500 mb-4">
-                                    {availableLLMProviders.length > 0
-                                        ? 'Select which LLM to use for model validation and enrichment. These API keys are configured globally in your main app settings.'
-                                        : 'No global LLM API keys found. You can add them later in Settings → LLM API Keys to enable validation features.'}
+                                    Add an LLM API key to enable AI-powered validation. This is optional and experimental.
                                 </p>
                             </div>
 
-                            {availableLLMProviders.length > 0 ? (
-                                <div className={`rounded-xl border p-4 ${bgCard}`}>
-                                    <div className="flex items-start gap-3 mb-4">
-                                        <Zap size={20} className="text-accent mt-0.5" />
-                                        <div className="flex-1">
-                                            <h4 className="font-medium">Available LLM Providers</h4>
-                                            <p className="text-sm text-zinc-500 mt-1">
-                                                These providers have API keys configured globally
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-3">
-                                        {availableLLMProviders.map((provider) => (
-                                            <button
-                                                key={provider.key}
-                                                onClick={() => setSelectedLLMProvider(provider.key)}
-                                                className={`w-full p-3 rounded-lg border-2 text-left transition-all duration-200 ${selectedLLMProvider === provider.key
-                                                    ? 'border-accent bg-violet-50 dark:bg-violet-950/20'
-                                                    : 'border-zinc-700 hover:border-zinc-600'
-                                                    }`}
-                                            >
-                                                <div className="flex items-center justify-between">
-                                                    <div>
-                                                        <div className={`font-medium text-sm ${selectedLLMProvider === provider.key ? 'text-accent' : ''}`}>
-                                                            {provider.name}
-                                                        </div>
-                                                        <div className="text-xs text-zinc-500 mt-1">
-                                                            Model: {provider.model}
-                                                        </div>
-                                                    </div>
-                                                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${selectedLLMProvider === provider.key
-                                                        ? 'border-accent bg-accent'
-                                                        : 'border-zinc-600'
-                                                        }`}>
-                                                        {selectedLLMProvider === provider.key && (
-                                                            <div className="w-2 h-2 bg-white rounded-full" />
-                                                        )}
-                                                    </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                {[
+                                    { key: 'anthropic', name: 'Anthropic', placeholder: 'sk-ant-...', model: 'Claude' },
+                                    { key: 'openai', name: 'OpenAI', placeholder: 'sk-...', model: 'GPT-4' },
+                                    { key: 'google', name: 'Google', placeholder: 'AIza...', model: 'Gemini' },
+                                    { key: 'deepseek', name: 'DeepSeek', placeholder: 'sk-...', model: 'DeepSeek' },
+                                ].map((provider) => {
+                                    const hasKey = !!(llmApiKeys[provider.key] || settings.apiConfig?.[provider.key as keyof typeof settings.apiConfig]?.apiKey);
+                                    return (
+                                        <div
+                                            key={provider.key}
+                                            className={`p-4 rounded-lg border-2 transition-all duration-200 ${hasKey
+                                                ? 'border-accent bg-accent/10'
+                                                : 'border-zinc-700 bg-zinc-900/50'
+                                                }`}
+                                        >
+                                            <div className="flex items-center justify-between mb-2">
+                                                <div className={`font-semibold text-sm ${hasKey ? 'text-white' : 'text-zinc-200'}`}>
+                                                    {provider.name}
                                                 </div>
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className={`rounded-xl border p-6 ${bgCard} text-center`}>
-                                    <Key size={48} className="text-zinc-600 mx-auto mb-3" />
-                                    <p className="text-sm text-zinc-500 mb-2">
-                                        No LLM API keys configured globally
-                                    </p>
-                                    <p className="text-xs text-zinc-600">
-                                        You can add them later in Settings → LLM API Keys
-                                    </p>
-                                </div>
-                            )}
+                                                {hasKey && (
+                                                    <CheckCircle size={16} className="text-green-500" />
+                                                )}
+                                            </div>
+                                            <div className={`text-xs mb-2 ${hasKey ? 'text-zinc-300' : 'text-zinc-500'}`}>
+                                                {provider.model}
+                                            </div>
+                                            <input
+                                                type="password"
+                                                value={llmApiKeys[provider.key] || ''}
+                                                onChange={(e) => setLlmApiKeys(prev => ({ ...prev, [provider.key]: e.target.value }))}
+                                                placeholder={provider.placeholder}
+                                                className={`w-full rounded border ${bgInput} px-2 py-1.5 text-xs font-mono`}
+                                            />
+                                        </div>
+                                    );
+                                })}
+                            </div>
+
+                            <p className="text-xs text-zinc-600 text-center mt-4">
+                                You can skip this step and add API keys later in Settings.
+                            </p>
                         </div>
                     )}
 
@@ -372,7 +406,7 @@ export function OnboardingWizard({ isOpen, onClose, onComplete }: OnboardingWiza
                 </div>
 
                 {/* Footer */}
-                <div className="flex items-center justify-between p-6 border-t border-zinc-800">
+                <div className="flex items-center justify-between p-6 border-t border-border">
                     <button
                         onClick={() => setStep(Math.max(1, step - 1))}
                         disabled={step === 1}

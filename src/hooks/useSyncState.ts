@@ -26,8 +26,8 @@ export interface SyncState {
     setLastSync: (timestamp: string | null) => void;
 
     // Sync summary (for toast display)
-    syncSummary: { found: number; flagged: number } | null;
-    setSyncSummary: (summary: { found: number; flagged: number } | null) => void;
+    syncSummary: { found: number; flagged: number; duplicates?: number } | null;
+    setSyncSummary: (summary: { found: number; flagged: number; duplicates?: number } | null) => void;
 }
 
 /**
@@ -66,7 +66,7 @@ export function useSyncState(): SyncState {
     const [lastSync, setLastSync] = useState<string | null>(null);
 
     // Sync summary state (for displaying toast after sync)
-    const [syncSummary, setSyncSummary] = useState<{ found: number; flagged: number } | null>(null);
+    const [syncSummary, setSyncSummary] = useState<{ found: number; flagged: number; duplicates?: number } | null>(null);
 
     return {
         isSyncing,

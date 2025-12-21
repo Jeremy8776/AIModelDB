@@ -196,7 +196,8 @@ export async function callProviderText(
 ): Promise<string> {
     // Get effective API key (local or global)
     const effectiveKey = await getEffectiveApiKey(key, cfg.apiKey);
-    if (!effectiveKey) throw new Error('no key');
+    const isOllama = cfg.protocol === 'ollama' || key === 'ollama';
+    if (!effectiveKey && !isOllama) throw new Error('no key');
 
     // Apply rate limiting before making the request
     await globalRateLimiter.waitForSlot();
@@ -216,7 +217,44 @@ export async function callProviderText(
             let url = '';
             let headers: Record<string, string> = { 'Accept': 'application/json' };
 
-            if (key === 'openai' || key === 'openrouter' || key === 'deepseek' || key === 'perplexity') {
+            if (cfg.isCustom || (cfg.baseUrl && cfg.baseUrl.trim() !== '')) {
+                const baseUrl = cfg.baseUrl?.replace(/\/$/, '') || '';
+                const protocol = cfg.protocol || (['anthropic', 'google'].includes(key) ? key : 'openai');
+
+                headers = { ...headers, 'Content-Type': 'application/json', ...(cfg.headers || {}) };
+                if (effectiveKey && protocol !== 'anthropic') headers['Authorization'] = `Bearer ${effectiveKey}`;
+
+                if (protocol === 'anthropic') {
+                    url = `${baseUrl}/messages`;
+                    if (effectiveKey) headers['x-api-key'] = effectiveKey;
+                    headers['anthropic-version'] = '2023-06-01';
+                    body = {
+                        model: cfg.model,
+                        max_tokens: 4000,
+                        messages: [{ role: 'user', content: `${systemPrompt}\n\n${userPrompt}` }]
+                    };
+                } else if (protocol === 'ollama') {
+                    url = `${baseUrl}/api/chat`;
+                    body = {
+                        model: cfg.model,
+                        messages: [
+                            { role: 'system', content: systemPrompt },
+                            { role: 'user', content: userPrompt }
+                        ],
+                        stream: false
+                    };
+                } else {
+                    // OpenAI Compatible (default)
+                    url = `${baseUrl}/chat/completions`;
+                    body = {
+                        model: cfg.model,
+                        messages: [
+                            { role: 'system', content: systemPrompt },
+                            { role: 'user', content: userPrompt }
+                        ]
+                    };
+                }
+            } else if (key === 'openai' || key === 'openrouter' || key === 'deepseek' || key === 'perplexity') {
                 // OpenAI-compatible chat
                 if (key === 'openai' && useDirectForOpenAI) {
                     // Direct connection for OpenAI to bypass proxy issues
@@ -245,7 +283,7 @@ export async function callProviderText(
                 headers = {
                     ...headers,
                     'Content-Type': 'application/json',
-                    'x-api-key': effectiveKey,
+                    'x-api-key': effectiveKey!,
                     'anthropic-version': '2023-06-01'
                 };
                 body = {
@@ -369,14 +407,57 @@ export async function callProviderText(
  */
 export async function callProviderLLM(key: ProviderKey, cfg: ProviderCfg, systemPrompt: string, userPrompt: string): Promise<Model[]> {
     // Get effective API key (local or global)
+    // Get effective API key (local or global)
     const effectiveKey = await getEffectiveApiKey(key, cfg.apiKey);
-    if (!effectiveKey) throw new Error('no key');
+    const isOllama = cfg.protocol === 'ollama' || key === 'ollama';
+    if (!effectiveKey && !isOllama) throw new Error('no key');
     try {
         let body: any = {};
         let url = '';
         let headers: Record<string, string> = { 'Accept': 'application/json' };
 
-        if (key === 'openai' || key === 'openrouter' || key === 'deepseek' || key === 'perplexity') {
+        if (cfg.isCustom || (cfg.baseUrl && cfg.baseUrl.trim() !== '')) {
+            const baseUrl = cfg.baseUrl?.replace(/\/$/, '') || '';
+            const protocol = cfg.protocol || (['anthropic', 'google'].includes(key) ? key : 'openai');
+
+            headers = { ...headers, 'Content-Type': 'application/json', ...(cfg.headers || {}) };
+            if (effectiveKey && protocol !== 'anthropic') headers['Authorization'] = `Bearer ${effectiveKey}`;
+
+            if (protocol === 'anthropic') {
+                url = `${baseUrl}/messages`;
+                if (effectiveKey) headers['x-api-key'] = effectiveKey;
+                headers['anthropic-version'] = '2023-06-01';
+                body = {
+                    model: cfg.model,
+                    max_tokens: 4000,
+                    system: systemPrompt,
+                    messages: [{ role: 'user', content: userPrompt }],
+                    temperature: 0
+                };
+            } else if (protocol === 'ollama') {
+                url = `${baseUrl}/api/chat`;
+                body = {
+                    model: cfg.model,
+                    messages: [
+                        { role: 'system', content: systemPrompt },
+                        { role: 'user', content: userPrompt }
+                    ],
+                    stream: false,
+                    format: "json"
+                };
+            } else {
+                // OpenAI Compatible (default)
+                url = `${baseUrl}/chat/completions`;
+                body = {
+                    model: cfg.model,
+                    messages: [
+                        { role: 'system', content: systemPrompt },
+                        { role: 'user', content: userPrompt }
+                    ],
+                    response_format: { type: 'json_object' }
+                };
+            }
+        } else if (key === 'openai' || key === 'openrouter' || key === 'deepseek' || key === 'perplexity') {
             // OpenAI-compatible chat
             const basePath = key === 'openrouter' ? '/openrouter-api' : key === 'openai' ? '/openai-api' : key === 'deepseek' ? '/deepseek-api' : '/perplexity-api';
             url = proxyUrl(`${basePath}/chat/completions`, (key === 'openrouter' ? 'https://openrouter.ai/api' : key === 'openai' ? 'https://api.openai.com' : key === 'deepseek' ? 'https://api.deepseek.com' : 'https://api.perplexity.ai') + '/v1/chat/completions');
@@ -400,7 +481,7 @@ export async function callProviderLLM(key: ProviderKey, cfg: ProviderCfg, system
             headers = {
                 ...headers,
                 'Content-Type': 'application/json',
-                'x-api-key': effectiveKey,
+                'x-api-key': effectiveKey!,
                 'anthropic-version': '2023-06-01'
             };
             body = {

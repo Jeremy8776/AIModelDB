@@ -101,7 +101,7 @@ export function ValidationProgress({
   };
 
   return (
-    <div className={`fixed bottom-20 right-4 ${isExpanded ? 'w-96' : 'w-56'} bg-white dark:bg-zinc-900 shadow-lg rounded-xl border border-orange-200 dark:border-orange-800/40 overflow-hidden z-40 transition-all duration-300`}>
+    <div className={`fixed bottom-20 right-4 ${isExpanded ? 'w-96' : 'w-56'} bg-white dark:bg-zinc-900 shadow-lg rounded-xl border border-violet-200 dark:border-violet-800/40 overflow-hidden z-40 transition-all duration-300`}>
       <div className="p-3">
         <div className="flex justify-between items-center">
           <h3 className="font-semibold text-sm flex items-center">
@@ -257,7 +257,7 @@ export function ValidationProgress({
                     <div className="mt-2 flex justify-end">
                       <button
                         onClick={() => window.dispatchEvent(new CustomEvent('open-sync'))}
-                        className="text-xs px-2 py-1 rounded-md bg-violet-500 text-white hover:bg-orange-600 transition-colors"
+                        className="text-xs px-2 py-1 rounded-md bg-violet-500 text-white hover:bg-violet-600 transition-colors"
                       >
                         Configure Providers
                       </button>

@@ -69,5 +69,10 @@ export const MODEL_OPTIONS: Record<ProviderKey, { label: string, value: string, 
     artificialanalysis: [
         { label: "AA Endpoint", value: "endpoint" },
         { label: "Custom…", value: "__custom__" }
+    ],
+    ollama: [
+        { label: "llama3", value: "llama3" },
+        { label: "mistral", value: "mistral" },
+        { label: "Custom…", value: "__custom__" }
     ]
 };

@@ -1,5 +1,5 @@
 import React, { useContext, useState } from 'react';
-import { X, Settings, Database, Shield, Zap, Palette, Download } from 'lucide-react';
+import { X, Settings, Database, Shield, Zap, Palette, Info } from 'lucide-react';
 import ThemeContext from '../context/ThemeContext';
 import { useSettings } from '../context/SettingsContext';
 import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
@@ -11,7 +11,6 @@ import { ValidationSection } from './settings/ValidationSection';
 import { DisplaySection } from './settings/DisplaySection';
 import { SecuritySection } from './settings/SecuritySection';
 import { SystemSection } from './settings/SystemSection';
-
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -29,9 +28,9 @@ export function SettingsModal({ isOpen, onClose, onSync, addConsoleLog }: Settin
 
   if (!isOpen) return null;
 
-  const bgModal = 'border-zinc-800 bg-black';
-  const bgTab = 'bg-zinc-900/40 border-zinc-800';
-  const bgActiveTab = 'bg-zinc-800 border-zinc-700';
+  const bgModal = 'border-border';
+  const bgTab = 'bg-transparent border-transparent text-text-secondary';
+  const bgActiveTab = 'bg-card border-border text-text';
 
   const tabs = [
     { id: 'data-sources', label: 'Data Sources', icon: Database },
@@ -63,10 +62,13 @@ export function SettingsModal({ isOpen, onClose, onSync, addConsoleLog }: Settin
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-2 sm:p-4" onClick={onClose}>
-      <div className={`w-full max-w-5xl max-h-[90vh] overflow-hidden rounded-2xl border ${bgModal}`} onClick={(e) => e.stopPropagation()}>
+      <div
+        className={`settings-modal-container w-full max-w-5xl max-h-[90vh] overflow-hidden rounded-2xl border ${bgModal} bg-bg`}
+        onClick={(e) => e.stopPropagation()}
+      >
 
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-zinc-300 dark:border-zinc-800">
+        <div className="settings-modal-header flex items-center justify-between p-4 border-b border-border">
           <div className="flex items-center gap-2">
             <Settings size={20} />
             <h2 className="text-lg font-semibold">Settings</h2>
@@ -81,7 +83,7 @@ export function SettingsModal({ isOpen, onClose, onSync, addConsoleLog }: Settin
 
         <div className="flex h-[calc(90vh-80px)]">
           {/* Sidebar */}
-          <div className="w-64 border-r border-zinc-300 dark:border-zinc-800 p-4 overflow-y-auto">
+          <div className="settings-modal-sidebar w-64 border-r border-border p-4 overflow-y-auto">
             <nav className="space-y-1">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
@@ -91,8 +93,8 @@ export function SettingsModal({ isOpen, onClose, onSync, addConsoleLog }: Settin
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
                     className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isActive
-                        ? `${bgActiveTab} shadow-sm`
-                        : `${bgTab} hover:bg-zinc-100 dark:hover:bg-zinc-800`
+                      ? `${bgActiveTab} shadow-sm`
+                      : `${bgTab} hover:bg-card`
                       }`}
                   >
                     <Icon size={16} className={isActive ? 'text-accent' : 'text-zinc-500'} />

@@ -245,21 +245,17 @@ Return ONLY a JSON array of model objects:
     setTimeout(() => setSettingsSaved(false), 2000);
   };
 
-  // Styling - forced dark mode with visible borders
-  const bgInput = "border border-zinc-700 bg-zinc-900/60";
-  const btnPrimary = theme === "dark"
-    ? "px-4 py-2 bg-accent hover:bg-accent-dark text-white rounded-lg"
-    : "px-4 py-2 bg-accent hover:bg-accent-dark text-white rounded-lg";
-  const btnSecondary = theme === "dark"
-    ? "px-4 py-2 border border-zinc-700 rounded-lg hover:bg-accent text-white"
-    : "px-4 py-2 border border-gray-200 rounded-lg hover:bg-accent text-white";
+  // Styling - semantic classes
+  const bgInput = "border border-border bg-input text-text";
+  const btnPrimary = "px-4 py-2 bg-accent hover:bg-accent-dark hover:text-white rounded-lg transition-colors";
+  const btnSecondary = "px-4 py-2 border border-border rounded-lg bg-card text-text hover:bg-accent hover:text-white transition-colors";
 
   // Don't render if the modal is not open
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-2 sm:p-4" onClick={onClose}>
-      <div className="w-full max-w-3xl max-h-[85vh] overflow-y-auto rounded-2xl border p-4 border-zinc-800 bg-black" onClick={(e) => e.stopPropagation()}>
+      <div className="w-full max-w-3xl max-h-[85vh] overflow-y-auto rounded-2xl border p-4 border-border bg-bg text-text" onClick={(e) => e.stopPropagation()}>
         <div className="mb-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Wrench size={18} />
@@ -274,7 +270,7 @@ Return ONLY a JSON array of model objects:
         </div>
         <div className="space-y-4">
           {/* 1. SYSTEM HEALTH */}
-          <div className={`rounded-xl border p-4 border-zinc-800 bg-black`}>
+          <div className="rounded-xl border p-4 border-border bg-card">
             <div className="mb-3 flex items-center justify-between">
               <h4 className="font-medium flex items-center gap-2">
                 <Zap size={18} className="text-green-500" />
@@ -869,7 +865,7 @@ Return ONLY a JSON array of model objects:
           {message && (
             <div className={`mt-4 p-3 rounded-lg flex items-center gap-2 ${status === 'success' ? 'text-green-700 dark:bg-green-900/20 dark:text-green-400' :
               status === 'error' ? 'text-red-700 dark:bg-red-900/20 dark:text-red-400' :
-                'text-orange-700 dark:bg-orange-900/20 dark:text-orange-400'
+                'text-violet-700 dark:bg-violet-900/20 dark:text-violet-400'
               }`}>
               {status === 'success' ? <Check size={18} /> :
                 status === 'error' ? <ServerCrash size={18} /> :

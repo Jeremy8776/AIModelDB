@@ -76,7 +76,8 @@ function AIModelDBProContent() {
     validateEntireDatabase,
     isLoading,
     loadingProgress,
-    validationProgress
+    validationProgress,
+    setLastMergeStats
   } = useModels();
 
   // Filtering and pagination
@@ -173,7 +174,8 @@ function AIModelDBProContent() {
     const updated = lastMergeStats.updated || 0;
     const found = syncState.syncSummary?.found ?? (added + updated);
     const flagged = syncState.syncSummary?.flagged ?? 0;
-    modalState.setImportToast({ found, added, updated, flagged });
+    const duplicates = syncState.syncSummary?.duplicates ?? 0;
+    modalState.setImportToast({ found, added, updated, flagged, duplicates });
     syncState.setSyncSummary(null);
     if (updated > 0) {
       consoleLogging.addConsoleLog(`Update complete: ${updated} models updated`);
@@ -186,12 +188,12 @@ function AIModelDBProContent() {
   async function syncAll(showSpinner = true) {
     try {
       if (showSpinner) syncState.setIsSyncing(true);
+      setLastMergeStats(null);
 
       const result = await syncAllSources(
         {
           dataSources: settings.dataSources || {},
           artificialAnalysisApiKey: settings.artificialAnalysisApiKey,
-          roboflowApiKey: (settings as any).roboflowApiKey,
           enableNSFWFiltering: settings.enableNSFWFiltering,
           logNSFWAttempts: settings.logNSFWAttempts,
           apiConfig: settings.apiConfig,
@@ -207,7 +209,9 @@ function AIModelDBProContent() {
         }
       );
 
-      syncState.setSyncSummary({ found: result.complete.length, flagged: result.flagged.length });
+      const uniqueCount = dedupe(result.complete).length;
+      const dups = Math.max(0, result.complete.length - uniqueCount);
+      syncState.setSyncSummary({ found: result.complete.length, flagged: result.flagged.length, duplicates: dups });
       mergeInModels(result.complete);
       syncState.setLastSync(new Date().toISOString());
       setPage(1);
@@ -257,12 +261,12 @@ function AIModelDBProContent() {
     }
     if (options?.systemPrompt && options?.apiConfig) {
       syncState.setIsSyncing(true);
+      setLastMergeStats(null);
       try {
         const result = await syncWithLiveOptions(
           {
             dataSources: settings.dataSources || {},
             artificialAnalysisApiKey: settings.artificialAnalysisApiKey,
-            roboflowApiKey: (settings as any).roboflowApiKey,
             enableNSFWFiltering: settings.enableNSFWFiltering,
             logNSFWAttempts: settings.logNSFWAttempts,
             apiConfig: options.apiConfig,
@@ -277,6 +281,9 @@ function AIModelDBProContent() {
           }
         );
 
+        const uniqueCount = dedupe(result.complete).length;
+        const dups = Math.max(0, result.complete.length - uniqueCount);
+        syncState.setSyncSummary({ found: result.complete.length, flagged: result.flagged.length, duplicates: dups });
         mergeInModels(result.complete);
         syncState.setLastSync(new Date().toISOString());
         setPage(1);
@@ -310,21 +317,15 @@ function AIModelDBProContent() {
   }
 
   /**
-   * Syncs with API key validation
+   * Syncs models - shows wizard if DB is empty, otherwise just syncs
    */
   async function handleSyncWithApiCheck() {
-    const hasKeys = await hasApiKeys();
-    if (!hasKeys) {
-      modalState.setConfirmationToast({
-        title: 'API Keys Required',
-        message: 'API keys are not set up. Please go to settings and add your API keys before syncing.',
-        type: 'alert',
-        confirmText: 'Open Settings',
-        onConfirm: () => modalState.setShowSync(true)
-      });
-      return;
+    if (models.length === 0) {
+      // Show onboarding wizard for empty database
+      modalState.setShowOnboarding(true);
+    } else {
+      await syncAll(true);
     }
-    await syncAll(true);
   }
 
   /**

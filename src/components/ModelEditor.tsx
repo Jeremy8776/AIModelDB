@@ -114,11 +114,7 @@ export function ModelEditor({ model, onSave, onClose, isOpen }: ModelEditorProps
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
       <div
-        className={`w-full max-w-3xl max-h-[85vh] overflow-y-auto rounded-2xl border p-4 ${theme === "dark" ? "border-zinc-800" : "border-zinc-200"}`}
-        style={{
-          backgroundColor: theme === "dark" ? "#09090b" : "#ffffff",
-          color: theme === "dark" ? "#fafafa" : "#000000"
-        }}
+        className="w-full max-w-3xl max-h-[85vh] overflow-y-auto rounded-2xl border p-4 border-border bg-bg text-text"
       >
         <div className="p-6">
           <h2 className="text-xl font-semibold mb-4">Edit Model: {model?.name}</h2>
@@ -133,17 +129,16 @@ export function ModelEditor({ model, onSave, onClose, isOpen }: ModelEditorProps
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Basic Information */}
               <div className="space-y-3 md:col-span-2">
-                <h3 className="font-medium text-lg border-b pb-1 dark:border-zinc-700">Basic Information</h3>
+                <h3 className="font-medium text-lg border-b pb-1 border-border">Basic Information</h3>
 
                 <div className="flex flex-col">
-                  <label className="text-sm text-zinc-600 dark:text-zinc-400">Name</label>
+                  <label className="text-sm text-text-secondary">Name</label>
                   <input
                     type="text"
                     name="name"
                     value={editedModel.name || ''}
                     onChange={handleChange}
-                    style={inputStyle}
-                    className={`w-full rounded-lg border px-2 py-1.5 text-sm ${theme === "dark" ? "border-zinc-800 bg-zinc-900/60" : "border-zinc-300 bg-white"}`}
+                    className="w-full rounded-lg border px-2 py-1.5 text-sm border-border bg-input text-text"
                   />
                 </div>
 
@@ -154,19 +149,19 @@ export function ModelEditor({ model, onSave, onClose, isOpen }: ModelEditorProps
                     name="provider"
                     value={editedModel.provider || ''}
                     onChange={handleChange}
-                    style={inputStyle}
-                    className={`w-full rounded-lg border px-2 py-1.5 text-sm ${theme === "dark" ? "border-zinc-800 bg-zinc-900/60" : "border-zinc-300 bg-white"}`}
+
+                    className="w-full rounded-lg border px-2 py-1.5 text-sm border-border bg-input text-text"
                   />
                 </div>
 
                 <div className="flex flex-col">
-                  <label className="text-sm text-zinc-600 dark:text-zinc-400">Domain</label>
+                  <label className="text-sm text-text-secondary">Domain</label>
                   <select
                     name="domain"
                     value={editedModel.domain || ''}
                     onChange={handleChange}
-                    style={inputStyle}
-                    className={`w-full rounded-lg border px-2 py-1.5 text-sm ${theme === "dark" ? "border-zinc-800 bg-zinc-900/60" : "border-zinc-300 bg-white"}`}
+
+                    className="w-full rounded-lg border px-2 py-1.5 text-sm border-border bg-input text-text"
                   >
                     <option value="" disabled>Select domain</option>
                     {domains.map(domain => (
@@ -176,37 +171,37 @@ export function ModelEditor({ model, onSave, onClose, isOpen }: ModelEditorProps
                 </div>
 
                 <div className="flex flex-col">
-                  <label className="text-sm text-zinc-600 dark:text-zinc-400">Parameters</label>
+                  <label className="text-sm text-text-secondary">Parameters</label>
                   <input
                     type="text"
                     name="parameters"
                     value={editedModel.parameters || ''}
                     onChange={handleChange}
-                    className={`w-full rounded-lg border px-2 py-1.5 text-sm ${theme === "dark" ? "border-zinc-800 bg-zinc-900/60" : "border-zinc-300 bg-white"}`}
+                    className="w-full rounded-lg border px-2 py-1.5 text-sm border-border bg-input text-text"
                     placeholder="e.g., 7B, 13B, etc."
                   />
                 </div>
 
                 <div className="flex flex-col">
-                  <label className="text-sm text-zinc-600 dark:text-zinc-400">Context Window</label>
+                  <label className="text-sm text-text-secondary">Context Window</label>
                   <input
                     type="text"
                     name="context_window"
                     value={editedModel.context_window || ''}
                     onChange={handleChange}
-                    className={`w-full rounded-lg border px-2 py-1.5 text-sm ${theme === "dark" ? "border-zinc-800 bg-zinc-900/60" : "border-zinc-300 bg-white"}`}
+                    className="w-full rounded-lg border px-2 py-1.5 text-sm border-border bg-input text-text"
                     placeholder="e.g., 8K, 32K, etc."
                   />
                 </div>
 
                 <div className="flex flex-col">
-                  <label className="text-sm text-zinc-600 dark:text-zinc-400">Tags (comma separated)</label>
+                  <label className="text-sm text-text-secondary">Tags (comma separated)</label>
                   <input
                     type="text"
                     name="tags"
                     value={editedModel.tags?.join(', ') || ''}
                     onChange={handleTagsChange}
-                    className={`w-full rounded-lg border px-2 py-1.5 text-sm ${theme === "dark" ? "border-zinc-800 bg-zinc-900/60" : "border-zinc-300 bg-white"}`}
+                    className="w-full rounded-lg border px-2 py-1.5 text-sm border-border bg-input text-text"
                     placeholder="tag1, tag2, tag3..."
                   />
                 </div>
@@ -214,27 +209,27 @@ export function ModelEditor({ model, onSave, onClose, isOpen }: ModelEditorProps
 
               {/* License Information */}
               <div className="space-y-3 md:col-span-2">
-                <h3 className="font-medium text-lg border-b pb-1 dark:border-zinc-700">License Information</h3>
+                <h3 className="font-medium text-lg border-b pb-1 border-border">License Information</h3>
 
                 <div className="flex flex-col">
-                  <label className="text-sm text-zinc-600 dark:text-zinc-400">License Name</label>
+                  <label className="text-sm text-text-secondary">License Name</label>
                   <input
                     type="text"
                     name="license.name"
                     value={editedModel.license?.name || ''}
                     onChange={handleChange}
-                    className={`w-full rounded-lg border px-2 py-1.5 text-sm ${theme === "dark" ? "border-zinc-800 bg-zinc-900/60" : "border-zinc-300 bg-white"}`}
+                    className="w-full rounded-lg border px-2 py-1.5 text-sm border-border bg-input text-text"
                     placeholder="e.g., MIT, Apache-2.0, etc."
                   />
                 </div>
 
                 <div className="flex flex-col">
-                  <label className="text-sm text-zinc-600 dark:text-zinc-400">License Type</label>
+                  <label className="text-sm text-text-secondary">License Type</label>
                   <select
                     name="license.type"
                     value={editedModel.license?.type || ''}
                     onChange={handleChange}
-                    className={`w-full rounded-lg border px-2 py-1.5 text-sm ${theme === "dark" ? "border-zinc-800 bg-zinc-900/60" : "border-zinc-300 bg-white"}`}
+                    className="w-full rounded-lg border px-2 py-1.5 text-sm border-border bg-input text-text"
                   >
                     <option value="" disabled>Select type</option>
                     <option value="OSI">Open Source (OSI)</option>
@@ -298,62 +293,62 @@ export function ModelEditor({ model, onSave, onClose, isOpen }: ModelEditorProps
 
               {/* URL and Date Information */}
               <div className="space-y-3 md:col-span-2">
-                <h3 className="font-medium text-lg border-b pb-1 dark:border-zinc-700">Links & Dates</h3>
+                <h3 className="font-medium text-lg border-b pb-1 border-border">Links & Dates</h3>
 
                 <div className="flex flex-col">
-                  <label className="text-sm text-zinc-600 dark:text-zinc-400">Model URL</label>
+                  <label className="text-sm text-text-secondary">Model URL</label>
                   <input
                     type="text"
                     name="url"
                     value={editedModel.url || ''}
                     onChange={handleChange}
-                    className={`w-full rounded-lg border px-2 py-1.5 text-sm ${theme === "dark" ? "border-zinc-800 bg-zinc-900/60" : "border-zinc-300 bg-white"}`}
+                    className="w-full rounded-lg border px-2 py-1.5 text-sm border-border bg-input text-text"
                     placeholder="https://..."
                   />
                 </div>
 
                 <div className="flex flex-col">
-                  <label className="text-sm text-zinc-600 dark:text-zinc-400">Repository URL</label>
+                  <label className="text-sm text-text-secondary">Repository URL</label>
                   <input
                     type="text"
                     name="repo"
                     value={editedModel.repo || ''}
                     onChange={handleChange}
-                    className={`w-full rounded-lg border px-2 py-1.5 text-sm ${theme === "dark" ? "border-zinc-800 bg-zinc-900/60" : "border-zinc-300 bg-white"}`}
+                    className="w-full rounded-lg border px-2 py-1.5 text-sm border-border bg-input text-text"
                     placeholder="https://github.com/..."
                   />
                 </div>
 
                 <div className="flex flex-col">
-                  <label className="text-sm text-zinc-600 dark:text-zinc-400">Release Date</label>
+                  <label className="text-sm text-text-secondary">Release Date</label>
                   <input
                     type="date"
                     name="release_date"
                     value={editedModel.release_date ? new Date(editedModel.release_date).toISOString().split('T')[0] : ''}
                     onChange={handleChange}
-                    className={`w-full rounded-lg border px-2 py-1.5 text-sm ${theme === "dark" ? "border-zinc-800 bg-zinc-900/60" : "border-zinc-300 bg-white"}`}
+                    className="w-full rounded-lg border px-2 py-1.5 text-sm border-border bg-input text-text"
                   />
                 </div>
 
                 <div className="flex flex-col">
-                  <label className="text-sm text-zinc-600 dark:text-zinc-400">Updated At</label>
+                  <label className="text-sm text-text-secondary">Updated At</label>
                   <input
                     type="date"
                     name="updated_at"
                     value={editedModel.updated_at ? new Date(editedModel.updated_at).toISOString().split('T')[0] : ''}
                     onChange={handleChange}
-                    className={`w-full rounded-lg border px-2 py-1.5 text-sm ${theme === "dark" ? "border-zinc-800 bg-zinc-900/60" : "border-zinc-300 bg-white"}`}
+                    className="w-full rounded-lg border px-2 py-1.5 text-sm border-border bg-input text-text"
                   />
                 </div>
 
                 <div className="flex flex-col">
-                  <label className="text-sm text-zinc-600 dark:text-zinc-400">Downloads (approximate)</label>
+                  <label className="text-sm text-text-secondary">Downloads (approximate)</label>
                   <input
                     type="number"
                     name="downloads"
                     value={editedModel.downloads || ''}
                     onChange={handleChange}
-                    className={`w-full rounded-lg border px-2 py-1.5 text-sm ${theme === "dark" ? "border-zinc-800 bg-zinc-900/60" : "border-zinc-300 bg-white"}`}
+                    className="w-full rounded-lg border px-2 py-1.5 text-sm border-border bg-input text-text"
                   />
                 </div>
               </div>
@@ -363,7 +358,7 @@ export function ModelEditor({ model, onSave, onClose, isOpen }: ModelEditorProps
               <button
                 type="button"
                 onClick={onClose}
-                className={`px-4 py-2 rounded-lg border transition-colors ${theme === "dark" ? "border-zinc-700 text-white bg-black hover:bg-accent" : "border-zinc-300 text-black bg-white hover:bg-accent"}`}
+                className="px-4 py-2 rounded-lg border transition-colors border-border bg-card text-text hover:bg-accent hover:text-white"
               >
                 Cancel
               </button>

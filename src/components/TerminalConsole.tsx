@@ -11,7 +11,7 @@ type ParsedKind = 'REQ' | 'RES' | 'ERR' | 'APP' | 'RAW';
 type ParsedEntry = {
   id: string;
   kind: ParsedKind;
-  level?: 'LOG'|'INFO'|'WARN'|'ERROR'|'WEBHOOK';
+  level?: 'LOG' | 'INFO' | 'WARN' | 'ERROR' | 'WEBHOOK';
   url?: string;
   method?: string;
   status?: number;
@@ -32,7 +32,7 @@ function parseLogLine(line: string): ParsedEntry {
     const headersRaw = headersIdx >= 0 ? line.slice(headersIdx + 8, bodyIdx >= 0 ? bodyIdx : undefined).trim() : undefined;
     const bodyRaw = bodyIdx >= 0 ? line.slice(bodyIdx + 5).trim() : undefined;
     let headers: any = undefined;
-    try { headers = headersRaw ? JSON.parse(headersRaw) : undefined; } catch {}
+    try { headers = headersRaw ? JSON.parse(headersRaw) : undefined; } catch { }
     return {
       id,
       kind: 'REQ',
@@ -99,7 +99,7 @@ function tryPrettyJson(text?: string): string | undefined {
       try {
         const json = JSON.parse(trimmed.slice(start, end + 1));
         return JSON.stringify(json, null, 2);
-      } catch {}
+      } catch { }
     }
   }
   return undefined;
@@ -148,13 +148,13 @@ export const TerminalConsole: React.FC<TerminalConsoleProps> = ({ logs, onClose,
   return (
     <div className="fixed bottom-4 right-4 z-40 w-[720px] max-h-[75vh] bg-black text-zinc-100 border border-zinc-800 rounded-xl shadow-2xl flex flex-col">
       <div className="flex items-center justify-between px-4 py-2 border-b border-zinc-800 bg-black rounded-t-xl">
-        <span className="font-bold text-orange-400 flex items-center gap-2">
+        <span className="font-bold text-accent flex items-center gap-2">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><text x="3" y="17" fontSize="16" fontFamily="monospace" fill="currentColor">&gt;_</text></svg>
           Console
         </span>
         <div className="flex items-center gap-2">
           <button className="text-xs px-2 py-1 bg-zinc-800 rounded hover:bg-zinc-700" onClick={onClear}>Clear</button>
-          <button className="text-xs px-2 py-1 bg-zinc-800 rounded hover:bg-orange-600" onClick={onClose}>Close</button>
+          <button className="text-xs px-2 py-1 bg-zinc-800 rounded hover:bg-accent" onClick={onClose}>Close</button>
         </div>
       </div>
       <div ref={containerRef} className="flex-1 overflow-y-auto p-3 font-mono text-[11px]">

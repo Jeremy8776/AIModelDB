@@ -167,16 +167,16 @@ export function SimpleValidationModal({
     }
   };
 
-  const bgModal = 'bg-black border-zinc-800';
-  const textPrimary = theme === 'dark' ? 'text-zinc-100' : 'text-zinc-900';
-  const textSecondary = theme === 'dark' ? 'text-zinc-400' : 'text-zinc-600';
-  const bgInput = 'border border-zinc-700 bg-zinc-900/60';
+  const bgModal = 'bg-bg border-border text-text';
+  const textPrimary = 'text-text';
+  const textSecondary = 'text-text-secondary';
+  const bgInput = 'border border-border bg-input text-text';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div className={`w-full max-w-md rounded-2xl border ${bgModal} shadow-2xl`}>
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-zinc-300 dark:border-zinc-700">
+        <div className="flex items-center justify-between p-6 border-b border-border">
           <div className="flex items-center gap-3">
             <CheckCircle className="size-6 text-violet-500" />
             <h2 className={`text-lg font-semibold ${textPrimary}`}>
@@ -198,7 +198,7 @@ export function SimpleValidationModal({
           </div>
 
           {/* Batch controls (auto-disabled in single mode) */}
-          <div className={`rounded-lg border p-3 ${'border-zinc-800 bg-black'}`}>
+          <div className="rounded-lg border p-3 border-border bg-card">
             <div className="text-xs font-medium mb-2">Batch settings</div>
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -257,7 +257,7 @@ export function SimpleValidationModal({
           {/* Removed extra model-count hint to avoid duplication */}
 
           {incompleteCount > 0 && (
-            <div className="rounded-lg border p-3 ${theme === 'dark' ? 'border-zinc-800 bg-zinc-900/40' : 'border-zinc-200 bg-zinc-50'}">
+            <div className="rounded-lg border p-3 border-border bg-card">
               <div className="flex items-start gap-3">
                 <AlertTriangle className="size-5 text-violet-500 mt-0.5" />
                 <div className="flex-1 text-sm">
@@ -302,8 +302,8 @@ export function SimpleValidationModal({
 
           {result && (
             <div className={`rounded-lg border p-3 ${result.success
-                ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800/40'
-                : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800/40'
+              ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800/40'
+              : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800/40'
               }`}>
               <div className="flex items-center gap-2">
                 {result.success ? (
@@ -312,8 +312,8 @@ export function SimpleValidationModal({
                   <AlertTriangle className="size-4 text-red-500" />
                 )}
                 <span className={`text-sm font-medium ${result.success
-                    ? 'text-green-800 dark:text-green-400'
-                    : 'text-red-800 dark:text-red-400'
+                  ? 'text-green-800 dark:text-green-400'
+                  : 'text-red-800 dark:text-red-400'
                   }`}>
                   {result.message}
                 </span>
@@ -340,8 +340,8 @@ export function SimpleValidationModal({
             <button
               onClick={onClose}
               className={`px-3 py-1.5 rounded-lg border transition-colors ${theme === 'dark'
-                  ? 'border-zinc-700 text-white bg-black hover:bg-zinc-800'
-                  : 'border-zinc-300 text-black bg-white hover:bg-gray-50'
+                ? 'border-zinc-700 text-white bg-black hover:bg-zinc-800'
+                : 'border-zinc-300 text-black bg-white hover:bg-gray-50'
                 } text-sm`}
             >
               Close
@@ -365,7 +365,7 @@ export function SimpleValidationModal({
                 }
               }}
               disabled={isValidating || !hasApiProvider}
-              className="px-4 py-2 rounded-lg bg-violet-500 text-white hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2 text-sm"
+              className="px-4 py-2 rounded-lg bg-violet-500 text-white hover:bg-violet-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2 text-sm"
             >
               {isValidating && (
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>

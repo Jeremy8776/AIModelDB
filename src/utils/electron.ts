@@ -1,29 +1,31 @@
 // Type declarations for Electron API exposed via preload script
-// Extends the existing interface from fetch-wrapper.ts
 
-export interface ElectronAPIExtended {
-    // Fetch wrapper
-    fetchExternal: (url: string, options?: RequestInit) => Promise<{
-        ok: boolean;
-        status: number;
-        statusText: string;
-        headers: Record<string, string>;
-        body: string;
-    }>;
+export interface UpdateStatus {
+    status: 'checking-for-update' | 'update-available' | 'update-not-available' | 'download-progress' | 'update-downloaded' | 'update-error';
+    version?: string;
+    percent?: number;
+    bytesPerSecond?: number;
+    transferred?: number;
+    total?: number;
+    message?: string;
+}
+
+export interface ElectronAPI {
     // App info
     getAppVersion: () => Promise<string>;
     getPlatform: () => Promise<string>;
     // Open external URLs  
     openExternal: (url: string) => void;
+    // Auto-updater
+    checkForUpdates: () => void;
+    installUpdate: () => void;
+    onUpdateStatus: (callback: (status: UpdateStatus) => void) => void;
+    removeUpdateListener: () => void;
     // Check if running in Electron
     isElectron: boolean;
 }
 
-declare global {
-    interface Window {
-        electronAPI?: ElectronAPIExtended;
-    }
-}
+// Window.electronAPI type is declared in src/types/electron.d.ts
 
 /**
  * Check if running inside Electron
@@ -64,4 +66,40 @@ export async function getPlatform(): Promise<string> {
         return window.electronAPI.getPlatform();
     }
     return 'web';
+}
+
+/**
+ * Check for app updates (Electron only)
+ */
+export function checkForUpdates(): void {
+    if (isElectron() && window.electronAPI?.checkForUpdates) {
+        window.electronAPI.checkForUpdates();
+    }
+}
+
+/**
+ * Install downloaded update and restart (Electron only)
+ */
+export function installUpdate(): void {
+    if (isElectron() && window.electronAPI?.installUpdate) {
+        window.electronAPI.installUpdate();
+    }
+}
+
+/**
+ * Subscribe to update status changes (Electron only)
+ */
+export function onUpdateStatus(callback: (status: UpdateStatus) => void): void {
+    if (isElectron() && window.electronAPI?.onUpdateStatus) {
+        window.electronAPI.onUpdateStatus(callback);
+    }
+}
+
+/**
+ * Remove update status listener (Electron only)
+ */
+export function removeUpdateListener(): void {
+    if (isElectron() && window.electronAPI?.removeUpdateListener) {
+        window.electronAPI.removeUpdateListener();
+    }
 }

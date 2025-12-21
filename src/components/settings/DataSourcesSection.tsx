@@ -14,12 +14,15 @@ export function DataSourcesSection({ onSync, addConsoleLog }: DataSourcesSection
   const { theme } = useContext(ThemeContext);
   const { settings, saveSettings } = useSettings();
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'done' | 'error'>('idle');
+  const [savedKeys, setSavedKeys] = useState<Record<string, boolean>>({});
+  const [pendingKeys, setPendingKeys] = useState<Record<string, string>>({});
 
-  const bgCard = 'border-zinc-800 bg-black';
-  const bgInput = 'border-zinc-700 bg-zinc-900/60';
+  const bgCard = 'border-border bg-card text-text';
+  const bgInput = 'border-border bg-input text-text';
 
   const dataSources = [
     { key: 'huggingface', label: 'HuggingFace', description: 'Popular open-source models' },
+    { key: 'github', label: 'GitHub', description: 'AI repositories and projects' },
     { key: 'artificialanalysis', label: 'Artificial Analysis', description: 'Model performance benchmarks' },
     { key: 'civitai', label: 'Civitai', description: 'Community AI models' },
     { key: 'openmodeldb', label: 'OpenModelDB', description: 'Open model database' },
@@ -65,11 +68,12 @@ export function DataSourcesSection({ onSync, addConsoleLog }: DataSourcesSection
             </p>
           </div>
           <button
+            id="sync-now-btn"
             onClick={handleSync}
             disabled={syncStatus === 'syncing'}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${syncStatus === 'syncing'
               ? 'opacity-60 cursor-not-allowed'
-              : 'bg-accent hover:bg-accent-dark text-white'
+              : 'bg-accent hover:bg-accent-dark hover:text-white'
               }`}
           >
             {syncStatus === 'syncing' ? (
@@ -98,97 +102,102 @@ export function DataSourcesSection({ onSync, addConsoleLog }: DataSourcesSection
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {dataSources.map((source) => {
             const isEnabled = settings.dataSources?.[source.key as keyof typeof settings.dataSources] ?? false;
+            const needsApiKey = source.key === 'artificialanalysis' || source.key === 'github';
+            const apiKeyValue = source.key === 'artificialanalysis'
+              ? settings.artificialAnalysisApiKey
+              : source.key === 'github'
+                ? settings.gitHubToken
+                : '';
+            const apiKeyPlaceholder = source.key === 'artificialanalysis' ? 'aa_...' : 'ghp_...';
+            const apiKeyLabel = source.key === 'artificialanalysis' ? 'API Key' : 'Token (optional)';
+
             return (
-              <button
+              <div
                 key={source.key}
-                onClick={() => saveSettings({
-                  dataSources: {
-                    ...settings.dataSources,
-                    [source.key]: !isEnabled
-                  }
-                })}
                 className={`p-4 rounded-lg border-2 text-left transition-all duration-200 ${isEnabled
-                  ? 'border-accent bg-violet-50 dark:bg-violet-950/20'
-                  : 'border-zinc-300 dark:border-zinc-700 hover:border-zinc-400 dark:hover:border-zinc-600'
+                  ? 'border-accent bg-accent/10'
+                  : 'border-zinc-700 hover:border-zinc-500 bg-zinc-900/50'
                   }`}
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex-1 min-w-0">
-                    <div className={`font-medium text-sm ${isEnabled ? 'text-accent' : ''}`}>
-                      {source.label}
+                <button
+                  onClick={() => saveSettings({
+                    dataSources: {
+                      ...settings.dataSources,
+                      [source.key]: !isEnabled
+                    }
+                  })}
+                  className="w-full text-left group"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1 min-w-0">
+                      <div className={`font-semibold text-sm ${isEnabled ? 'text-white' : 'text-zinc-200'} transition-colors`}>
+                        {source.label}
+                      </div>
+                      <div className={`text-xs mt-1 ${isEnabled ? 'text-zinc-300' : 'text-zinc-500'} transition-colors`}>
+                        {source.description}
+                      </div>
                     </div>
-                    <div className="text-xs text-zinc-700 dark:text-zinc-400 mt-1">
-                      {source.description}
+                    <div className={`ml-3 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${isEnabled
+                      ? 'bg-accent border-accent'
+                      : 'border-zinc-600 group-hover:border-zinc-500'
+                      }`}>
+                      {isEnabled && <Check size={14} strokeWidth={3} className="text-white" />}
                     </div>
                   </div>
-                  <div className={`ml-3 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${isEnabled
-                    ? 'border-accent bg-accent'
-                    : 'border-zinc-400 dark:border-zinc-600'
-                    }`}>
-                    {isEnabled && (
-                      <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                    )}
+                </button>
+
+                {/* Inline API Key Input - shown when enabled and needs API key */}
+                {isEnabled && needsApiKey && (
+                  <div className="mt-3 pt-3 border-t border-zinc-700">
+                    <label className="text-xs text-zinc-400 block mb-1">{apiKeyLabel}</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="password"
+                        value={pendingKeys[source.key] ?? apiKeyValue ?? ''}
+                        onChange={(e) => {
+                          e.stopPropagation();
+                          setPendingKeys(prev => ({ ...prev, [source.key]: e.target.value }));
+                          setSavedKeys(prev => ({ ...prev, [source.key]: false }));
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                        placeholder={apiKeyPlaceholder}
+                        className={`flex-1 rounded border ${bgInput} px-2 py-1.5 text-xs font-mono`}
+                      />
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const value = pendingKeys[source.key] ?? apiKeyValue ?? '';
+                          if (source.key === 'artificialanalysis') {
+                            saveSettings({ artificialAnalysisApiKey: value });
+                          } else if (source.key === 'github') {
+                            saveSettings({ gitHubToken: value });
+                          }
+                          setSavedKeys(prev => ({ ...prev, [source.key]: true }));
+                          setTimeout(() => {
+                            setSavedKeys(prev => ({ ...prev, [source.key]: false }));
+                          }, 2000);
+                        }}
+                        className={`px-3 py-1.5 rounded text-xs font-medium transition-all ${savedKeys[source.key]
+                          ? 'bg-green-600 text-white'
+                          : 'bg-accent hover:bg-accent-dark text-white'
+                          }`}
+                      >
+                        {savedKeys[source.key] ? (
+                          <span className="flex items-center gap-1">
+                            <Check size={12} />
+                            Saved
+                          </span>
+                        ) : (
+                          'Save'
+                        )}
+                      </button>
+                    </div>
                   </div>
-                </div>
-              </button>
+                )}
+              </div>
             );
           })}
         </div>
-      </div>
-
-      {/* Artificial Analysis API Key */}
-      {settings.dataSources?.artificialanalysis && (
-        <div className={`rounded-xl border p-4 ${bgCard}`}>
-          <h4 className="font-medium mb-2">Artificial Analysis API Key</h4>
-          <p className="text-sm text-zinc-700 dark:text-zinc-400 mb-3">
-            Required for accessing model benchmarks and pricing data.
-          </p>
-          <input
-            type="password"
-            value={settings.artificialAnalysisApiKey || ""}
-            onChange={(e) => saveSettings({ artificialAnalysisApiKey: e.target.value })}
-            placeholder="aa_..."
-            className={`w-full rounded-lg border ${bgInput} px-3 py-2 text-sm font-mono`}
-          />
-          <p className="text-xs text-zinc-500 dark:text-zinc-500 mt-2">
-            Get your free API key from{' '}
-            <a
-              href="https://artificialanalysis.ai/documentation"
-              onClick={(e) => handleExternalLink(e, 'https://artificialanalysis.ai/documentation')}
-              className="text-accent hover:underline cursor-pointer"
-            >
-              Artificial Analysis
-            </a>
-          </p>
-        </div>
-      )}
-
-      {/* GitHub Token (Optional) */}
-      <div className={`rounded-xl border p-4 ${bgCard}`}>
-        <h4 className="font-medium mb-2">GitHub Token (Optional)</h4>
-        <p className="text-sm text-zinc-700 dark:text-zinc-400 mb-3">
-          Increases API rate limits for syncing GitHub repositories. Without a token, you're limited to 60 requests/hour.
-        </p>
-        <input
-          type="password"
-          value={settings.gitHubToken || ""}
-          onChange={(e) => saveSettings({ gitHubToken: e.target.value })}
-          placeholder="ghp_..."
-          className={`w-full rounded-lg border ${bgInput} px-3 py-2 text-sm font-mono`}
-        />
-        <p className="text-xs text-zinc-500 dark:text-zinc-500 mt-2">
-          Create a personal access token at{' '}
-          <a
-            href="https://github.com/settings/tokens"
-            onClick={(e) => handleExternalLink(e, 'https://github.com/settings/tokens')}
-            className="text-accent hover:underline cursor-pointer"
-          >
-            GitHub Settings → Developer Settings → Personal Access Tokens
-          </a>
-          . No special permissions needed.
-        </p>
       </div>
 
       {/* Sync Settings */}
@@ -212,17 +221,7 @@ export function DataSourcesSection({ onSync, addConsoleLog }: DataSourcesSection
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium mb-2">Validation Batch Size</label>
-            <input
-              type="number"
-              value={settings.validationBatchSize || 50}
-              onChange={(e) => saveSettings({ validationBatchSize: parseInt(e.target.value) || 50 })}
-              className={`w-full rounded-lg border ${bgInput} px-3 py-2 text-sm`}
-              min="1"
-              max="200"
-            />
-          </div>
+
         </div>
       </div>
     </div>

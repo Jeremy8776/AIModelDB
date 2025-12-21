@@ -1,5 +1,6 @@
-const { app, BrowserWindow, ipcMain, shell } = require('electron');
+const { app, BrowserWindow, ipcMain, shell, dialog, safeStorage } = require('electron');
 const path = require('path');
+const { autoUpdater } = require('electron-updater');
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require('electron-squirrel-startup')) {
@@ -11,24 +12,31 @@ let mainWindow = null;
 
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
 
+// Configure auto-updater
+autoUpdater.autoDownload = false; // Don't download automatically, ask user first
+autoUpdater.autoInstallOnAppQuit = true;
+
+// Logging for auto-updater
+autoUpdater.logger = require('electron').app.isPackaged ? null : console;
+
 function createWindow() {
-    // Create the browser window.
+    // Create the browser window with themed title bar
     mainWindow = new BrowserWindow({
         width: 1400,
         height: 900,
         minWidth: 1000,
         minHeight: 700,
-        title: 'AI Model Live Database – Pro',
-        icon: path.join(__dirname, 'public/favicon.svg'),
-        backgroundColor: '#000000',
+        title: 'AI Model DB Pro',
+        icon: path.join(__dirname, '../public/favicon.svg'),
+        backgroundColor: '#0a0a0b',
         webPreferences: {
             nodeIntegration: false,
             contextIsolation: true,
-            preload: path.join(__dirname, 'electron/preload.js'),
+            preload: path.join(__dirname, 'preload.js'),
         },
-        // Modern frameless window with custom titlebar
-        frame: true,
-        titleBarStyle: 'default',
+        // Use hidden title bar with NO overlay to allow custom controls
+        titleBarStyle: 'hidden',
+        titleBarOverlay: false,
         autoHideMenuBar: true,
     });
 
@@ -40,7 +48,12 @@ function createWindow() {
         mainWindow.webContents.openDevTools();
     } else {
         // In production, load from built files
-        mainWindow.loadFile(path.join(__dirname, 'dist/index.html'));
+        mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
+
+        // Check for updates in production only
+        setTimeout(() => {
+            checkForUpdates();
+        }, 3000); // Wait 3 seconds after startup
     }
 
     // Handle external links - open in default browser
@@ -60,6 +73,105 @@ function createWindow() {
     mainWindow.on('closed', () => {
         mainWindow = null;
     });
+}
+
+// Window Controls IPC
+ipcMain.on('window-minimize', () => {
+    if (mainWindow) mainWindow.minimize();
+});
+
+ipcMain.on('window-maximize', () => {
+    if (mainWindow) {
+        if (mainWindow.isMaximized()) {
+            mainWindow.unmaximize();
+        } else {
+            mainWindow.maximize();
+        }
+    }
+});
+
+ipcMain.on('window-close', () => {
+    if (mainWindow) mainWindow.close();
+});
+
+// Auto-updater functions
+function checkForUpdates() {
+    if (isDev) {
+        console.log('[AutoUpdater] Skipping update check in development mode');
+        return;
+    }
+
+    console.log('[AutoUpdater] Checking for updates...');
+    autoUpdater.checkForUpdates().catch(err => {
+        console.error('[AutoUpdater] Error checking for updates:', err);
+    });
+}
+
+// Auto-updater events
+autoUpdater.on('checking-for-update', () => {
+    console.log('[AutoUpdater] Checking for update...');
+    sendStatusToWindow('checking-for-update');
+});
+
+autoUpdater.on('update-available', (info) => {
+    console.log('[AutoUpdater] Update available:', info.version);
+    sendStatusToWindow('update-available', info);
+
+    // Ask user if they want to download
+    dialog.showMessageBox(mainWindow, {
+        type: 'info',
+        title: 'Update Available',
+        message: `A new version (${info.version}) is available!`,
+        detail: 'Would you like to download and install it now? The app will restart to apply the update.',
+        buttons: ['Download & Install', 'Later'],
+        defaultId: 0,
+        cancelId: 1
+    }).then(({ response }) => {
+        if (response === 0) {
+            autoUpdater.downloadUpdate();
+        }
+    });
+});
+
+autoUpdater.on('update-not-available', (info) => {
+    console.log('[AutoUpdater] Update not available');
+    sendStatusToWindow('update-not-available', info);
+});
+
+autoUpdater.on('download-progress', (progressObj) => {
+    console.log(`[AutoUpdater] Download progress: ${Math.round(progressObj.percent)}%`);
+    sendStatusToWindow('download-progress', progressObj);
+});
+
+autoUpdater.on('update-downloaded', (info) => {
+    console.log('[AutoUpdater] Update downloaded');
+    sendStatusToWindow('update-downloaded', info);
+
+    // Notify user and ask to restart
+    dialog.showMessageBox(mainWindow, {
+        type: 'info',
+        title: 'Update Ready',
+        message: 'Update downloaded!',
+        detail: 'The update has been downloaded. Restart now to apply the update?',
+        buttons: ['Restart Now', 'Later'],
+        defaultId: 0,
+        cancelId: 1
+    }).then(({ response }) => {
+        if (response === 0) {
+            autoUpdater.quitAndInstall();
+        }
+    });
+});
+
+autoUpdater.on('error', (err) => {
+    console.error('[AutoUpdater] Error:', err);
+    sendStatusToWindow('update-error', { message: err.message });
+});
+
+function sendStatusToWindow(status, data = {}) {
+    if (mainWindow && mainWindow.webContents) {
+        mainWindow.webContents.send('update-status', { status, ...data });
+    }
 }
 
 // This method will be called when Electron has finished initialization
@@ -93,4 +205,69 @@ ipcMain.handle('get-platform', () => {
 // Handle opening external URLs
 ipcMain.on('open-external', (event, url) => {
     shell.openExternal(url);
+});
+
+// Handle update check request from renderer
+ipcMain.on('check-for-updates', () => {
+    checkForUpdates();
+});
+
+// Handle install update request
+ipcMain.on('install-update', () => {
+    autoUpdater.quitAndInstall();
+});
+
+// SafeStorage IPC handlers
+ipcMain.handle('encrypt-string', async (event, plainText) => {
+    if (!safeStorage.isEncryptionAvailable()) {
+        console.warn('[SafeStorage] Encryption is not available');
+        return null;
+    }
+    try {
+        const buffer = safeStorage.encryptString(plainText);
+        return buffer.toString('hex');
+    } catch (error) {
+        console.error('[SafeStorage] Encryption failed:', error);
+        throw error;
+    }
+});
+
+ipcMain.handle('decrypt-string', async (event, encryptedHex) => {
+    if (!safeStorage.isEncryptionAvailable()) {
+        console.warn('[SafeStorage] Encryption is not available');
+        return null;
+    }
+    try {
+        const buffer = Buffer.from(encryptedHex, 'hex');
+        const decrypted = safeStorage.decryptString(buffer);
+        return decrypted;
+    } catch (error) {
+        console.error('[SafeStorage] Decryption failed:', error);
+        return null; // Return null on failure (e.g. wrong key, corrupted data)
+    }
+});
+
+// Proxy Request Handler to bypass CORS
+ipcMain.handle('proxy-request', async (event, { url, method = 'GET', headers = {}, body = null }) => {
+    try {
+        const fetchOptions = {
+            method,
+            headers,
+            body: body ? JSON.stringify(body) : undefined
+        };
+
+        console.log(`[Proxy] ${method} ${url}`);
+        const response = await fetch(url, fetchOptions);
+
+        if (!response.ok) {
+            const text = await response.text();
+            throw new Error(`Request failed: ${response.status} ${text}`);
+        }
+
+        const data = await response.json();
+        return { success: true, data };
+    } catch (error) {
+        console.error('[Proxy] Request error:', error);
+        return { success: false, error: error.message };
+    }
 });

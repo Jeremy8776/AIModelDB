@@ -1,27 +1,49 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="AI Model Live Database Pro - A comprehensive database for tracking and managing AI models across multiple providers including Hugging Face, OpenAI, Anthropic, and more." />
-    <meta name="keywords" content="AI, machine learning, models, database, Hugging Face, OpenAI, Anthropic, LLM, deep learning" />
-    <meta name="author" content="AI Model DB Pro" />
-    <meta name="theme-color" content="#000000" />
-    
-    <!-- Open Graph / Social Media -->
-    <meta property="og:type" content="website" />
-    <meta property="og:title" content="AI Model Live Database – Pro" />
-    <meta property="og:description" content="Track, manage, and validate AI models from multiple providers in one comprehensive database." />
-    
-    <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    
-    <title>AI Model Live Database – Pro</title>
-  </head>
 
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description"
+    content="AI Model Live Database Pro - A comprehensive database for tracking and managing AI models across multiple providers including Hugging Face, OpenAI, Anthropic, and more." />
+  <meta name="keywords"
+    content="AI, machine learning, models, database, Hugging Face, OpenAI, Anthropic, LLM, deep learning" />
+  <meta name="author" content="AI Model DB Pro" />
+  <meta name="theme-color" content="#000000" />
+
+  <!-- Open Graph / Social Media -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="AI Model Live Database – Pro" />
+  <meta property="og:description"
+    content="Track, manage, and validate AI models from multiple providers in one comprehensive database." />
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=VT323&family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+
+  <title>AI Model Live Database – Pro</title>
+</head>
+
+<body>
+  <!-- SVG Filters for Themes -->
+  <svg style="position: absolute; width: 0; height: 0; overflow: hidden;" version="1.1"
+    xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <filter id="sketchy-svg">
+        <feTurbulence type="fractalNoise" baseFrequency="0.08" numOctaves="2" result="noise" />
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.5" />
+      </filter>
+    </defs>
+  </svg>
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
 </html>

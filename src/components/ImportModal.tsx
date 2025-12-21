@@ -164,7 +164,7 @@ export function ImportModal({ isOpen, onClose, onImport, addConsoleLog }: Import
   };
 
   // Styling - forced dark mode with visible borders
-  const bgInput = "border border-zinc-700 bg-zinc-900/60";
+  const bgInput = "border border-border bg-input text-text";
   const tabStyle = theme === "dark"
     ? "px-4 py-2 hover:bg-zinc-800 cursor-pointer"
     : "px-4 py-2 hover:bg-gray-100 cursor-pointer";
@@ -172,7 +172,7 @@ export function ImportModal({ isOpen, onClose, onImport, addConsoleLog }: Import
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-2 sm:p-4" onClick={onClose}>
-      <div className={`w-full max-w-3xl max-h-[85vh] overflow-y-auto rounded-2xl border p-4 ${theme === "dark" ? "border-zinc-800 bg-black" : "border-zinc-200 bg-white"}`} onClick={(e) => e.stopPropagation()}>
+      <div className="w-full max-w-3xl max-h-[85vh] overflow-y-auto rounded-2xl border p-4 border-border bg-bg text-text" onClick={(e) => e.stopPropagation()}>
         <div className="mb-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Download size={18} />
@@ -187,7 +187,7 @@ export function ImportModal({ isOpen, onClose, onImport, addConsoleLog }: Import
           </p>
 
           {/* Tab navigation */}
-          <div className="flex border-b mb-4" style={{ borderColor: theme === "dark" ? "#27272a" : "#e4e4e7" }}>
+          <div className="flex border-b mb-4 border-border">
             <button
               className={`${tabStyle} ${activeTab === "file" ? tabActiveStyle : ""} flex items-center gap-1`}
               onClick={() => setActiveTab("file")}
@@ -213,7 +213,7 @@ export function ImportModal({ isOpen, onClose, onImport, addConsoleLog }: Import
 
           {/* File Upload Tab */}
           {activeTab === "file" && (
-            <div className={`rounded-xl border p-4 ${theme === "dark" ? "border-zinc-800 bg-black/40" : "border-zinc-200 bg-zinc-50"}`}>
+            <div className="rounded-xl border p-4 border-border bg-card">
               <div className="flex items-center gap-2 mb-3">
                 <input
                   type="file"
@@ -293,7 +293,7 @@ export function ImportModal({ isOpen, onClose, onImport, addConsoleLog }: Import
 
           {/* URL Tab */}
           {activeTab === "url" && (
-            <div className={`rounded-xl border p-4 ${theme === "dark" ? "border-zinc-800 bg-black/40" : "border-zinc-200 bg-zinc-50"}`}>
+            <div className="rounded-xl border p-4 border-border bg-card">
               <div className="mb-2">
                 <label className="block text-xs mb-1">Enter URL</label>
                 <input
@@ -320,7 +320,7 @@ export function ImportModal({ isOpen, onClose, onImport, addConsoleLog }: Import
 
           {/* Paste Tab */}
           {activeTab === "paste" && (
-            <div className={`rounded-xl border p-4 ${theme === "dark" ? "border-zinc-800 bg-black/40" : "border-zinc-200 bg-zinc-50"}`}>
+            <div className="rounded-xl border p-4 border-border bg-card">
               <div className="mb-3">
                 <label className="block text-xs mb-1">Paste Data</label>
                 <textarea
@@ -352,7 +352,7 @@ export function ImportModal({ isOpen, onClose, onImport, addConsoleLog }: Import
           )}
 
           {preview && (
-            <div className={`rounded-xl border p-4 ${theme === "dark" ? "border-zinc-800 bg-black/40" : "border-zinc-200 bg-zinc-50"}`}>
+            <div className="rounded-xl border p-4 border-border bg-card">
               <h4 className="mb-3 font-medium flex items-center gap-2">
                 <FileText size={18} />
                 Preview ({preview.length} items found)
@@ -381,7 +381,7 @@ export function ImportModal({ isOpen, onClose, onImport, addConsoleLog }: Import
           )}
         </div>
 
-        <div className="border-t pt-4 mt-4 flex justify-between" style={{ borderColor: theme === "dark" ? "#27272a" : "#e4e4e7" }}>
+        <div className="border-t pt-4 mt-4 flex justify-between border-border">
           <div className="text-sm">
             <span className="opacity-70">Supported formats:</span> CSV, TSV, JSON, XLSX, ODS
           </div>

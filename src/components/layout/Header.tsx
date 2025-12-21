@@ -51,27 +51,31 @@ export function Header({
     // Styling based on theme
     const bgHeader = theme === "dark" ? "border-zinc-900/80 bg-black/80" : "border-gray-400 bg-white shadow-sm";
     const bgInput = theme === "dark"
-        ? "border-zinc-700 bg-zinc-900/70 text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-violet-500"
-        : "border-gray-500 bg-white text-black placeholder:text-gray-700 focus:outline-none focus:ring-2 focus:ring-violet-500";
+        ? "border-zinc-700 bg-zinc-900/70 text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus-within:ring-2 focus-within:ring-violet-500 focus-within:border-transparent transition-all"
+        : "border-gray-500 bg-white text-black placeholder:text-gray-700 focus:outline-none focus-within:ring-2 focus-within:ring-violet-500 focus-within:border-transparent transition-all";
 
     return (
-        <header className={`sticky top-0 z-10 ${bgHeader} backdrop-blur border-b`}>
+        <header className={`app-header relative z-10 ${bgHeader} border-b`}>
             <div className="flex w-full items-center justify-between gap-3 px-4 py-3">
-                <div className={`flex w-full max-w-xl items-center gap-2 rounded-2xl ${bgInput} px-3 py-2`}>
-                    <Search className="size-4" />
+                <div className={`flex w-full max-w-xl items-center gap-2 rounded-2xl px-3 py-2 border transition-all ${theme === 'dark'
+                    ? 'bg-zinc-900/70 border-zinc-700 text-zinc-100 focus-within:border-accent focus-within:ring-1 focus-within:ring-accent'
+                    : 'bg-white border-gray-500 text-black focus-within:border-accent focus-within:ring-1 focus-within:ring-accent'
+                    }`}>
+                    <Search className="size-4 opacity-50" />
                     <input
                         ref={searchRef}
                         value={query}
                         onChange={e => onQueryChange(e.target.value)}
                         placeholder="Search models, providers, licenses… (/ to focus)"
-                        className="w-full bg-transparent text-sm outline-none placeholder:opacity-70"
+                        className="w-full h-full bg-transparent text-sm search-input-reset shadow-none appearance-none placeholder:opacity-70"
                     />
                 </div>
                 <div className="flex items-center gap-1 ml-auto">
                     <button
+                        id="header-update-db-btn"
                         onClick={onSync}
                         disabled={isSyncing}
-                        className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold bg-accent hover:bg-accent-dark text-white disabled:opacity-60`}
+                        className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold bg-accent hover:bg-accent-dark hover:text-white disabled:opacity-60`}
                         title="Update Database"
                     >
                         <RefreshCw className={`size-4 ${isSyncing ? 'animate-spin' : ''}`} />

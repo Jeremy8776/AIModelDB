@@ -95,6 +95,7 @@ export function DetailPanel({ model, onClose, onDelete, triggerElement }: Detail
 
   return (
     <div
+      id="model-detail-panel"
       className={`
         overflow-auto rounded-2xl border backdrop-blur-sm scrollbar-thin
         ${theme === 'dark' ? 'border-zinc-800 bg-zinc-950/95' : 'border-zinc-200 bg-white/95'} 

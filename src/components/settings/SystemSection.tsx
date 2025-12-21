@@ -1,13 +1,45 @@
-import React, { useContext, useState } from 'react';
-import { Settings, Zap, Database, RefreshCw, Trash2 } from 'lucide-react';
+import React, { useContext, useState, useEffect } from 'react';
+import { Settings, Zap, Database, RefreshCw, Trash2, Info, Download, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import ThemeContext from '../../context/ThemeContext';
 import { useSettings } from '../../context/SettingsContext';
+import { isElectron, getAppVersion, getPlatform, checkForUpdates, onUpdateStatus, removeUpdateListener, UpdateStatus } from '../../utils/electron';
 
 export function SystemSection() {
   const { theme } = useContext(ThemeContext);
   const { settings } = useSettings();
   const [diagRunning, setDiagRunning] = useState(false);
   const [diagResults, setDiagResults] = useState<Array<{ name: string, ok: boolean, status?: string }>>([]);
+
+  const [appVersion, setAppVersion] = useState<string>('Loading...');
+  const [platform, setPlatform] = useState<string>('Loading...');
+  const [updateStatus, setUpdateStatus] = useState<UpdateStatus | null>(null);
+  const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
+  const [isElectronApp, setIsElectronApp] = useState(false);
+
+  useEffect(() => {
+    const loadInfo = async () => {
+      setIsElectronApp(isElectron());
+      setAppVersion(await getAppVersion());
+      setPlatform(await getPlatform());
+    };
+    loadInfo();
+
+    // Subscribe to update status if in Electron
+    if (isElectron()) {
+      onUpdateStatus((status) => {
+        setUpdateStatus(status);
+        if (status.status !== 'checking-for-update') {
+          setIsCheckingUpdate(false);
+        }
+      });
+    }
+
+    return () => {
+      if (isElectron()) {
+        removeUpdateListener();
+      }
+    };
+  }, []);
 
   const bgCard = 'border-zinc-800 bg-black';
 
@@ -35,6 +67,35 @@ export function SystemSection() {
     setDiagRunning(false);
   };
 
+  const handleCheckForUpdates = () => {
+    setIsCheckingUpdate(true);
+    setUpdateStatus(null);
+    checkForUpdates();
+  };
+
+  const getStatusMessage = () => {
+    if (!updateStatus) return null;
+
+    switch (updateStatus.status) {
+      case 'checking-for-update':
+        return { icon: Loader2, message: 'Checking for updates...', color: 'text-zinc-400', spin: true };
+      case 'update-available':
+        return { icon: Download, message: `Update available: v${updateStatus.version}`, color: 'text-accent' };
+      case 'update-not-available':
+        return { icon: CheckCircle, message: 'You have the latest version!', color: 'text-green-500' };
+      case 'download-progress':
+        return { icon: Loader2, message: `Downloading: ${Math.round(updateStatus.percent || 0)}%`, color: 'text-accent', spin: true };
+      case 'update-downloaded':
+        return { icon: CheckCircle, message: 'Update ready to install!', color: 'text-green-500' };
+      case 'update-error':
+        return { icon: AlertCircle, message: `Update error: ${updateStatus.message}`, color: 'text-red-500' };
+      default:
+        return null;
+    }
+  };
+
+  const statusInfo = getStatusMessage();
+
   const handleDatabaseReset = () => {
     window.dispatchEvent(new CustomEvent('show-confirmation', {
       detail: {
@@ -60,7 +121,7 @@ export function SystemSection() {
           System & Diagnostics
         </h3>
         <p className="text-sm text-zinc-700 dark:text-zinc-400">
-          System health checks and maintenance tools.
+          System health checks, application information, and maintenance tools.
         </p>
       </div>
 
@@ -105,32 +166,68 @@ export function SystemSection() {
         )}
       </div>
 
-      {/* System Information */}
+      {/* Application Info */}
       <div className={`rounded-xl border p-4 ${bgCard}`}>
         <h4 className="font-medium mb-4 flex items-center gap-2">
-          <Database size={18} className="text-zinc-500" />
-          System Information
+          <Info size={18} className="text-zinc-500" />
+          Application Info
         </h4>
-        <div className="space-y-2 text-sm">
-          <div className="flex justify-between">
-            <span className="text-zinc-700 dark:text-zinc-400">User Agent:</span>
-            <span className="text-xs font-mono max-w-xs truncate">
-              {navigator.userAgent.split(' ')[0]}
-            </span>
+        <div className="space-y-4">
+          <div className="space-y-3">
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-zinc-700 dark:text-zinc-400">Version</span>
+              <span className="text-sm font-mono bg-zinc-100 dark:bg-zinc-800 px-2 py-1 rounded">{appVersion}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-zinc-700 dark:text-zinc-400">Platform</span>
+              <span className="text-sm font-mono bg-zinc-100 dark:bg-zinc-800 px-2 py-1 rounded capitalize">{platform}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-zinc-700 dark:text-zinc-400">Runtime</span>
+              <span className="text-sm font-mono bg-zinc-100 dark:bg-zinc-800 px-2 py-1 rounded">
+                {isElectronApp ? 'Desktop (Electron)' : 'Web Browser'}
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-zinc-700 dark:text-zinc-400">Language</span>
+              <span className="text-sm font-mono bg-zinc-100 dark:bg-zinc-800 px-2 py-1 rounded">{navigator.language}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-zinc-700 dark:text-zinc-400">Status</span>
+              <span className={`text-sm font-medium px-2 py-1 rounded ${navigator.onLine ? 'text-green-600 bg-green-50 dark:bg-green-900/20' : 'text-red-600 bg-red-50 dark:bg-red-900/20'}`}>
+                {navigator.onLine ? 'Online' : 'Offline'}
+              </span>
+            </div>
           </div>
-          <div className="flex justify-between">
-            <span className="text-zinc-700 dark:text-zinc-400">Platform:</span>
-            <span>{navigator.platform}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-zinc-700 dark:text-zinc-400">Language:</span>
-            <span>{navigator.language}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-zinc-700 dark:text-zinc-400">Online:</span>
-            <span className={navigator.onLine ? 'text-green-500' : 'text-red-500'}>
-              {navigator.onLine ? 'Yes' : 'No'}
-            </span>
+
+          <div className="h-px bg-zinc-200 dark:bg-zinc-800" />
+
+          <div className="space-y-2">
+            <h5 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-2">Resources</h5>
+            <a
+              href="https://github.com/Jeremy8776/AIModelDB"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block text-sm text-accent hover:underline"
+            >
+              GitHub Repository
+            </a>
+            <a
+              href="https://github.com/Jeremy8776/AIModelDB/releases"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block text-sm text-accent hover:underline"
+            >
+              Release Notes
+            </a>
+            <a
+              href="https://github.com/Jeremy8776/AIModelDB/issues"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block text-sm text-accent hover:underline"
+            >
+              Report an Issue
+            </a>
           </div>
         </div>
       </div>
@@ -160,15 +257,41 @@ export function SystemSection() {
         </div>
       </div>
 
-      {/* Version Info */}
-      <div className={`rounded-xl border p-4 ${bgCard}`}>
-        <h4 className="font-medium mb-2">Application Info</h4>
-        <div className="text-sm text-zinc-700 dark:text-zinc-400">
-          <p className="font-semibold">Optikka Model Database</p>
-          <p className="text-xs mt-1">Version 1.0.0</p>
-          <p className="text-xs mt-2">Comprehensive AI model discovery and management platform</p>
+      {/* Updates Section - Only show in Electron */}
+      {isElectronApp && (
+        <div className={`rounded-xl border p-4 ${bgCard}`}>
+          <h4 className="font-medium mb-4 flex items-center gap-2">
+            <Download size={18} className="text-zinc-500" />
+            Updates
+          </h4>
+          <div className="space-y-4">
+            <p className="text-sm text-zinc-700 dark:text-zinc-400">
+              Check for new versions of AI Model DB Pro.
+            </p>
+
+            {/* Update Status */}
+            {statusInfo && (
+              <div className={`flex items-center gap-2 text-sm ${statusInfo.color}`}>
+                <statusInfo.icon size={16} className={statusInfo.spin ? 'animate-spin' : ''} />
+                <span>{statusInfo.message}</span>
+              </div>
+            )}
+
+            {/* Check for Updates Button */}
+            <button
+              onClick={handleCheckForUpdates}
+              disabled={isCheckingUpdate}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${isCheckingUpdate
+                ? 'opacity-60 cursor-not-allowed bg-zinc-700'
+                : 'bg-accent hover:bg-accent-dark text-white'
+                }`}
+            >
+              <RefreshCw size={16} className={isCheckingUpdate ? 'animate-spin' : ''} />
+              {isCheckingUpdate ? 'Checking...' : 'Check for Updates'}
+            </button>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

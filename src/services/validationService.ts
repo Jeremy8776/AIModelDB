@@ -66,6 +66,11 @@ export interface ValidationCallbacks {
  * @returns Promise resolving to true if valid key exists
  */
 async function hasValidKey(key: string, cfg: any): Promise<boolean> {
+    // Check if protocol allows no key (e.g. Ollama)
+    if (cfg.protocol === 'ollama' || key === 'ollama') {
+        return true;
+    }
+
     // Check if has local key
     if (cfg.apiKey && cfg.apiKey.trim() !== '') {
         return true;

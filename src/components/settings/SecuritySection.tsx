@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { Shield, AlertTriangle } from 'lucide-react';
+import { Shield, AlertTriangle, Check } from 'lucide-react';
 import ThemeContext from '../../context/ThemeContext';
 import { useSettings } from '../../context/SettingsContext';
 
@@ -25,41 +25,57 @@ export function SecuritySection() {
       <div className={`rounded-xl border p-4 ${bgCard}`}>
         <h4 className="font-medium mb-4">Content Filtering</h4>
         <div className="space-y-4">
-          <div className="flex items-start gap-3">
-            <input
-              type="checkbox"
-              id="enableNSFWFiltering"
-              checked={settings.enableNSFWFiltering ?? true}
-              onChange={(e) => saveSettings({ enableNSFWFiltering: e.target.checked })}
-              className="mt-1 rounded"
-            />
+          <label htmlFor="enableNSFWFiltering" className="flex items-start gap-3 cursor-pointer group select-none">
+            <div className="relative mt-1">
+              <input
+                type="checkbox"
+                id="enableNSFWFiltering"
+                checked={settings.enableNSFWFiltering ?? true}
+                onChange={(e) => saveSettings({ enableNSFWFiltering: e.target.checked })}
+                className="sr-only"
+              />
+              <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${(settings.enableNSFWFiltering ?? true)
+                ? 'bg-accent border-accent'
+                : 'border-zinc-600 group-hover:border-zinc-500'
+                }`}>
+                {(settings.enableNSFWFiltering ?? true) && <Check size={14} strokeWidth={3} className="text-white" />}
+              </div>
+            </div>
             <div className="flex-1">
-              <label htmlFor="enableNSFWFiltering" className="font-medium text-sm cursor-pointer">
+              <div className="font-medium text-sm">
                 Enable NSFW Content Filtering
-              </label>
+              </div>
               <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
                 Automatically filter out models with adult or inappropriate content
               </p>
             </div>
-          </div>
+          </label>
 
-          <div className="flex items-start gap-3">
-            <input
-              type="checkbox"
-              id="logNSFWAttempts"
-              checked={settings.logNSFWAttempts ?? false}
-              onChange={(e) => saveSettings({ logNSFWAttempts: e.target.checked })}
-              className="mt-1 rounded"
-            />
+          <label htmlFor="logNSFWAttempts" className="flex items-start gap-3 cursor-pointer group select-none">
+            <div className="relative mt-1">
+              <input
+                type="checkbox"
+                id="logNSFWAttempts"
+                checked={settings.logNSFWAttempts ?? false}
+                onChange={(e) => saveSettings({ logNSFWAttempts: e.target.checked })}
+                className="sr-only"
+              />
+              <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${(settings.logNSFWAttempts ?? false)
+                ? 'bg-accent border-accent'
+                : 'border-zinc-600 group-hover:border-zinc-500'
+                }`}>
+                {(settings.logNSFWAttempts ?? false) && <Check size={14} strokeWidth={3} className="text-white" />}
+              </div>
+            </div>
             <div className="flex-1">
-              <label htmlFor="logNSFWAttempts" className="font-medium text-sm cursor-pointer">
+              <div className="font-medium text-sm">
                 Log Filtered Content Attempts
-              </label>
+              </div>
               <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
                 Keep logs of content that was filtered for compliance purposes
               </p>
             </div>
-          </div>
+          </label>
         </div>
       </div>
 

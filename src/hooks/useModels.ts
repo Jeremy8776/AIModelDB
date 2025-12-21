@@ -506,7 +506,7 @@ export function useModels() {
 
           // Find an enabled LLM provider
           const enabledProviders = Object.entries(apiConfig)
-            .filter(([_, cfg]) => (cfg as ProviderCfg).enabled && (cfg as ProviderCfg).apiKey)
+            .filter(([key, cfg]) => (cfg as ProviderCfg).enabled && ((cfg as ProviderCfg).apiKey || (cfg as ProviderCfg).protocol === 'ollama' || key === 'ollama'))
             .map(([key]) => key as ProviderKey);
 
           if (!enabledProviders.length) {
@@ -627,13 +627,13 @@ export function useModels() {
   // Function to check if API providers are configured
   const hasConfiguredProviders = (): boolean => {
     return Object.entries(apiConfig)
-      .some(([_, cfg]) => (cfg as ProviderCfg).enabled && (cfg as ProviderCfg).apiKey);
+      .some(([key, cfg]) => (cfg as ProviderCfg).enabled && ((cfg as ProviderCfg).apiKey || (cfg as ProviderCfg).protocol === 'ollama' || key === 'ollama'));
   };
 
   // Function to get list of enabled providers
   const getEnabledProviders = (): ProviderKey[] => {
     return Object.entries(apiConfig)
-      .filter(([_, cfg]) => (cfg as ProviderCfg).enabled && (cfg as ProviderCfg).apiKey)
+      .filter(([key, cfg]) => (cfg as ProviderCfg).enabled && ((cfg as ProviderCfg).apiKey || (cfg as ProviderCfg).protocol === 'ollama' || key === 'ollama'))
       .map(([key]) => key as ProviderKey);
   };
 
@@ -777,6 +777,11 @@ export function useModels() {
 
       // Helper function to check if a provider has a valid key
       const hasValidKey = async (key: string, cfg: any): Promise<boolean> => {
+        // Check if protocol allows no key (e.g. Ollama)
+        if (cfg.protocol === 'ollama' || key === 'ollama') {
+          return true;
+        }
+
         // Check if has local key
         if (cfg.apiKey && cfg.apiKey.trim() !== '') {
           return true;
@@ -1090,6 +1095,7 @@ CRITICAL INSTRUCTIONS:
     setSyncProgress,
     validationProgress,
     lastMergeStats,
+    setLastMergeStats,
     addModel,
     updateModel,
     deleteModel,

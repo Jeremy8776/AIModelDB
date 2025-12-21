@@ -329,7 +329,7 @@ app.post('/scrape', async (req, res) => {
     if (!ALLOWLIST.includes(u.hostname)) {
       return res.status(400).json({ error: 'Domain not allowed' });
     }
-    const r = await fetch(url, { headers: { 'User-Agent': 'optikka-model-db' } });
+    const r = await fetch(url, { headers: { 'User-Agent': 'model-db-pro' } });
     if (!r.ok) return res.status(502).json({ error: `Fetch failed ${r.status}` });
     const html = await r.text();
     const $ = cheerio.load(html);
