@@ -33,8 +33,7 @@ export interface ElectronAPI {
 export function isElectron(): boolean {
     return typeof window !== 'undefined' &&
         window.electronAPI !== undefined &&
-        'isElectron' in window.electronAPI &&
-        window.electronAPI.isElectron === true;
+        (window.electronAPI as any).isElectron === true;
 }
 
 /**

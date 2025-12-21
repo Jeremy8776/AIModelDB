@@ -178,7 +178,8 @@ export function createWebhookStream(
     let pollIntervalId: number | null = null;
     let lastWebhookId: string | null = null;
 
-    const canUseWebhooks = (import.meta.env.PROD || import.meta.env.VITE_USE_PROXY === 'true');
+    const canUseWebhooks = (import.meta.env.PROD || import.meta.env.VITE_USE_PROXY === 'true') &&
+        (window.location.protocol === 'http:' || window.location.protocol === 'https:');
 
     /**
      * Poll for webhook logs via HTTP endpoint

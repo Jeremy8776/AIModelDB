@@ -3,6 +3,7 @@ import { Settings, Zap, Database, RefreshCw, Trash2, Info, Download, CheckCircle
 import ThemeContext from '../../context/ThemeContext';
 import { useSettings } from '../../context/SettingsContext';
 import { isElectron, getAppVersion, getPlatform, checkForUpdates, onUpdateStatus, removeUpdateListener, UpdateStatus } from '../../utils/electron';
+import { useUpdate } from '../../context/UpdateContext';
 
 export function SystemSection() {
   const { theme } = useContext(ThemeContext);
@@ -275,7 +276,7 @@ function UpdatesCard({ appVersion, isCheckingUpdate, onCheckForUpdates }: {
   isCheckingUpdate: boolean;
   onCheckForUpdates: () => void;
 }) {
-  const { updateAvailable, updateVersion, updateDownloaded, downloadProgress, downloadUpdate, installUpdate, checking, error } = require('../../context/UpdateContext').useUpdate();
+  const { updateAvailable, updateVersion, updateDownloaded, downloadProgress, downloadUpdate, installUpdate, checking, error } = useUpdate();
 
   const bgCard = 'border-zinc-800 bg-black';
 

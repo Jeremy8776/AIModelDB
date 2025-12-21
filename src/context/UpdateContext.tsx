@@ -68,6 +68,16 @@ export function UpdateProvider({ children }: { children: React.ReactNode }) {
                     break;
             }
         });
+
+        // Auto-check for updates on app launch (with a small delay to let app initialize)
+        const autoCheckTimer = setTimeout(() => {
+            console.log('[UpdateContext] Auto-checking for updates on launch...');
+            window.electronAPI?.checkForUpdates();
+        }, 2000);
+
+        return () => {
+            clearTimeout(autoCheckTimer);
+        };
     }, []);
 
     const checkForUpdates = () => {
