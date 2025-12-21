@@ -147,9 +147,8 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "installerHeader": "build/installerHeader.png",
-      "installerSidebar": "build/installerSidebar.png",
-      "license": "build/license.txt"
+      "license": "build/license.txt",
+      "include": "build/installer.nsh"
     }
   }
 }
