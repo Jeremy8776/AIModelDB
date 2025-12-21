@@ -1,0 +1,136 @@
+MIT License
+
+Copyright (c) 2024 Jeremy8776
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+================================================================================
+                              ADDITIONAL TERMS
+================================================================================
+
+IMPORTANT: READ BEFORE USE
+
+By using AI Model DB Pro, you acknowledge and agree to the following additional
+terms and conditions:
+
+--------------------------------------------------------------------------------
+1. DATA SOURCES AND TERMS OF SERVICE
+--------------------------------------------------------------------------------
+
+AI Model DB Pro is a tool that facilitates access to publicly available APIs
+and data sources. The software itself does not host, store, or redistribute
+any model data on behalf of users.
+
+USERS ARE SOLELY RESPONSIBLE FOR:
+
+  * Reviewing and complying with the Terms of Service of each data source
+    they choose to enable
+  * Ensuring their use of aggregated data complies with applicable laws
+    and regulations
+  * Obtaining any necessary permissions or licenses for their intended
+    use of the data
+  * Respecting rate limits and fair usage policies of third-party services
+
+THE DEVELOPERS OF AI MODEL DB PRO:
+
+  * Do not guarantee the accuracy, completeness, or availability of any
+    third-party data
+  * Are not responsible for any changes to third-party APIs or Terms of Service
+  * Do not endorse or verify any models, content, or information retrieved
+    through this software
+  * Accept no liability for any damages arising from the use or inability
+    to use this software
+
+--------------------------------------------------------------------------------
+2. THIRD-PARTY SERVICES
+--------------------------------------------------------------------------------
+
+This software connects to third-party services including but not limited to
+Hugging Face, Civitai, OpenModelDB, and Artificial Analysis. These services
+are owned and operated by their respective companies and are subject to their
+own terms, privacy policies, and usage restrictions.
+
+Each data source may have different terms regarding:
+
+  * Commercial vs. non-commercial use
+  * Data aggregation and redistribution
+  * API usage limits and authentication requirements
+  * Geographic restrictions
+
+Users must independently verify compliance with each service's current terms
+before enabling data synchronization.
+
+--------------------------------------------------------------------------------
+3. NO LEGAL ADVICE
+--------------------------------------------------------------------------------
+
+Nothing in this software or documentation constitutes legal advice. If you
+have questions about the legality of your intended use, consult with a
+qualified legal professional.
+
+--------------------------------------------------------------------------------
+4. INDEMNIFICATION
+--------------------------------------------------------------------------------
+
+By using this software, you agree to indemnify and hold harmless the
+developers, contributors, and maintainers from any claims, damages, losses,
+liabilities, costs, or expenses (including reasonable attorneys' fees)
+arising from:
+
+  * Your use of the software
+  * Your violation of any third-party terms of service
+  * Your violation of any applicable laws or regulations
+  * Any content or data you access, store, or distribute using this software
+  * Any claims by third parties related to your use of the software
+
+--------------------------------------------------------------------------------
+5. LIMITATION OF LIABILITY
+--------------------------------------------------------------------------------
+
+IN NO EVENT SHALL THE DEVELOPERS BE LIABLE FOR ANY INDIRECT, INCIDENTAL,
+SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING BUT NOT LIMITED TO
+LOSS OF PROFITS, DATA, USE, GOODWILL, OR OTHER INTANGIBLE LOSSES, RESULTING
+FROM:
+
+  * YOUR ACCESS TO OR USE OF OR INABILITY TO ACCESS OR USE THE SOFTWARE
+  * ANY CONDUCT OR CONTENT OF ANY THIRD PARTY ON OR THROUGH THE SOFTWARE
+  * ANY CONTENT OBTAINED FROM THIRD-PARTY SERVICES
+  * UNAUTHORIZED ACCESS, USE, OR ALTERATION OF YOUR DATA
+
+--------------------------------------------------------------------------------
+6. CHANGES TO TERMS
+--------------------------------------------------------------------------------
+
+These terms may be updated from time to time. Continued use of the software
+after any such changes constitutes your acceptance of the new terms.
+
+--------------------------------------------------------------------------------
+7. GOVERNING LAW
+--------------------------------------------------------------------------------
+
+These terms shall be governed by and construed in accordance with applicable
+laws, without regard to conflict of law principles.
+
+================================================================================
+
+By downloading, installing, or using AI Model DB Pro, you acknowledge that
+you have read, understood, and agree to be bound by both the MIT License
+above and these Additional Terms.
+
+If you do not agree to these terms, do not use this software.
