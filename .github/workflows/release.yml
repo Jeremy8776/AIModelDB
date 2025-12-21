@@ -54,7 +54,8 @@ jobs:
             release/*.zip
             release/*.AppImage
             release/*.deb
-            release/*.snap
+            release/*.yml
+            release/*.blockmap
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
