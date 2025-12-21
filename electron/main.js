@@ -22,8 +22,8 @@ autoUpdater.logger = require('electron').app.isPackaged ? null : console;
 function createWindow() {
     // Create the browser window with themed title bar
     mainWindow = new BrowserWindow({
-        width: 1400,
-        height: 900,
+        width: 1662,
+        height: 1070,
         minWidth: 1000,
         minHeight: 700,
         title: 'AI Model DB Pro',
