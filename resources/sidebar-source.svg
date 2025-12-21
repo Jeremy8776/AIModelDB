@@ -13,7 +13,10 @@
     </filter>
   </defs>
   <rect width="164" height="314" fill="#000000"/>
-  <g transform="translate(18, 93) scale(0.25)" filter="url(#glow)">
+  <!-- Scaled to 0.28 (~143px width) to fill width nicely.
+       Centered X: (164 - 143)/2 = 10.5 -> 10.
+       Centered Y: (314 - 143)/2 = 85.5 -> 85. -->
+  <g transform="translate(10, 85) scale(0.28)" filter="url(#glow)">
     <path d="M128 160h256M128 256h192M128 352h128" stroke="url(#gradient)" stroke-width="32" stroke-linecap="round"/>
     <circle cx="384" cy="352" r="48" fill="url(#gradient)"/>
   </g>

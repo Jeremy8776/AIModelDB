@@ -13,7 +13,11 @@
     </filter>
   </defs>
   <rect width="150" height="57" fill="#000000"/>
-  <g transform="translate(110, 8) scale(0.08)" filter="url(#glow)">
+  <!-- Scaled to 0.11 (~56px height) to fill the vertical space. 
+       Centered vertically. Pushed to right. 
+       512 * 0.11 = 56.32. 
+       X: 150 - 56 - 10(padding) = 84.  -->
+  <g transform="translate(84, 0) scale(0.11)" filter="url(#glow)">
     <path d="M128 160h256M128 256h192M128 352h128" stroke="url(#gradient)" stroke-width="32" stroke-linecap="round"/>
     <circle cx="384" cy="352" r="48" fill="url(#gradient)"/>
   </g>
