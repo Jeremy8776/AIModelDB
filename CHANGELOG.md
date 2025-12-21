@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.3] - 2025-12-21
+
+### Fixed
+- **Model Row Hover Styling**: Fixed hover effects on table rows that were being overridden by CSS. Rows now properly show elevated background and accent border on hover for both dark and light themes.
+- **Cursor Pointer**: Ensured table rows always show pointer cursor to indicate clickability.
+
+---
+
 ## [0.3.1] - 2025-12-21
 
 ### Added
