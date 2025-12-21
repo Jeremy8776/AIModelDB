@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.5] - 2025-12-21
+
+### Fixed
+- **App Update Check**: Fixed application not checking for updates on launch.
+- **Build Configuration**: Configured static artifact names for better persistent download links.
+- **Documentation**: Updated README with permanent latest download links and fixed license badge.
+
 ## [0.3.4] - 2025-12-21
 
 ### Fixed
