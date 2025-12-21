@@ -120,21 +120,42 @@ export async function syncAllSources(
             onProgress({ current: 0, total: totalSources });
         }
 
-        const updateProgress = (source?: string, found?: number) => {
-            completedSources++;
+        const activeSources = new Set<string>();
+
+        const updateProgress = (completed: boolean, name?: string, found?: number) => {
+            if (completed) completedSources++;
+
+            // Generate status string from active sources
+            const activeList = Array.from(activeSources);
+            const statusSource = activeList.length > 0
+                ? activeList.join(', ')
+                : (name || 'Completed');
+
             if (onProgress) {
-                onProgress({ current: completedSources, total: totalSources, source, found });
+                onProgress({
+                    current: completedSources,
+                    total: totalSources,
+                    source: statusSource,
+                    found
+                });
             }
         };
 
         const withProgress = async <T,>(p: Promise<T>, name: string, fallback: T): Promise<T> => {
-            // Update progress to show we're starting this source
+            activeSources.add(name);
+            // Initial update to show this source started
             if (onProgress) {
-                onProgress({ current: completedSources, total: totalSources, source: name });
+                onProgress({
+                    current: completedSources,
+                    total: totalSources,
+                    source: Array.from(activeSources).join(', ')
+                });
             }
 
             try {
                 const res = await p;
+                activeSources.delete(name);
+
                 // Progressive display: Update models immediately as each source completes
                 if (res && typeof res === 'object' && 'complete' in res && Array.isArray(res.complete)) {
                     const newModels = res.complete as Model[];
@@ -144,21 +165,21 @@ export async function syncAllSources(
                     if (onModelsUpdate && newModels.length > 0) {
                         onModelsUpdate(newModels);
                     }
-                    // Update progress with the count
-                    updateProgress(name, newModels.length);
+                    // Update progress with completion
+                    updateProgress(true, name, newModels.length);
                     return res;
                 }
+                activeSources.delete(name); // Ensure deleted if condition above fails
+                updateProgress(true, name, 0);
                 return res;
             } catch (error) {
+                activeSources.delete(name);
                 console.error(`Error fetching from ${name}:`, error);
                 if (onLog) {
                     onLog(`Error fetching from ${name}: ${error instanceof Error ? error.message : String(error)}`);
                 }
+                updateProgress(true, name, 0);
                 return fallback;
-            } finally {
-                if (!('complete' in (fallback as any))) {
-                    updateProgress(name, 0);
-                }
             }
         };
 
@@ -166,7 +187,7 @@ export async function syncAllSources(
         const fetchPromises = [];
 
         if (options.dataSources?.huggingface) {
-            fetchPromises.push(withProgress(fetchHuggingFaceRecent(500), 'HuggingFace', { complete: [], flagged: [] }));
+            fetchPromises.push(withProgress(fetchHuggingFaceRecent(), 'HuggingFace', { complete: [], flagged: [] }));
         }
         if (options.dataSources?.artificialanalysis) {
             fetchPromises.push(withProgress(

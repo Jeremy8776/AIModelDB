@@ -15,10 +15,10 @@ import { fetchWrapper } from '../../../utils/fetch-wrapper';
 
 /**
  * Fetch recent models from HuggingFace
- * @param limit Maximum number of models to fetch (default: 100)
+ * @param limit Maximum number of models to fetch (default: 10000)
  * @returns Object containing complete and flagged models
  */
-export async function fetchHuggingFaceRecent(limit = 500): Promise<{ complete: Model[], flagged: Model[] }> {
+export async function fetchHuggingFaceRecent(limit = 10000): Promise<{ complete: Model[], flagged: Model[] }> {
     let complete: Model[] = [];
     let flagged: Model[] = [];
 

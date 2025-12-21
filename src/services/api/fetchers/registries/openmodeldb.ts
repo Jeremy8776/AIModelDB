@@ -47,7 +47,8 @@ export async function fetchOpenModelDB(): Promise<{ complete: Model[], flagged: 
                     const modelId = filePath.replace('data/models/', '').replace('.json', '');
                     const rawUrl = `https://raw.githubusercontent.com/OpenModelDB/open-model-database/main/${filePath}`;
 
-                    const response = await fetchWrapper(rawUrl);
+                    // Bypass global rate limiter for raw content
+                    const response = await fetch(rawUrl);
                     if (!response.ok) {
                         console.warn(`[OpenModelDB] Failed to fetch ${modelId}: ${response.status}`);
                         return null;

@@ -38,13 +38,31 @@ function encodeBMP(imgData, width, height) {
 // Plan B: PowerShell conversion script
 const psScript = `
 Add-Type -AssemblyName System.Drawing
-$sidebar = [System.Drawing.Image]::FromFile("${path.resolve('build/installerSidebar.png')}")
-$sidebar.Save("${path.resolve('build/installerSidebar.bmp')}", [System.Drawing.Imaging.ImageFormat]::Bmp)
-$sidebar.Dispose()
 
-$header = [System.Drawing.Image]::FromFile("${path.resolve('build/installerHeader.png')}")
-$header.Save("${path.resolve('build/installerHeader.bmp')}", [System.Drawing.Imaging.ImageFormat]::Bmp)
-$header.Dispose()
+function Convert-To24BitBmp {
+    param(
+        [string]$SourcePath,
+        [string]$DestPath
+    )
+    
+    $srcImage = [System.Drawing.Image]::FromFile($SourcePath)
+    # Create a blank bitmap with the same dimensions but 24-bit RGB format
+    $destImage = New-Object System.Drawing.Bitmap($srcImage.Width, $srcImage.Height, [System.Drawing.Imaging.PixelFormat]::Format24bppRgb)
+    
+    # Draw the source image onto the new 24-bit bitmap
+    $graphics = [System.Drawing.Graphics]::FromImage($destImage)
+    $graphics.DrawImage($srcImage, 0, 0, $srcImage.Width, $srcImage.Height)
+    $graphics.Dispose()
+    
+    # Save as BMP
+    $destImage.Save($DestPath, [System.Drawing.Imaging.ImageFormat]::Bmp)
+    
+    $destImage.Dispose()
+    $srcImage.Dispose()
+}
+
+Convert-To24BitBmp "${path.resolve('build/installerSidebar.png')}" "${path.resolve('build/installerSidebar.bmp')}"
+Convert-To24BitBmp "${path.resolve('build/installerHeader.png')}" "${path.resolve('build/installerHeader.bmp')}"
 `;
 
 const cp = require('child_process');

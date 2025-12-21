@@ -4,6 +4,7 @@ interface ElectronAPI {
     getPlatform: () => Promise<string>;
     openExternal: (url: string) => void;
     checkForUpdates: () => void;
+    downloadUpdate: () => void;
     installUpdate: () => void;
     onUpdateStatus: (callback: (data: any) => void) => void;
     removeUpdateListener: () => void;

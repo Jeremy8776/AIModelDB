@@ -64,7 +64,7 @@ export class RateLimiter {
 }
 
 // Create rate limiters for different API tiers
-export const createRateLimiter = (tier: 'free' | 'tier1' | 'tier2' | 'tier3' = 'free'): RateLimiter => {
+export const createRateLimiter = (tier: 'free' | 'tier1' | 'tier2' | 'tier3' | 'tier4' = 'free'): RateLimiter => {
   switch (tier) {
     case 'free':
       return new RateLimiter(3, 1, 20000); // 3 requests/minute, 20s between requests
@@ -74,10 +74,12 @@ export const createRateLimiter = (tier: 'free' | 'tier1' | 'tier2' | 'tier3' = '
       return new RateLimiter(50, 1, 1200); // 50 requests/minute, 1.2s between requests
     case 'tier3':
       return new RateLimiter(100, 1, 600); // 100 requests/minute, 0.6s between requests
+    case 'tier4':
+      return new RateLimiter(300, 1, 200); // 300 requests/minute (5/sec), 0.2s between requests
     default:
       return new RateLimiter(3, 1, 20000); // Default to free tier
   }
 };
 
-// Global rate limiter instance - using Tier 2 (50 req/min) for better responsiveness
-export const globalRateLimiter = createRateLimiter('tier2');
+// Global rate limiter instance - using Tier 4 (300 req/min) for better responsiveness in bulk operations
+export const globalRateLimiter = createRateLimiter('tier4');

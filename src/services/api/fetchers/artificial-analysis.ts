@@ -10,18 +10,20 @@ import { fetchWrapper } from '../../../utils/fetch-wrapper';
  */
 export async function fetchArtificialAnalysisIndex(apiKey?: string): Promise<{ complete: Model[], flagged: Model[] }> {
     try {
+        // If apiKey is not provided, skip entirely to avoid 401 errors
+        if (!apiKey || apiKey.trim() === '') {
+            console.log('[ArtificialAnalysis] Skipping fetch: No API key provided');
+            return { complete: [], flagged: [] };
+        }
+
         console.log('[ArtificialAnalysis] Fetching models from all API endpoints...');
 
         const headers: Record<string, string> = {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'x-api-key': apiKey
         };
 
-        // Add API key if provided
-        if (apiKey) {
-            headers['x-api-key'] = apiKey;
-        }
-
-        console.log(`[ArtificialAnalysis] Using API key: ${apiKey ? 'Yes' : 'No'}`);
+        console.log(`[ArtificialAnalysis] Using API key: Yes`);
 
         // Fetch from all available endpoints
         // Based on Artificial Analysis API documentation: https://artificialanalysis.ai/documentation

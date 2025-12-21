@@ -23,6 +23,7 @@ export interface HeaderProps {
     onImport: () => void;
     onSettings: () => void;
     theme: "light" | "dark";
+    hasUpdate?: boolean;
 }
 
 /**
@@ -33,6 +34,7 @@ export interface HeaderProps {
  * - Update Database button with loading state
  * - Add Model, Import, and Settings buttons
  * - Theme-aware styling
+ * - Update notification dot on Settings button
  * 
  * @param props - Header component props
  * @returns JSX.Element
@@ -46,7 +48,8 @@ export function Header({
     onAddModel,
     onImport,
     onSettings,
-    theme
+    theme,
+    hasUpdate = false
 }: HeaderProps) {
     // Styling based on theme
     const bgHeader = theme === "dark" ? "border-zinc-900/80 bg-black/80" : "border-gray-400 bg-white shadow-sm";
@@ -97,13 +100,17 @@ export function Header({
                     </button>
                     <button
                         onClick={onSettings}
-                        className={`rounded-xl ${bgInput} p-2`}
+                        className={`rounded-xl ${bgInput} p-2 relative`}
                         title="Settings"
                     >
                         <Wrench className="size-4" />
+                        {hasUpdate && (
+                            <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-black animate-pulse" />
+                        )}
                     </button>
                 </div>
             </div>
         </header>
     );
 }
+

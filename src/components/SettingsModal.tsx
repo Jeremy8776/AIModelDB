@@ -2,6 +2,7 @@ import React, { useContext, useState } from 'react';
 import { X, Settings, Database, Shield, Zap, Palette, Info, History } from 'lucide-react';
 import ThemeContext from '../context/ThemeContext';
 import { useSettings } from '../context/SettingsContext';
+import { useUpdate } from '../context/UpdateContext';
 import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 
 // Import section components
@@ -26,6 +27,7 @@ interface SettingsModalProps {
 export function SettingsModal({ isOpen, onClose, onSync, addConsoleLog, currentModels, onRestore }: SettingsModalProps) {
   const { theme } = useContext(ThemeContext);
   const { settings } = useSettings();
+  const { updateAvailable } = useUpdate();
   const [activeTab, setActiveTab] = useState('data-sources');
 
   // Lock body scroll when modal is open
@@ -44,7 +46,7 @@ export function SettingsModal({ isOpen, onClose, onSync, addConsoleLog, currentM
     { id: 'validation', label: 'Validation', icon: Shield },
     { id: 'display', label: 'Display', icon: Palette },
     { id: 'security', label: 'Security', icon: Shield },
-    { id: 'system', label: 'System', icon: Settings },
+    { id: 'system', label: 'System', icon: Settings, hasNotification: updateAvailable },
   ];
 
   const renderActiveSection = () => {
@@ -100,13 +102,16 @@ export function SettingsModal({ isOpen, onClose, onSync, addConsoleLog, currentM
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isActive
+                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors relative ${isActive
                       ? `${bgActiveTab} shadow-sm`
                       : `${bgTab} hover:bg-card`
                       }`}
                   >
                     <Icon size={16} className={isActive ? 'text-accent' : 'text-zinc-500'} />
                     {tab.label}
+                    {tab.hasNotification && (
+                      <span className="absolute right-2 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                    )}
                   </button>
                 );
               })}

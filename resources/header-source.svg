@@ -17,7 +17,7 @@
        Centered vertically. Pushed to right. 
        512 * 0.11 = 56.32. 
        X: 150 - 56 - 10(padding) = 84.  -->
-  <g transform="translate(84, 0) scale(0.11)" filter="url(#glow)">
+  <g transform="translate(84, -5) scale(0.11)" filter="url(#glow)">
     <path d="M128 160h256M128 256h192M128 352h128" stroke="url(#gradient)" stroke-width="32" stroke-linecap="round"/>
     <circle cx="384" cy="352" r="48" fill="url(#gradient)"/>
   </g>

@@ -78,7 +78,6 @@ export function OnboardingWizard({ isOpen, onClose, onComplete }: OnboardingWiza
         { key: 'civitai', label: 'Civitai', description: 'Community AI models', requiresKey: false },
         { key: 'openmodeldb', label: 'OpenModelDB', description: 'Open model database', requiresKey: false },
         { key: 'civitasbay', label: 'CivitasBay', description: 'AI model marketplace', requiresKey: false },
-        { key: 'llmDiscovery', label: 'LLM Discovery', description: 'AI-powered discovery', requiresKey: false },
     ];
 
     const sourcesRequiringKeys = dataSources.filter(s => s.requiresKey && selectedSources[s.key]);
@@ -318,6 +317,33 @@ export function OnboardingWizard({ isOpen, onClose, onComplete }: OnboardingWiza
                                 <p className="text-sm text-zinc-500 mb-4">
                                     Add an LLM API key to enable AI-powered validation. This is optional and experimental.
                                 </p>
+
+                                <div className={`p-4 rounded-lg border border-zinc-700 bg-zinc-900/30 mb-4`}>
+                                    <label className="flex items-start gap-3 cursor-pointer">
+                                        <div className="relative flex items-center mt-0.5">
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedSources.llmDiscovery}
+                                                onChange={() => toggleSource('llmDiscovery')}
+                                                className="sr-only"
+                                            />
+                                            <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${selectedSources.llmDiscovery
+                                                ? 'bg-accent border-accent'
+                                                : 'border-zinc-600 bg-zinc-800'
+                                                }`}>
+                                                {selectedSources.llmDiscovery && <CheckCircle size={12} className="text-white" />}
+                                            </div>
+                                        </div>
+                                        <div className="flex-1">
+                                            <div className={`text-sm font-medium ${selectedSources.llmDiscovery ? 'text-white' : 'text-zinc-300'}`}>
+                                                Enable LLM-powered Model Discovery
+                                            </div>
+                                            <div className="text-xs text-zinc-500 mt-0.5">
+                                                Use AI to automatically discover and classify models from unstructured sources. Requires an API key below.
+                                            </div>
+                                        </div>
+                                    </label>
+                                </div>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">

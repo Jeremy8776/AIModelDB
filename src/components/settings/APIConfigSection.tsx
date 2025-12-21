@@ -393,6 +393,37 @@ export function APIConfigSection() {
         </p>
       </div>
 
+      {/* Discovery Configuration */}
+      <div className={`rounded-xl border p-4 ${bgCard}`}>
+        <label className="flex items-center justify-between cursor-pointer group">
+          <div>
+            <h4 className="font-medium text-base">AI Model Discovery</h4>
+            <p className="text-sm text-zinc-500 mt-1">
+              Use configured LLMs to automatically discover, validate, and classify new models from unstructured sources.
+            </p>
+          </div>
+          <div className="relative flex items-center justify-center">
+            <input
+              type="checkbox"
+              checked={settings.dataSources?.llmDiscovery ?? false}
+              onChange={(e) => saveSettings({
+                dataSources: {
+                  ...settings.dataSources,
+                  llmDiscovery: e.target.checked
+                }
+              })}
+              className="sr-only"
+            />
+            <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${settings.dataSources?.llmDiscovery
+              ? 'bg-accent border-accent'
+              : 'border-zinc-600 group-hover:border-zinc-500'
+              }`}>
+              {settings.dataSources?.llmDiscovery && <Check size={14} strokeWidth={3} className="text-white" />}
+            </div>
+          </div>
+        </label>
+      </div>
+
       {/* Preferred Provider Selection - only show if multiple providers are available */}
       {availableProviders.length > 1 && (
         <div className={`rounded-xl border p-4 ${bgCard}`}>

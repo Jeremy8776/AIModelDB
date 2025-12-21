@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from "react";
-import { DatabaseZap } from "lucide-react";
+import { DatabaseZap, RefreshCw, X } from "lucide-react";
 import { ThemeProvider, useTheme } from "./context/ThemeContext";
 import { SettingsProvider, useSettings } from "./context/SettingsContext";
+import { UpdateProvider, useUpdate } from "./context/UpdateContext";
 import { ApiDir, Model } from "./types";
 import { useModels, isModelIncomplete } from "./hooks/useModels";
 import { useModelFiltering } from "./hooks/useModelFiltering";
@@ -36,6 +37,7 @@ import { MainLayout } from "./components/layout/MainLayout";
 import { ToastContainer } from "./components/toasts/ToastContainer";
 import { UndoToast } from "./components/toasts/UndoToast";
 import { ConsoleButton } from "./components/console/ConsoleButton";
+
 /**
  * Main content component for the AI Model Database Pro application.
  * Manages model browsing, filtering, synchronization, validation, and export functionality.
@@ -43,6 +45,17 @@ import { ConsoleButton } from "./components/console/ConsoleButton";
 function AIModelDBProContent() {
   const { theme } = useTheme();
   const { settings } = useSettings();
+  const { updateAvailable, updateVersion } = useUpdate();
+  const [showUpdateToast, setShowUpdateToast] = useState(false);
+
+  // Show toast when update becomes available
+  useEffect(() => {
+    if (updateAvailable) {
+      setShowUpdateToast(true);
+      const t = setTimeout(() => setShowUpdateToast(false), 8000);
+      return () => clearTimeout(t);
+    }
+  }, [updateAvailable]);
 
   // Custom hooks for state management
   const uiState = useUIState();
@@ -396,8 +409,6 @@ function AIModelDBProContent() {
       onUndo: () => {
         // Restore models
         setModels(prev => dedupe([...prev, ...modelsToDelete]));
-        // Note: we don't restore selection to avoid confusion, or we could?
-        // Let's keep it simple.
       },
       duration: 5000
     });
@@ -451,6 +462,26 @@ function AIModelDBProContent() {
 
   return (
     <div className={`min-h-screen ${bgRoot}`}>
+      {/* Update Toast Notification */}
+      {showUpdateToast && (
+        <div className={`fixed top-24 right-4 z-[100] animate-in slide-in-from-right fade-in duration-300 ${theme === 'dark' ? 'bg-zinc-800 border-zinc-700' : 'bg-white border-gray-200'} border shadow-2xl rounded-xl p-4 max-w-sm`}>
+          <div className="flex items-start gap-4">
+            <div className="p-2 bg-violet-600 rounded-lg text-white">
+              <RefreshCw className="size-5" />
+            </div>
+            <div className="flex-1">
+              <h4 className={`font-semibold text-sm mb-1 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>New Update Available</h4>
+              <p className={`text-xs ${theme === 'dark' ? 'text-zinc-400' : 'text-gray-600'}`}>
+                Version {updateVersion} is available to download.
+              </p>
+            </div>
+            <button onClick={() => setShowUpdateToast(false)} className={`p-1 rounded-md hover:bg-black/5 ${theme === 'dark' ? 'text-zinc-500 hover:text-white' : 'text-gray-400 hover:text-black'}`}>
+              <X className="size-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {!isOnline && (
         <div className="bg-amber-500/90 backdrop-blur text-white text-xs font-bold text-center py-1 sticky top-0 z-50">
           ⚠️ OFFLINE MODE - Network features disabled
@@ -466,6 +497,7 @@ function AIModelDBProContent() {
         onImport={() => modalState.setShowImport(true)}
         onSettings={() => modalState.setShowSync(true)}
         theme={theme}
+        hasUpdate={updateAvailable}
       />
 
       <div className="w-full px-4 py-2">
@@ -631,13 +663,7 @@ function AIModelDBProContent() {
         isOpen={modalState.showExportModal}
         onClose={() => modalState.setShowExportModal(false)}
         onExport={(format, scope, customCriteria) => {
-          // If models are manually selected, prefer export of selection
-          // NOTE: 'filtered' scope is removed from UI, but we keep this check for safety if selectedIds > 0
-          // Actually, scope type is now 'all' | 'custom', so 'filtered' logic is dead.
-          // We should just support simple export.
-
           if (scope === 'custom' && customCriteria) {
-            // Use custom criteria to filter models
             const fullCriteria = {
               query: '',
               domainPick: 'All',
@@ -652,7 +678,6 @@ function AIModelDBProContent() {
             exportModels({ format, models: customFiltered });
             consoleLogging.addConsoleLog(`Exported ${customFiltered.length} models (Custom Filter).`);
           } else {
-            // 'all' scope
             exportModels({ format, models: models });
             consoleLogging.addConsoleLog(`Exported ${models.length} models (Entire DB).`);
           }
@@ -774,13 +799,15 @@ function AIModelDBProContent() {
 
 /**
  * Main AI Model Database Pro component with context providers.
- * Provides theme and settings context to the application.
+ * Provides theme, settings, and update context to the application.
  */
 export default function AIModelDBPro() {
   return (
     <ThemeProvider>
       <SettingsProvider>
-        <AIModelDBProContent />
+        <UpdateProvider>
+          <AIModelDBProContent />
+        </UpdateProvider>
       </SettingsProvider>
     </ThemeProvider>
   );

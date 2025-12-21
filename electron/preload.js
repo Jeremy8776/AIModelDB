@@ -13,6 +13,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // Auto-updater methods
     checkForUpdates: () => ipcRenderer.send('check-for-updates'),
     installUpdate: () => ipcRenderer.send('install-update'),
+    downloadUpdate: () => ipcRenderer.send('download-update'),
     onUpdateStatus: (callback) => {
         ipcRenderer.on('update-status', (event, data) => callback(data));
     },

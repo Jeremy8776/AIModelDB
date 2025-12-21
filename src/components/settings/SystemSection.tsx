@@ -259,39 +259,138 @@ export function SystemSection() {
 
       {/* Updates Section - Only show in Electron */}
       {isElectronApp && (
-        <div className={`rounded-xl border p-4 ${bgCard}`}>
-          <h4 className="font-medium mb-4 flex items-center gap-2">
-            <Download size={18} className="text-zinc-500" />
-            Updates
-          </h4>
-          <div className="space-y-4">
-            <p className="text-sm text-zinc-700 dark:text-zinc-400">
-              Check for new versions of AI Model DB Pro.
+        <UpdatesCard
+          appVersion={appVersion}
+          isCheckingUpdate={isCheckingUpdate}
+          onCheckForUpdates={handleCheckForUpdates}
+        />
+      )}
+    </div>
+  );
+}
+
+// Updates Card Component using UpdateContext
+function UpdatesCard({ appVersion, isCheckingUpdate, onCheckForUpdates }: {
+  appVersion: string;
+  isCheckingUpdate: boolean;
+  onCheckForUpdates: () => void;
+}) {
+  const { updateAvailable, updateVersion, updateDownloaded, downloadProgress, downloadUpdate, installUpdate, checking, error } = require('../../context/UpdateContext').useUpdate();
+
+  const bgCard = 'border-zinc-800 bg-black';
+
+  // If update is available but not downloaded
+  if (updateAvailable && !updateDownloaded) {
+    return (
+      <div className={`rounded-xl border-2 border-violet-500 p-4 bg-gradient-to-br from-violet-900/20 to-black`}>
+        <div className="flex items-start gap-4">
+          <div className="p-3 bg-violet-600 rounded-xl text-white">
+            <Download size={24} />
+          </div>
+          <div className="flex-1">
+            <h4 className="font-semibold text-lg text-white mb-1">
+              New Version Detected!
+            </h4>
+            <p className="text-sm text-zinc-400 mb-3">
+              Version <span className="font-mono text-violet-400">{updateVersion}</span> is available.
+              You are currently on <span className="font-mono text-zinc-500">{appVersion}</span>.
             </p>
 
-            {/* Update Status */}
-            {statusInfo && (
-              <div className={`flex items-center gap-2 text-sm ${statusInfo.color}`}>
-                <statusInfo.icon size={16} className={statusInfo.spin ? 'animate-spin' : ''} />
-                <span>{statusInfo.message}</span>
+            {downloadProgress !== null ? (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-sm text-zinc-400">
+                  <Loader2 size={14} className="animate-spin" />
+                  <span>Downloading... {Math.round(downloadProgress)}%</span>
+                </div>
+                <div className="w-full bg-zinc-800 rounded-full h-2">
+                  <div
+                    className="bg-violet-500 h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${downloadProgress}%` }}
+                  />
+                </div>
               </div>
+            ) : (
+              <button
+                onClick={downloadUpdate}
+                className="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg font-medium transition-colors"
+              >
+                <Download size={16} />
+                Download Update
+              </button>
             )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-            {/* Check for Updates Button */}
+  // If update is downloaded and ready to install
+  if (updateDownloaded) {
+    return (
+      <div className={`rounded-xl border-2 border-green-500 p-4 bg-gradient-to-br from-green-900/20 to-black`}>
+        <div className="flex items-start gap-4">
+          <div className="p-3 bg-green-600 rounded-xl text-white">
+            <CheckCircle size={24} />
+          </div>
+          <div className="flex-1">
+            <h4 className="font-semibold text-lg text-white mb-1">
+              Update Ready to Install
+            </h4>
+            <p className="text-sm text-zinc-400 mb-3">
+              Version <span className="font-mono text-green-400">{updateVersion}</span> has been downloaded.
+              Restart the application to apply the update.
+            </p>
             <button
-              onClick={handleCheckForUpdates}
-              disabled={isCheckingUpdate}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${isCheckingUpdate
-                ? 'opacity-60 cursor-not-allowed bg-zinc-700'
-                : 'bg-accent hover:bg-accent-dark text-white'
-                }`}
+              onClick={installUpdate}
+              className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors"
             >
-              <RefreshCw size={16} className={isCheckingUpdate ? 'animate-spin' : ''} />
-              {isCheckingUpdate ? 'Checking...' : 'Check for Updates'}
+              <RefreshCw size={16} />
+              Restart & Install
             </button>
           </div>
         </div>
-      )}
+      </div>
+    );
+  }
+
+  // Default: No update available or not checked yet
+  return (
+    <div className={`rounded-xl border p-4 ${bgCard}`}>
+      <h4 className="font-medium mb-4 flex items-center gap-2">
+        <Download size={18} className="text-zinc-500" />
+        Updates
+      </h4>
+      <div className="space-y-4">
+        <p className="text-sm text-zinc-700 dark:text-zinc-400">
+          Check for new versions of AI Model DB Pro.
+        </p>
+
+        {error && (
+          <div className="flex items-center gap-2 text-sm text-red-500">
+            <AlertCircle size={16} />
+            <span>{error}</span>
+          </div>
+        )}
+
+        {checking && (
+          <div className="flex items-center gap-2 text-sm text-zinc-400">
+            <Loader2 size={16} className="animate-spin" />
+            <span>Checking for updates...</span>
+          </div>
+        )}
+
+        <button
+          onClick={onCheckForUpdates}
+          disabled={isCheckingUpdate || checking}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${isCheckingUpdate || checking
+            ? 'opacity-60 cursor-not-allowed bg-zinc-700'
+            : 'bg-accent hover:bg-accent-dark text-white'
+            }`}
+        >
+          <RefreshCw size={16} className={isCheckingUpdate || checking ? 'animate-spin' : ''} />
+          {isCheckingUpdate || checking ? 'Checking...' : 'Check for Updates'}
+        </button>
+      </div>
     </div>
   );
 }

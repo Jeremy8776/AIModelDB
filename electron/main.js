@@ -116,21 +116,6 @@ autoUpdater.on('checking-for-update', () => {
 autoUpdater.on('update-available', (info) => {
     console.log('[AutoUpdater] Update available:', info.version);
     sendStatusToWindow('update-available', info);
-
-    // Ask user if they want to download
-    dialog.showMessageBox(mainWindow, {
-        type: 'info',
-        title: 'Update Available',
-        message: `A new version (${info.version}) is available!`,
-        detail: 'Would you like to download and install it now? The app will restart to apply the update.',
-        buttons: ['Download & Install', 'Later'],
-        defaultId: 0,
-        cancelId: 1
-    }).then(({ response }) => {
-        if (response === 0) {
-            autoUpdater.downloadUpdate();
-        }
-    });
 });
 
 autoUpdater.on('update-not-available', (info) => {
@@ -146,21 +131,6 @@ autoUpdater.on('download-progress', (progressObj) => {
 autoUpdater.on('update-downloaded', (info) => {
     console.log('[AutoUpdater] Update downloaded');
     sendStatusToWindow('update-downloaded', info);
-
-    // Notify user and ask to restart
-    dialog.showMessageBox(mainWindow, {
-        type: 'info',
-        title: 'Update Ready',
-        message: 'Update downloaded!',
-        detail: 'The update has been downloaded. Restart now to apply the update?',
-        buttons: ['Restart Now', 'Later'],
-        defaultId: 0,
-        cancelId: 1
-    }).then(({ response }) => {
-        if (response === 0) {
-            autoUpdater.quitAndInstall();
-        }
-    });
 });
 
 autoUpdater.on('error', (err) => {
@@ -215,6 +185,11 @@ ipcMain.on('check-for-updates', () => {
 // Handle install update request
 ipcMain.on('install-update', () => {
     autoUpdater.quitAndInstall();
+});
+
+// Handle download update request
+ipcMain.on('download-update', () => {
+    autoUpdater.downloadUpdate();
 });
 
 // SafeStorage IPC handlers
