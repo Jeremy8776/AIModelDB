@@ -10,13 +10,13 @@
 
 <p align="center">
   <a href="https://github.com/Jeremy8776/AIModelDB/releases/latest">
-    <img src="https://img.shields.io/github/v/release/Jeremy8776/AIModelDB?style=for-the-badge&logo=github&color=7c3aed" alt="Latest Release">
+    <img src="https://img.shields.io/badge/Windows-Download-0078D6?style=for-the-badge&logo=windows&logoColor=white" alt="Download for Windows">
   </a>
-  <a href="https://github.com/Jeremy8776/AIModelDB/releases">
-    <img src="https://img.shields.io/github/downloads/Jeremy8776/AIModelDB/total?style=for-the-badge&logo=github&color=22c55e" alt="Downloads">
+  <a href="https://github.com/Jeremy8776/AIModelDB/releases/latest">
+    <img src="https://img.shields.io/badge/macOS-Download-000000?style=for-the-badge&logo=apple&logoColor=white" alt="Download for macOS">
   </a>
-  <a href="https://github.com/Jeremy8776/AIModelDB/blob/main/LICENSE">
-    <img src="https://img.shields.io/github/license/Jeremy8776/AIModelDB?style=for-the-badge&color=3b82f6" alt="License">
+  <a href="https://github.com/Jeremy8776/AIModelDB/releases/latest">
+    <img src="https://img.shields.io/badge/Linux-Download-FCC624?style=for-the-badge&logo=linux&logoColor=black" alt="Download for Linux">
   </a>
 </p>
 
