@@ -162,6 +162,50 @@ MIT License - See [LICENSE](LICENSE) for details.
 
 ---
 
+## Disclaimer
+
+**IMPORTANT: READ BEFORE USE**
+
+This software is provided "as is", without warranty of any kind, express or implied. By using AI Model DB Pro, you acknowledge and agree to the following:
+
+### Data Sources and Terms of Service
+
+AI Model DB Pro is a **tool** that facilitates access to publicly available APIs and data sources. The software itself does not host, store, or redistribute any model data on behalf of users.
+
+**Users are solely responsible for:**
+- Reviewing and complying with the Terms of Service of each data source they choose to enable
+- Ensuring their use of aggregated data complies with applicable laws and regulations
+- Obtaining any necessary permissions or licenses for their intended use of the data
+- Respecting rate limits and fair usage policies of third-party services
+
+**The developers of AI Model DB Pro:**
+- Do not guarantee the accuracy, completeness, or availability of any third-party data
+- Are not responsible for any changes to third-party APIs or Terms of Service
+- Do not endorse or verify any models, content, or information retrieved through this software
+- Accept no liability for any damages arising from the use or inability to use this software
+
+### Third-Party Services
+
+This software connects to third-party services including but not limited to Hugging Face, Civitai, OpenModelDB, and Artificial Analysis. These services are owned and operated by their respective companies and are subject to their own terms, privacy policies, and usage restrictions.
+
+**Each data source may have different terms regarding:**
+- Commercial vs. non-commercial use
+- Data aggregation and redistribution
+- API usage limits and authentication requirements
+- Geographic restrictions
+
+Users must independently verify compliance with each service's current terms before enabling data synchronization.
+
+### No Legal Advice
+
+Nothing in this software or documentation constitutes legal advice. If you have questions about the legality of your intended use, consult with a qualified legal professional.
+
+### Indemnification
+
+By using this software, you agree to indemnify and hold harmless the developers from any claims, damages, or expenses arising from your use of the software or violation of any third-party terms of service.
+
+---
+
 ## Contributing
 
 Contributions are welcome! Please read our contributing guidelines before submitting PRs.
