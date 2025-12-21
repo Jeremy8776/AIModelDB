@@ -34,7 +34,7 @@
   <tr>
     <td width="50%">
       <h3>Multi-Source Database</h3>
-      <p>Aggregate AI models from Hugging Face, Civitai, TensorArt, Roboflow, Kaggle, and more into one unified database.</p>
+      <p>Aggregate AI models from Hugging Face, Civitai, and more into one unified database.</p>
     </td>
     <td width="50%">
       <h3>LLM-Powered Validation</h3>
