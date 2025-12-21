@@ -147,9 +147,9 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "installerHeader": "resources/header.png",
-      "installerSidebar": "resources/sidebar.png",
-      "license": "resources/EULA.txt"
+      "installerHeader": "build/installerHeader.png",
+      "installerSidebar": "build/installerSidebar.png",
+      "license": "build/license.txt"
     }
   }
 }
