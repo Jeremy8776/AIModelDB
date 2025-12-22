@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { DatabaseZap, RefreshCw, X } from "lucide-react";
+import { DatabaseZap } from "lucide-react";
 import { ThemeProvider, useTheme } from "./context/ThemeContext";
 import { SettingsProvider, useSettings } from "./context/SettingsContext";
 import { UpdateProvider, useUpdate } from "./context/UpdateContext";
@@ -37,6 +37,9 @@ import { MainLayout } from "./components/layout/MainLayout";
 import { ToastContainer } from "./components/toasts/ToastContainer";
 import { UndoToast } from "./components/toasts/UndoToast";
 import { ConsoleButton } from "./components/console/ConsoleButton";
+import { KeyboardShortcutsModal } from "./components/KeyboardShortcutsModal";
+import { TitleBar } from "./components/TitleBar";
+import { UpdateProgress } from "./components/UpdateProgress";
 
 /**
  * Main content component for the AI Model Database Pro application.
@@ -45,17 +48,16 @@ import { ConsoleButton } from "./components/console/ConsoleButton";
 function AIModelDBProContent() {
   const { theme } = useTheme();
   const { settings } = useSettings();
-  const { updateAvailable, updateVersion } = useUpdate();
-  const [showUpdateToast, setShowUpdateToast] = useState(false);
+  const { updateAvailable, updateVersion, checking, downloadProgress, updateDownloaded, error } = useUpdate();
+  const [showUpdateProgress, setShowUpdateProgress] = useState(false);
+  const [showShortcutsModal, setShowShortcutsModal] = useState(false);
 
-  // Show toast when update becomes available
+  // Show update progress when any update activity happens
   useEffect(() => {
-    if (updateAvailable) {
-      setShowUpdateToast(true);
-      const t = setTimeout(() => setShowUpdateToast(false), 8000);
-      return () => clearTimeout(t);
+    if (updateAvailable || checking || downloadProgress !== null || updateDownloaded || error) {
+      setShowUpdateProgress(true);
     }
-  }, [updateAvailable]);
+  }, [updateAvailable, checking, downloadProgress, updateDownloaded, error]);
 
   // Custom hooks for state management
   const uiState = useUIState();
@@ -131,7 +133,10 @@ function AIModelDBProContent() {
   });
 
   // Keyboard shortcuts and window events
-  useKeyboardShortcuts(searchRef, () => syncAll(true));
+  useKeyboardShortcuts(searchRef, () => syncAll(true), {
+    onShowShortcuts: () => setShowShortcutsModal(true),
+    onOpenSettings: () => modalState.setShowSync(true)
+  });
   useWindowEvents({
     onEditModel: openModelEditor,
     onShowConfirmation: modalState.setConfirmationToast,
@@ -461,339 +466,333 @@ function AIModelDBProContent() {
   }
 
   return (
-    <div className={`min-h-screen ${bgRoot}`}>
-      {/* Update Toast Notification */}
-      {showUpdateToast && (
-        <div className={`fixed top-24 right-4 z-[100] animate-in slide-in-from-right fade-in duration-300 ${theme === 'dark' ? 'bg-zinc-800 border-zinc-700' : 'bg-white border-gray-200'} border shadow-2xl rounded-xl p-4 max-w-sm`}>
-          <div className="flex items-start gap-4">
-            <div className="p-2 bg-violet-600 rounded-lg text-white">
-              <RefreshCw className="size-5" />
-            </div>
-            <div className="flex-1">
-              <h4 className={`font-semibold text-sm mb-1 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>New Update Available</h4>
-              <p className={`text-xs ${theme === 'dark' ? 'text-zinc-400' : 'text-gray-600'}`}>
-                Version {updateVersion} is available to download.
-              </p>
-            </div>
-            <button onClick={() => setShowUpdateToast(false)} className={`p-1 rounded-md hover:bg-black/5 ${theme === 'dark' ? 'text-zinc-500 hover:text-white' : 'text-gray-400 hover:text-black'}`}>
-              <X className="size-4" />
-            </button>
+    <>
+      <TitleBar />
+      <div className={`min-h-screen ${bgRoot}`}>
+        {/* Update Progress Toast */}
+        <UpdateProgress
+          show={showUpdateProgress}
+          onDismiss={() => setShowUpdateProgress(false)}
+        />
+
+        {!isOnline && (
+          <div className="bg-amber-500/90 backdrop-blur text-white text-xs font-bold text-center py-1 sticky top-0 z-50">
+            ⚠️ OFFLINE MODE - Network features disabled
           </div>
-        </div>
-      )}
-
-      {!isOnline && (
-        <div className="bg-amber-500/90 backdrop-blur text-white text-xs font-bold text-center py-1 sticky top-0 z-50">
-          ⚠️ OFFLINE MODE - Network features disabled
-        </div>
-      )}
-      <Header
-        query={uiState.query}
-        onQueryChange={uiState.setQuery}
-        searchRef={searchRef}
-        isSyncing={syncState.isSyncing}
-        onSync={handleSyncWithApiCheck}
-        onAddModel={() => modalState.setShowAddModel(true)}
-        onImport={() => modalState.setShowImport(true)}
-        onSettings={() => modalState.setShowSync(true)}
-        theme={theme}
-        hasUpdate={updateAvailable}
-      />
-
-      <div className="w-full px-4 py-2">
-        <Toolbar
+        )}
+        <Header
+          query={uiState.query}
+          onQueryChange={uiState.setQuery}
+          searchRef={searchRef}
           isSyncing={syncState.isSyncing}
-          syncProgress={syncState.syncProgress}
-          lastSync={syncState.lastSync}
-          pageItems={pageItems}
-          total={total}
+          onSync={handleSyncWithApiCheck}
+          onAddModel={() => modalState.setShowAddModel(true)}
+          onImport={() => modalState.setShowImport(true)}
+          onSettings={() => modalState.setShowSync(true)}
+          theme={theme}
+          hasUpdate={updateAvailable}
+        />
+
+        <div className="w-full px-4 py-2">
+          <Toolbar
+            isSyncing={syncState.isSyncing}
+            syncProgress={syncState.syncProgress}
+            lastSync={syncState.lastSync}
+            pageItems={pageItems}
+            total={total}
+            minDownloads={uiState.minDownloads}
+            pageSize={uiState.pageSize}
+            onPageSizeChange={(size) => {
+              uiState.setPageSize(size);
+              setPage(1);
+            }}
+            page={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            totalModels={models.length}
+            onExport={() => modalState.setShowExportModal(true)}
+            onDeleteDatabase={() => {
+              modalState.setConfirmationToast({
+                title: 'Delete Database',
+                message: 'Wipe all local data, caches and IndexedDB for this app? This CANNOT be undone.',
+                type: 'error',
+                confirmText: 'Delete All Data',
+                onConfirm: async () => {
+                  try {
+                    await (window as any).__hardReset?.();
+                  } catch { }
+                  window.dispatchEvent(new CustomEvent('hard-reset'));
+                }
+              });
+            }}
+            onValidateModels={validateModels}
+            theme={theme}
+          />
+        </div>
+
+        <MainLayout
+          domainPick={uiState.domainPick}
+          onDomainChange={uiState.setDomainPick}
           minDownloads={uiState.minDownloads}
-          pageSize={uiState.pageSize}
-          onPageSizeChange={(size) => {
-            uiState.setPageSize(size);
-            setPage(1);
+          onMinDownloadsChange={uiState.setMinDownloads}
+          licenseTypes={uiState.licenseTypes}
+          onLicenseTypesChange={uiState.setLicenseTypes}
+          commercialAllowed={uiState.commercialAllowed}
+          onCommercialAllowedChange={uiState.setCommercialAllowed}
+          includeTags={uiState.includeTags}
+          onIncludeTagsChange={uiState.setIncludeTags}
+          excludeTags={uiState.excludeTags}
+          onExcludeTagsChange={uiState.setExcludeTags}
+          favoritesOnly={uiState.favoritesOnly}
+          onFavoritesOnlyChange={uiState.setFavoritesOnly}
+          onClearFilters={() => {
+            uiState.setLicenseTypes([]);
+            uiState.setCommercialAllowed(null);
+            uiState.setIncludeTags([]);
+            uiState.setExcludeTags([]);
+            uiState.setMinDownloads(0);
+            uiState.setDomainPick('All');
+            uiState.setFavoritesOnly(false);
           }}
-          page={page}
-          totalPages={totalPages}
-          onPageChange={setPage}
+          models={visibleItems}
+          sortKey={uiState.sortKey}
+          sortDirection={uiState.sortDirection}
+          onSortChange={(key, direction) => {
+            uiState.setSortKey(key);
+            uiState.setSortDirection(direction);
+          }}
+          onModelOpen={(model, element) => {
+            if (uiState.open && uiState.open.id === model.id) {
+              uiState.setOpen(null);
+              uiState.setTriggerElement(null);
+            } else {
+              uiState.setOpen(model);
+              uiState.setTriggerElement(element || null);
+            }
+          }}
+          hasMore={hasMore && uiState.pageSize === null}
+          sentinelRef={sentinelRef}
+          displayCount={displayCount}
+          totalCount={totalCount}
+          openModel={uiState.open}
+          onCloseDetail={() => {
+            uiState.setOpen(null);
+            uiState.setTriggerElement(null);
+          }}
+          onDeleteModel={(id) => {
+            const m = models.find(m => m.id === id);
+            if (m) handleUndoableDelete([m]);
+          }}
+          triggerElement={uiState.triggerElement}
+          isSyncing={syncState.isSyncing}
+          filteredCount={filtered.length}
+          onShowOnboarding={() => modalState.setShowOnboarding(true)}
+          onShowImport={() => modalState.setShowImport(true)}
+          theme={theme}
+          selectedIds={selectedIds}
+          onSelect={handleSelect}
+          onSelectAll={handleSelectAll}
+          onBulkDelete={handleBulkDelete}
+          onBulkExport={handleBulkExport}
+          onToggleFavorite={(model) => {
+            setModels(prev => prev.map(m => m.id === model.id ? { ...m, isFavorite: !m.isFavorite } : m));
+          }}
+        />
+
+        <OnboardingWizard
+          isOpen={modalState.showOnboarding}
+          onClose={() => modalState.setShowOnboarding(false)}
+          onComplete={() => {
+            modalState.setShowOnboarding(false);
+            handleLiveSync();
+          }}
+        />
+
+        <AddModelModal
+          isOpen={modalState.showAddModel}
+          onClose={() => modalState.setShowAddModel(false)}
+          onAddModel={addModel}
+          domains={["All", "LLM", "VLM", "ImageGen", "VideoGen", "Audio", "ASR", "TTS", "3D", "World/Sim", "LoRA", "FineTune", "BackgroundRemoval", "Upscaler", "Other"] as const}
+          addConsoleLog={consoleLogging.addConsoleLog}
+        />
+
+        <ImportModal
+          isOpen={modalState.showImport}
+          onClose={() => modalState.setShowImport(false)}
+          onImport={handleImport}
+          addConsoleLog={consoleLogging.addConsoleLog}
+        />
+
+        <SettingsModal
+          isOpen={modalState.showSync}
+          onClose={() => modalState.setShowSync(false)}
+          onSync={handleLiveSync}
+          addConsoleLog={consoleLogging.addConsoleLog}
+          currentModels={models}
+          onRestore={(restored) => {
+            setModels(restored);
+            consoleLogging.addConsoleLog(`Restored ${restored.length} models from snapshot`);
+          }}
+        />
+
+        <FlaggedModelsModal
+          flagged={modalState.flaggedModels}
+          isOpen={modalState.showFlaggedModal}
+          onApprove={handleApproveFlagged}
+          onDeny={handleDenyFlagged}
+          onEdit={handleEditFlagged}
+          onClose={() => modalState.setShowFlaggedModal(false)}
+          addConsoleLog={consoleLogging.addConsoleLog}
+        />
+
+        <ModelEditor
+          model={selectedModelForEdit}
+          isOpen={showModelEditor}
+          onClose={closeModelEditor}
+          onSave={saveModelEdit}
+        />
+
+        <ExportModal
+          isOpen={modalState.showExportModal}
+          onClose={() => modalState.setShowExportModal(false)}
+          onExport={(format, scope, customCriteria) => {
+            if (scope === 'custom' && customCriteria) {
+              const fullCriteria = {
+                query: '',
+                domainPick: 'All',
+                sortKey: 'recent',
+                sortDirection: 'asc' as const,
+                minDownloads: 0,
+                pageSize: null,
+                ...customCriteria
+              } as any;
+
+              const customFiltered = filterModels(models, fullCriteria);
+              exportModels({ format, models: customFiltered });
+              consoleLogging.addConsoleLog(`Exported ${customFiltered.length} models (Custom Filter).`);
+            } else {
+              exportModels({ format, models: models });
+              consoleLogging.addConsoleLog(`Exported ${models.length} models (Entire DB).`);
+            }
+          }}
           totalModels={models.length}
-          onExport={() => modalState.setShowExportModal(true)}
-          onDeleteDatabase={() => {
-            modalState.setConfirmationToast({
-              title: 'Delete Database',
-              message: 'Wipe all local data, caches and IndexedDB for this app? This CANNOT be undone.',
-              type: 'error',
-              confirmText: 'Delete All Data',
-              onConfirm: async () => {
-                try {
-                  await (window as any).__hardReset?.();
-                } catch { }
-                window.dispatchEvent(new CustomEvent('hard-reset'));
-              }
-            });
+          currentFilters={{
+            domainPick: uiState.domainPick,
+            favoritesOnly: uiState.favoritesOnly,
+            minDownloads: uiState.minDownloads,
+            licenseTypes: uiState.licenseTypes,
+            commercialAllowed: uiState.commercialAllowed,
+            includeTags: uiState.includeTags,
+            excludeTags: uiState.excludeTags
           }}
-          onValidateModels={validateModels}
+          theme={theme}
+        />
+
+        <SimpleValidationModal
+          isOpen={showValidationModal}
+          onClose={closeValidationModal}
+          onValidateAll={async (opts?: any) => {
+            const result = await validateEntireDatabase({
+              batchSize: opts?.batchSize ?? 50,
+              pauseMs: opts?.pauseMs ?? 60000,
+              maxBatches: opts?.maxBatches ?? 0,
+              apiConfig: settings.apiConfig,
+              preferredModelProvider: settings.preferredModelProvider
+            });
+            if (result.success && result.updatedModels) {
+              setModels(result.updatedModels);
+            }
+            return result;
+          }}
+          models={models}
+          hasApiProvider={hasApiProvider}
+        />
+
+        {consoleLogging.showConsole && (
+          <TerminalConsole
+            logs={consoleLogging.consoleLogs}
+            onClose={() => consoleLogging.setShowConsole(false)}
+            onClear={consoleLogging.clearConsoleLogs}
+          />
+        )}
+
+        <ToastContainer
+          importToast={modalState.importToast}
+          onDismissImport={() => modalState.setImportToast(null)}
+          validationToast={validationState.validationToast}
+          onDismissValidation={() => validationState.setValidationToast(null)}
+          theme={theme}
+        />
+
+        <UndoToast
+          data={modalState.undoToast}
+          onClose={() => modalState.setUndoToast(null)}
+        />
+
+        <ConfirmationToast
+          isOpen={!!modalState.confirmationToast}
+          title={modalState.confirmationToast?.title || ''}
+          message={modalState.confirmationToast?.message}
+          type={modalState.confirmationToast?.type}
+          confirmText={modalState.confirmationToast?.confirmText}
+          cancelText={modalState.confirmationToast?.cancelText}
+          onConfirm={() => {
+            modalState.confirmationToast?.onConfirm();
+            modalState.setConfirmationToast(null);
+          }}
+          onCancel={() => modalState.setConfirmationToast(null)}
+        />
+
+        {(isValidating || validationJobs.length > 0) && (
+          <ValidationProgress
+            jobs={validationJobs}
+            onClear={clearFinishedValidationJobs}
+            onPause={pauseValidation}
+            onResume={resumeValidation}
+            onCancelAll={stopValidation}
+            isPaused={validationState.validationPaused}
+          />
+        )}
+
+        {validationProgress && (
+          <div className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-40 rounded-lg border px-3 py-2 shadow-lg ${theme === 'dark' ? 'border-zinc-800 bg-black text-zinc-100' : 'border-zinc-200 bg-white text-zinc-900'}`}>
+            <div className="flex items-center gap-2">
+              <div className="w-48 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                <div className="h-full bg-violet-500 transition-all" style={{ width: `${(validationProgress.current / validationProgress.total) * 100}%` }} />
+              </div>
+              <span className="text-[11px] opacity-70 whitespace-nowrap">{validationProgress.current}/{validationProgress.total}</span>
+            </div>
+            <div className="mt-2 flex items-center justify-end gap-1">
+              <button
+                className={`text-[10px] px-2 py-0.5 rounded transition-colors ${theme === 'dark' ? 'bg-zinc-800 text-zinc-200 hover:bg-zinc-700' : 'bg-zinc-100 text-zinc-800 hover:bg-zinc-200'}`}
+                onClick={() => window.dispatchEvent(new CustomEvent('open-validation-progress'))}
+                title="Show validation details"
+              >
+                Details
+              </button>
+              <button
+                className={`text-[10px] px-2 py-0.5 rounded transition-colors ${theme === 'dark' ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-red-600 text-white hover:bg-red-700'}`}
+                onClick={stopValidation}
+                title="Cancel all validation jobs"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+
+        <KeyboardShortcutsModal
+          isOpen={showShortcutsModal}
+          onClose={() => setShowShortcutsModal(false)}
+        />
+
+        <ConsoleButton
+          showConsole={consoleLogging.showConsole}
+          onShowConsole={() => consoleLogging.setShowConsole(true)}
           theme={theme}
         />
       </div>
-
-      <MainLayout
-        domainPick={uiState.domainPick}
-        onDomainChange={uiState.setDomainPick}
-        minDownloads={uiState.minDownloads}
-        onMinDownloadsChange={uiState.setMinDownloads}
-        licenseTypes={uiState.licenseTypes}
-        onLicenseTypesChange={uiState.setLicenseTypes}
-        commercialAllowed={uiState.commercialAllowed}
-        onCommercialAllowedChange={uiState.setCommercialAllowed}
-        includeTags={uiState.includeTags}
-        onIncludeTagsChange={uiState.setIncludeTags}
-        excludeTags={uiState.excludeTags}
-        onExcludeTagsChange={uiState.setExcludeTags}
-        favoritesOnly={uiState.favoritesOnly}
-        onFavoritesOnlyChange={uiState.setFavoritesOnly}
-        onClearFilters={() => {
-          uiState.setLicenseTypes([]);
-          uiState.setCommercialAllowed(null);
-          uiState.setIncludeTags([]);
-          uiState.setExcludeTags([]);
-          uiState.setMinDownloads(0);
-          uiState.setDomainPick('All');
-          uiState.setFavoritesOnly(false);
-        }}
-        models={visibleItems}
-        sortKey={uiState.sortKey}
-        sortDirection={uiState.sortDirection}
-        onSortChange={(key, direction) => {
-          uiState.setSortKey(key);
-          uiState.setSortDirection(direction);
-        }}
-        onModelOpen={(model, element) => {
-          if (uiState.open && uiState.open.id === model.id) {
-            uiState.setOpen(null);
-            uiState.setTriggerElement(null);
-          } else {
-            uiState.setOpen(model);
-            uiState.setTriggerElement(element || null);
-          }
-        }}
-        hasMore={hasMore && uiState.pageSize === null}
-        sentinelRef={sentinelRef}
-        displayCount={displayCount}
-        totalCount={totalCount}
-        openModel={uiState.open}
-        onCloseDetail={() => {
-          uiState.setOpen(null);
-          uiState.setTriggerElement(null);
-        }}
-        onDeleteModel={(id) => {
-          const m = models.find(m => m.id === id);
-          if (m) handleUndoableDelete([m]);
-        }}
-        triggerElement={uiState.triggerElement}
-        isSyncing={syncState.isSyncing}
-        filteredCount={filtered.length}
-        onShowOnboarding={() => modalState.setShowOnboarding(true)}
-        onShowImport={() => modalState.setShowImport(true)}
-        theme={theme}
-        selectedIds={selectedIds}
-        onSelect={handleSelect}
-        onSelectAll={handleSelectAll}
-        onBulkDelete={handleBulkDelete}
-        onBulkExport={handleBulkExport}
-        onToggleFavorite={(model) => {
-          setModels(prev => prev.map(m => m.id === model.id ? { ...m, isFavorite: !m.isFavorite } : m));
-        }}
-      />
-
-      <OnboardingWizard
-        isOpen={modalState.showOnboarding}
-        onClose={() => modalState.setShowOnboarding(false)}
-        onComplete={() => {
-          modalState.setShowOnboarding(false);
-          handleLiveSync();
-        }}
-      />
-
-      <AddModelModal
-        isOpen={modalState.showAddModel}
-        onClose={() => modalState.setShowAddModel(false)}
-        onAddModel={addModel}
-        domains={["All", "LLM", "VLM", "ImageGen", "VideoGen", "Audio", "ASR", "TTS", "3D", "World/Sim", "LoRA", "FineTune", "BackgroundRemoval", "Upscaler", "Other"] as const}
-        addConsoleLog={consoleLogging.addConsoleLog}
-      />
-
-      <ImportModal
-        isOpen={modalState.showImport}
-        onClose={() => modalState.setShowImport(false)}
-        onImport={handleImport}
-        addConsoleLog={consoleLogging.addConsoleLog}
-      />
-
-      <SettingsModal
-        isOpen={modalState.showSync}
-        onClose={() => modalState.setShowSync(false)}
-        onSync={handleLiveSync}
-        addConsoleLog={consoleLogging.addConsoleLog}
-        currentModels={models}
-        onRestore={(restored) => {
-          setModels(restored);
-          consoleLogging.addConsoleLog(`Restored ${restored.length} models from snapshot`);
-        }}
-      />
-
-      <FlaggedModelsModal
-        flagged={modalState.flaggedModels}
-        isOpen={modalState.showFlaggedModal}
-        onApprove={handleApproveFlagged}
-        onDeny={handleDenyFlagged}
-        onEdit={handleEditFlagged}
-        onClose={() => modalState.setShowFlaggedModal(false)}
-        addConsoleLog={consoleLogging.addConsoleLog}
-      />
-
-      <ModelEditor
-        model={selectedModelForEdit}
-        isOpen={showModelEditor}
-        onClose={closeModelEditor}
-        onSave={saveModelEdit}
-      />
-
-      <ExportModal
-        isOpen={modalState.showExportModal}
-        onClose={() => modalState.setShowExportModal(false)}
-        onExport={(format, scope, customCriteria) => {
-          if (scope === 'custom' && customCriteria) {
-            const fullCriteria = {
-              query: '',
-              domainPick: 'All',
-              sortKey: 'recent',
-              sortDirection: 'asc' as const,
-              minDownloads: 0,
-              pageSize: null,
-              ...customCriteria
-            } as any;
-
-            const customFiltered = filterModels(models, fullCriteria);
-            exportModels({ format, models: customFiltered });
-            consoleLogging.addConsoleLog(`Exported ${customFiltered.length} models (Custom Filter).`);
-          } else {
-            exportModels({ format, models: models });
-            consoleLogging.addConsoleLog(`Exported ${models.length} models (Entire DB).`);
-          }
-        }}
-        totalModels={models.length}
-        currentFilters={{
-          domainPick: uiState.domainPick,
-          favoritesOnly: uiState.favoritesOnly,
-          minDownloads: uiState.minDownloads,
-          licenseTypes: uiState.licenseTypes,
-          commercialAllowed: uiState.commercialAllowed,
-          includeTags: uiState.includeTags,
-          excludeTags: uiState.excludeTags
-        }}
-        theme={theme}
-      />
-
-      <SimpleValidationModal
-        isOpen={showValidationModal}
-        onClose={closeValidationModal}
-        onValidateAll={async (opts?: any) => {
-          const result = await validateEntireDatabase({
-            batchSize: opts?.batchSize ?? 50,
-            pauseMs: opts?.pauseMs ?? 60000,
-            maxBatches: opts?.maxBatches ?? 0,
-            apiConfig: settings.apiConfig,
-            preferredModelProvider: settings.preferredModelProvider
-          });
-          if (result.success && result.updatedModels) {
-            setModels(result.updatedModels);
-          }
-          return result;
-        }}
-        models={models}
-        hasApiProvider={hasApiProvider}
-      />
-
-      {consoleLogging.showConsole && (
-        <TerminalConsole
-          logs={consoleLogging.consoleLogs}
-          onClose={() => consoleLogging.setShowConsole(false)}
-          onClear={consoleLogging.clearConsoleLogs}
-        />
-      )}
-
-      <ToastContainer
-        importToast={modalState.importToast}
-        onDismissImport={() => modalState.setImportToast(null)}
-        validationToast={validationState.validationToast}
-        onDismissValidation={() => validationState.setValidationToast(null)}
-        theme={theme}
-      />
-
-      <UndoToast
-        data={modalState.undoToast}
-        onClose={() => modalState.setUndoToast(null)}
-      />
-
-      <ConfirmationToast
-        isOpen={!!modalState.confirmationToast}
-        title={modalState.confirmationToast?.title || ''}
-        message={modalState.confirmationToast?.message}
-        type={modalState.confirmationToast?.type}
-        confirmText={modalState.confirmationToast?.confirmText}
-        cancelText={modalState.confirmationToast?.cancelText}
-        onConfirm={() => {
-          modalState.confirmationToast?.onConfirm();
-          modalState.setConfirmationToast(null);
-        }}
-        onCancel={() => modalState.setConfirmationToast(null)}
-      />
-
-      {(isValidating || validationJobs.length > 0) && (
-        <ValidationProgress
-          jobs={validationJobs}
-          onClear={clearFinishedValidationJobs}
-          onPause={pauseValidation}
-          onResume={resumeValidation}
-          onCancelAll={stopValidation}
-          isPaused={validationState.validationPaused}
-        />
-      )}
-
-      {validationProgress && (
-        <div className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-40 rounded-lg border px-3 py-2 shadow-lg ${theme === 'dark' ? 'border-zinc-800 bg-black text-zinc-100' : 'border-zinc-200 bg-white text-zinc-900'}`}>
-          <div className="flex items-center gap-2">
-            <div className="w-48 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
-              <div className="h-full bg-violet-500 transition-all" style={{ width: `${(validationProgress.current / validationProgress.total) * 100}%` }} />
-            </div>
-            <span className="text-[11px] opacity-70 whitespace-nowrap">{validationProgress.current}/{validationProgress.total}</span>
-          </div>
-          <div className="mt-2 flex items-center justify-end gap-1">
-            <button
-              className={`text-[10px] px-2 py-0.5 rounded transition-colors ${theme === 'dark' ? 'bg-zinc-800 text-zinc-200 hover:bg-zinc-700' : 'bg-zinc-100 text-zinc-800 hover:bg-zinc-200'}`}
-              onClick={() => window.dispatchEvent(new CustomEvent('open-validation-progress'))}
-              title="Show validation details"
-            >
-              Details
-            </button>
-            <button
-              className={`text-[10px] px-2 py-0.5 rounded transition-colors ${theme === 'dark' ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-red-600 text-white hover:bg-red-700'}`}
-              onClick={stopValidation}
-              title="Cancel all validation jobs"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
-
-      <ConsoleButton
-        showConsole={consoleLogging.showConsole}
-        onShowConsole={() => consoleLogging.setShowConsole(true)}
-        theme={theme}
-      />
-    </div>
+    </>
   );
 }
 

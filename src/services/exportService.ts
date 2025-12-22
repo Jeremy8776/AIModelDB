@@ -37,8 +37,18 @@ export function exportModels(options: ExportOptions): void {
     const { format, models, filename } = options;
 
     try {
-        const timestamp = Date.now();
-        const baseFilename = filename || `ai-models-${timestamp}`;
+        // Generate human-readable timestamp: YYYY-MM-DD_HH-MM
+        const now = new Date();
+        const timestamp = [
+            now.getFullYear(),
+            String(now.getMonth() + 1).padStart(2, '0'),
+            String(now.getDate()).padStart(2, '0')
+        ].join('-') + '_' + [
+            String(now.getHours()).padStart(2, '0'),
+            String(now.getMinutes()).padStart(2, '0')
+        ].join('-');
+
+        const baseFilename = filename || `ai-models-export_${timestamp}`;
 
         switch (format) {
             case 'json':

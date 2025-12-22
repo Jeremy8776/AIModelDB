@@ -728,3 +728,49 @@ header,
 .rounded-2xl {
   background-color: var(--bgCard) !important;
 }
+
+/* ============================================
+   Reduced Motion Mode
+   Respects user's OS preference for reduced motion
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Disable hover transforms */
+  .group\/row:hover,
+  [class*="group/row"]:hover,
+  button:hover,
+  a:hover {
+    transform: none !important;
+  }
+
+  /* Keep loading indicators visible but static */
+  .animate-pulse {
+    animation: none !important;
+    opacity: 0.7 !important;
+  }
+
+  .animate-spin {
+    animation: none !important;
+  }
+}
+
+/* ============================================
+   Utility class to force disable animations
+   Can be applied to body when user toggles in settings
+   ============================================ */
+.reduce-motion *,
+.reduce-motion *::before,
+.reduce-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}

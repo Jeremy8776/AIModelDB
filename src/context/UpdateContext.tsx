@@ -19,6 +19,8 @@ interface UpdateContextType {
     installUpdate: () => void;
     checking: boolean;
     error: string | null;
+    // Dev simulation
+    simulateUpdate: () => void;
 }
 
 const UpdateContext = createContext<UpdateContextType | undefined>(undefined);
@@ -100,6 +102,46 @@ export function UpdateProvider({ children }: { children: React.ReactNode }) {
         }
     };
 
+    // Dev simulation function - cycles through all update states
+    const simulateUpdate = () => {
+        console.log('[UpdateContext] Starting update simulation...');
+
+        // Reset state
+        setUpdateAvailable(false);
+        setUpdateDownloaded(false);
+        setDownloadProgress(null);
+        setError(null);
+
+        // Step 1: Checking
+        setChecking(true);
+
+        setTimeout(() => {
+            // Step 2: Update available
+            setChecking(false);
+            setUpdateAvailable(true);
+            setUpdateVersion('99.0.0-demo');
+
+            setTimeout(() => {
+                // Step 3: Downloading with progress
+                let progress = 0;
+                const progressInterval = setInterval(() => {
+                    progress += Math.random() * 15 + 5;
+                    if (progress >= 100) {
+                        progress = 100;
+                        clearInterval(progressInterval);
+                        setDownloadProgress(null);
+
+                        // Step 4: Downloaded
+                        setUpdateDownloaded(true);
+                        console.log('[UpdateContext] Simulation complete - update ready to install');
+                    } else {
+                        setDownloadProgress(progress);
+                    }
+                }, 500);
+            }, 2000);
+        }, 1500);
+    };
+
     return (
         <UpdateContext.Provider value={{
             updateAvailable,
@@ -111,7 +153,8 @@ export function UpdateProvider({ children }: { children: React.ReactNode }) {
             downloadUpdate,
             installUpdate,
             checking,
-            error
+            error,
+            simulateUpdate,
         }}>
             {children}
         </UpdateContext.Provider>
@@ -134,7 +177,8 @@ export const useUpdate = () => {
             downloadUpdate: () => { },
             installUpdate: () => { },
             checking: false,
-            error: null
+            error: null,
+            simulateUpdate: () => { console.log('[UpdateContext] Simulate not available - no context provider'); },
         };
     }
     return context;

@@ -161,7 +161,8 @@ export function ModelTable({
                 ref={parentRef}
                 className="p-2 relative mt-4"
                 style={{
-                    height: `${totalSize - offsetTop}px`,
+                    height: `${totalSize}px`,
+                    minHeight: '200px',
                 }}
             >
                 {virtualItems.map((virtualRow) => {

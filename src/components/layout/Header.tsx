@@ -69,7 +69,7 @@ export function Header({
                         ref={searchRef}
                         value={query}
                         onChange={e => onQueryChange(e.target.value)}
-                        placeholder="Search models, providers, licenses… (/ to focus)"
+                        placeholder="Search (? for help) • domain:LLM license:MIT downloads:>1000"
                         className="w-full h-full bg-transparent text-sm search-input-reset shadow-none appearance-none placeholder:opacity-70"
                     />
                 </div>
@@ -128,4 +128,5 @@ export function Header({
         </header>
     );
 }
+
 

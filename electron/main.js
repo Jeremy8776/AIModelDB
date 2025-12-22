@@ -9,6 +9,7 @@ if (require('electron-squirrel-startup')) {
 
 // Keep a global reference of the window object
 let mainWindow = null;
+let splashWindow = null;
 
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
 
@@ -18,6 +19,30 @@ autoUpdater.autoInstallOnAppQuit = true;
 
 // Logging for auto-updater
 autoUpdater.logger = require('electron').app.isPackaged ? null : console;
+
+function createSplashWindow() {
+    splashWindow = new BrowserWindow({
+        width: 400,
+        height: 300,
+        frame: false,
+        transparent: false,
+        resizable: false,
+        center: true,
+        backgroundColor: '#0a0a0b',
+        webPreferences: {
+            nodeIntegration: false,
+            contextIsolation: true,
+        },
+        skipTaskbar: true,
+        alwaysOnTop: true,
+    });
+
+    splashWindow.loadFile(path.join(__dirname, 'splash.html'));
+
+    splashWindow.on('closed', () => {
+        splashWindow = null;
+    });
+}
 
 function createWindow() {
     // Create the browser window with themed title bar
@@ -29,6 +54,7 @@ function createWindow() {
         title: 'AI Model DB Pro',
         icon: path.join(__dirname, '../public/favicon.svg'),
         backgroundColor: '#0a0a0b',
+        show: false, // Don't show until ready
         webPreferences: {
             nodeIntegration: false,
             contextIsolation: true,
@@ -55,6 +81,18 @@ function createWindow() {
             checkForUpdates();
         }, 3000); // Wait 3 seconds after startup
     }
+
+    // When main window is ready, close splash and show main
+    mainWindow.once('ready-to-show', () => {
+        // Add small delay for smoother transition
+        setTimeout(() => {
+            if (splashWindow && !splashWindow.isDestroyed()) {
+                splashWindow.close();
+            }
+            mainWindow.show();
+            mainWindow.focus();
+        }, isDev ? 500 : 1500); // Shorter delay in dev mode
+    });
 
     // Handle external links - open in default browser
     mainWindow.webContents.setWindowOpenHandler(({ url }) => {
@@ -146,6 +184,11 @@ function sendStatusToWindow(status, data = {}) {
 
 // This method will be called when Electron has finished initialization
 app.whenReady().then(() => {
+    // Show splash in production, skip in dev for faster iteration
+    if (!isDev) {
+        createSplashWindow();
+    }
+
     createWindow();
 
     app.on('activate', () => {

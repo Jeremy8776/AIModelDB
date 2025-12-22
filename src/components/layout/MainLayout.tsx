@@ -14,9 +14,10 @@ import { FiltersSidebar } from './FiltersSidebar';
 import { ModelTable } from '../table/ModelTable';
 import { DetailPanel } from '../DetailPanel';
 import { SkeletonRow } from '../ModelRow';
-import { DatabaseZap, Plus, Trash2, Download, X } from 'lucide-react';
+import { Trash2, Download, X } from 'lucide-react';
 import { ComparisonView } from '../ComparisonView';
 import { ErrorBoundary } from '../ErrorBoundary';
+import { EmptyState } from '../EmptyState';
 
 
 /**
@@ -187,28 +188,10 @@ export function MainLayout({
                                 {Array.from({ length: 8 }).map((_, i) => <SkeletonRow key={i} />)}
                             </div>
                         ) : filteredCount === 0 ? (
-                            <div className={`mt-16 rounded-2xl border p-10 text-center ${bgCard}`}>
-                                <DatabaseZap size={64} className="mx-auto mb-4 text-zinc-600" />
-                                <h3 className="text-xl font-semibold mb-2">Welcome to Model Database</h3>
-                                <p className="text-zinc-500 mb-6">Get started by adding models from various data sources</p>
-                                <div className="mt-4 flex justify-center gap-2">
-                                    <button
-                                        onClick={onShowOnboarding}
-                                        className="rounded-xl px-6 py-3 text-sm font-semibold bg-accent hover:bg-accent-dark text-white flex items-center gap-2"
-                                        title="Set up data sources"
-                                    >
-                                        <Plus size={16} />
-                                        Add Models
-                                    </button>
-                                    <button
-                                        onClick={onShowImport}
-                                        className={`rounded-xl ${bgInput} px-4 py-2 text-sm`}
-                                        title="Import models from file"
-                                    >
-                                        Import from File
-                                    </button>
-                                </div>
-                            </div>
+                            <EmptyState
+                                onSetupSources={onShowOnboarding}
+                                onImport={onShowImport}
+                            />
                         ) : (
                             <>
 

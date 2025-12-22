@@ -67,7 +67,7 @@ export function Toolbar({
     onExport,
     onDeleteDatabase,
     onValidateModels,
-    theme
+    theme,
 }: ToolbarProps) {
     // Styling based on theme
     const textSubtle = theme === "dark" ? "text-zinc-400" : "text-gray-800";

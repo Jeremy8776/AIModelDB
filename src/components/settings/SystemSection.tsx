@@ -276,7 +276,8 @@ function UpdatesCard({ appVersion, isCheckingUpdate, onCheckForUpdates }: {
   isCheckingUpdate: boolean;
   onCheckForUpdates: () => void;
 }) {
-  const { updateAvailable, updateVersion, updateDownloaded, downloadProgress, downloadUpdate, installUpdate, checking, error } = useUpdate();
+  const { updateAvailable, updateVersion, updateDownloaded, downloadProgress, downloadUpdate, installUpdate, checking, error, simulateUpdate } = useUpdate();
+  const isDev = import.meta.env.DEV;
 
   const bgCard = 'border-zinc-800 bg-black';
 
@@ -380,17 +381,29 @@ function UpdatesCard({ appVersion, isCheckingUpdate, onCheckForUpdates }: {
           </div>
         )}
 
-        <button
-          onClick={onCheckForUpdates}
-          disabled={isCheckingUpdate || checking}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${isCheckingUpdate || checking
-            ? 'opacity-60 cursor-not-allowed bg-zinc-700'
-            : 'bg-accent hover:bg-accent-dark text-white'
-            }`}
-        >
-          <RefreshCw size={16} className={isCheckingUpdate || checking ? 'animate-spin' : ''} />
-          {isCheckingUpdate || checking ? 'Checking...' : 'Check for Updates'}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={onCheckForUpdates}
+            disabled={isCheckingUpdate || checking}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${isCheckingUpdate || checking
+              ? 'opacity-60 cursor-not-allowed bg-zinc-700'
+              : 'bg-accent hover:bg-accent-dark text-white'
+              }`}
+          >
+            <RefreshCw size={16} className={isCheckingUpdate || checking ? 'animate-spin' : ''} />
+            {isCheckingUpdate || checking ? 'Checking...' : 'Check for Updates'}
+          </button>
+
+          {isDev && (
+            <button
+              onClick={simulateUpdate}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 border border-amber-500/30"
+              title="Dev only: Simulate update flow"
+            >
+              🎭 Simulate
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

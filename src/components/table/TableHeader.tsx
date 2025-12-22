@@ -34,7 +34,7 @@ export function TableHeader({
 }: TableHeaderProps) {
     const textSubtle = theme === 'dark' ? 'text-zinc-400' : 'text-gray-800';
     const checkboxBorder = theme === 'dark' ? 'border-zinc-700 bg-zinc-900' : 'border-gray-300 bg-white';
-    const checkboxChecked = 'bg-violet-600 border-violet-600';
+    const checkboxChecked = 'bg-accent border-accent';
 
     // Helper function to handle sort button clicks
     const handleSortClick = (key: SortKey) => {
@@ -51,8 +51,16 @@ export function TableHeader({
         return (
             <button
                 onClick={() => handleSortClick(key)}
-                className={`${colSpan} flex items-center gap-1 hover:text-violet-500 transition-colors cursor-pointer ${isActive ? 'text-violet-500' : ''
-                    }`}
+                className={`${colSpan} flex items-center gap-1 transition-colors cursor-pointer`}
+                style={{
+                    color: isActive ? 'var(--accent)' : undefined,
+                }}
+                onMouseEnter={(e) => {
+                    if (!isActive) e.currentTarget.style.color = 'var(--accent)';
+                }}
+                onMouseLeave={(e) => {
+                    if (!isActive) e.currentTarget.style.color = '';
+                }}
             >
                 {label}
                 {isActive ? (

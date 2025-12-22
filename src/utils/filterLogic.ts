@@ -14,6 +14,99 @@ export interface FilterOptions {
     favoritesOnly?: boolean;
 }
 
+/**
+ * Parse advanced search syntax from query string.
+ * Supported operators:
+ * - domain:ImageGen - Filter by domain
+ * - license:MIT - Filter by license name
+ * - downloads:>1000 - Filter by download count (>, <, >=, <=, =)
+ * - tag:transformer - Include models with tag
+ * - -tag:deprecated - Exclude models with tag
+ * - source:huggingface - Filter by source
+ * - provider:openai - Filter by provider
+ * - is:favorite - Only favorites
+ * - is:commercial - Only commercially usable
+ */
+interface ParsedQuery {
+    textTerms: string[];
+    domainFilter?: string;
+    licenseFilter?: string;
+    downloadsFilter?: { op: string; value: number };
+    includeTags: string[];
+    excludeTags: string[];
+    sourceFilter?: string;
+    providerFilter?: string;
+    favoritesOnly?: boolean;
+    commercialOnly?: boolean;
+}
+
+function parseAdvancedQuery(query: string): ParsedQuery {
+    const result: ParsedQuery = {
+        textTerms: [],
+        includeTags: [],
+        excludeTags: [],
+    };
+
+    if (!query.trim()) return result;
+
+    // Split by spaces but respect quoted strings
+    const tokens = query.match(/(?:[^\s"]+|"[^"]*")+/g) || [];
+
+    for (const token of tokens) {
+        const lower = token.toLowerCase();
+
+        // domain:value
+        if (lower.startsWith('domain:')) {
+            result.domainFilter = token.slice(7).replace(/"/g, '');
+        }
+        // license:value
+        else if (lower.startsWith('license:')) {
+            result.licenseFilter = token.slice(8).replace(/"/g, '').toLowerCase();
+        }
+        // downloads:>1000 or downloads:>=1000 or downloads:<1000 or downloads:1000
+        else if (lower.startsWith('downloads:')) {
+            const val = token.slice(10);
+            const match = val.match(/^(>=?|<=?|=)?(\d+)$/);
+            if (match) {
+                result.downloadsFilter = {
+                    op: match[1] || '>=',
+                    value: parseInt(match[2], 10)
+                };
+            }
+        }
+        // -tag:value (exclude)
+        else if (lower.startsWith('-tag:')) {
+            result.excludeTags.push(token.slice(5).replace(/"/g, '').toLowerCase());
+        }
+        // tag:value (include)
+        else if (lower.startsWith('tag:')) {
+            result.includeTags.push(token.slice(4).replace(/"/g, '').toLowerCase());
+        }
+        // source:value
+        else if (lower.startsWith('source:')) {
+            result.sourceFilter = token.slice(7).replace(/"/g, '').toLowerCase();
+        }
+        // provider:value
+        else if (lower.startsWith('provider:')) {
+            result.providerFilter = token.slice(9).replace(/"/g, '').toLowerCase();
+        }
+        // is:favorite
+        else if (lower === 'is:favorite' || lower === 'is:fav') {
+            result.favoritesOnly = true;
+        }
+        // is:commercial
+        else if (lower === 'is:commercial') {
+            result.commercialOnly = true;
+        }
+        // Regular text term
+        else {
+            result.textTerms.push(token.replace(/"/g, '').toLowerCase());
+        }
+    }
+
+    return result;
+}
+
 export const filterModels = (models: Model[], options: FilterOptions): Model[] => {
     const { query, domainPick, sortKey, sortDirection = 'asc', minDownloads, licenseTypes = [], commercialAllowed = null, includeTags = [], excludeTags = [], favoritesOnly = false } = options;
 
@@ -27,13 +120,72 @@ export const filterModels = (models: Model[], options: FilterOptions): Model[] =
         list = list.filter(m => m.source === "Import" || (m.downloads ?? 0) >= minDownloads);
     }
 
-    const q = query.trim().toLowerCase();
-    if (q) {
-        const terms = q.split(/\s+/).filter(Boolean);
+    // Parse advanced search syntax
+    const parsed = parseAdvancedQuery(query);
+
+    // Apply advanced search filters
+    if (parsed.domainFilter) {
+        list = list.filter(m => m.domain?.toLowerCase() === parsed.domainFilter!.toLowerCase());
+    }
+
+    if (parsed.licenseFilter) {
+        list = list.filter(m =>
+            m.license?.name?.toLowerCase().includes(parsed.licenseFilter!) ||
+            m.license?.type?.toLowerCase().includes(parsed.licenseFilter!)
+        );
+    }
+
+    if (parsed.downloadsFilter) {
+        const { op, value } = parsed.downloadsFilter;
         list = list.filter(m => {
-            // Optimize: build search string once instead of creating array and joining
+            const downloads = m.downloads ?? 0;
+            switch (op) {
+                case '>': return downloads > value;
+                case '>=': return downloads >= value;
+                case '<': return downloads < value;
+                case '<=': return downloads <= value;
+                case '=': return downloads === value;
+                default: return downloads >= value;
+            }
+        });
+    }
+
+    if (parsed.sourceFilter) {
+        list = list.filter(m => m.source?.toLowerCase().includes(parsed.sourceFilter!));
+    }
+
+    if (parsed.providerFilter) {
+        list = list.filter(m => m.provider?.toLowerCase().includes(parsed.providerFilter!));
+    }
+
+    if (parsed.favoritesOnly) {
+        list = list.filter(m => m.isFavorite);
+    }
+
+    if (parsed.commercialOnly) {
+        list = list.filter(m => m.license?.commercial_use === true);
+    }
+
+    // Apply tag filters from advanced syntax
+    if (parsed.includeTags.length) {
+        list = list.filter(m => {
+            const tags = (m.tags || []).map(t => String(t).toLowerCase());
+            return parsed.includeTags.every(t => tags.includes(t));
+        });
+    }
+
+    if (parsed.excludeTags.length) {
+        list = list.filter(m => {
+            const tags = (m.tags || []).map(t => String(t).toLowerCase());
+            return parsed.excludeTags.every(t => !tags.includes(t));
+        });
+    }
+
+    // Apply text search for remaining terms
+    if (parsed.textTerms.length) {
+        list = list.filter(m => {
             const searchStr = `${m.name} ${m.provider || ''} ${m.source || ''} ${m.license?.name || ''} ${(m.tags || []).join(' ')}`.toLowerCase();
-            return terms.every(term => searchStr.includes(term));
+            return parsed.textTerms.every(term => searchStr.includes(term));
         });
     }
 

@@ -28,7 +28,6 @@ export const RoundCheckbox = React.memo(({ checked, onChange, className = '', si
         lg: 14
     };
 
-    const activeColor = theme === 'dark' ? 'bg-violet-600 border-violet-600' : 'bg-violet-600 border-violet-600';
     const inactiveColor = theme === 'dark'
         ? 'border-zinc-600 hover:border-zinc-400 bg-transparent'
         : 'border-gray-300 hover:border-gray-400 bg-white';
@@ -36,8 +35,12 @@ export const RoundCheckbox = React.memo(({ checked, onChange, className = '', si
     return (
         <div
             onClick={(e) => { e.stopPropagation(); onChange(!checked); }}
-            className={`rounded-full flex items-center justify-center cursor-pointer transition-all duration-200 ${checked ? activeColor : inactiveColor
+            className={`rounded-full flex items-center justify-center cursor-pointer transition-all duration-200 ${!checked ? inactiveColor : ''
                 } ${sizeClasses[size]} ${className}`}
+            style={checked ? {
+                backgroundColor: 'var(--accent)',
+                borderColor: 'var(--accent)',
+            } : undefined}
             role="checkbox"
             aria-checked={checked}
             aria-label={ariaLabel}
