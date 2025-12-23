@@ -2,6 +2,49 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.10] - 2025-12-23
+
+### Fixed
+- **API BaseUrl Consistency**: Fixed all API configuration files to use consistent baseUrls with proper `/v1` or `/v1beta` paths:
+    - Anthropic: `https://api.anthropic.com/v1`
+    - DeepSeek: `https://api.deepseek.com/v1`
+    - Cohere: `https://api.cohere.com/v1`
+    - Google: `https://generativelanguage.googleapis.com/v1beta`
+- **Model Dropdown Styling**: Replaced native HTML `<datalist>` with ThemedSelect component for dark theme compliance.
+- **Dropdown Hover Legibility**: Fixed hover state text color to white for better legibility on accent background.
+- **EmptyState Card Gradients**: Removed gradients from welcome cards for Default theme consistency (pure black).
+
+### Added
+- **Debug Logging**: Added detailed logging to proxy-request handler for API troubleshooting.
+
+---
+
+## [0.3.9] - 2025-12-23
+
+### Fixed
+- **API Endpoints Verified**: Thoroughly verified all LLM provider API endpoints against official documentation:
+    - **Anthropic**: Now uses actual `/v1/models` endpoint with proper `x-api-key` and `anthropic-version` headers.
+    - **Cohere**: Fixed domain from `api.cohere.ai` to `api.cohere.com`; Updated chat endpoint to V2 API (`/v2/chat`).
+    - **Google Gemini**: Fixed auth header from `Authorization: Bearer` to `x-goog-api-key`.
+    - **Perplexity**: Updated to current Sonar models (sonar-pro, sonar, sonar-reasoning-pro, sonar-deep-research); Returns hardcoded list as no `/models` API exists.
+    - **OpenAI, DeepSeek, OpenRouter**: Confirmed correct - no changes needed.
+
+### Added
+- **Manual NSFW Flagging**: New feature to manually flag models as NSFW content:
+    - Added `isNSFWFlagged` field to Model type.
+    - Flag button appears on model row hover (red flag icon).
+    - "Hide Flagged" filter in FiltersSidebar (enabled by default).
+    - Flagged models persist and are hidden from view unless filter is disabled.
+
+---
+
+## [0.3.8] - 2025-12-22
+
+### Fixed
+- **GitHub Actions Build**: Removed `electron-icon-builder` dependency that was causing build failures due to deprecated `phantomjs-prebuilt` package.
+
+---
+
 ## [0.3.7] - 2025-12-21
 
 ### Fixed
