@@ -541,19 +541,13 @@ export function APIConfigSection() {
                   <label className="block text-sm font-medium mb-2">Model</label>
                   <div className="flex gap-2">
                     <div className="relative flex-1">
-                      <input
-                        type="text"
-                        list={`models-${provider.key}`}
+                      <ThemedSelect
                         value={config?.model || ''}
-                        onChange={(e) => updateApiConfig(provider.key, 'model', e.target.value)}
-                        placeholder="Enter model name"
-                        className={`w-full rounded-lg border ${bgInput} px-3 py-2 text-sm placeholder:text-zinc-600`}
+                        onChange={(val) => updateApiConfig(provider.key, 'model', val)}
+                        options={modelsList?.length > 0 ? modelsList : [{ value: '', label: 'No models fetched' }]}
+                        placeholder="Select model"
+                        ariaLabel="Model selection"
                       />
-                      <datalist id={`models-${provider.key}`}>
-                        {modelsList?.map((m) => (
-                          <option key={m.value} value={m.value}>{m.label}</option>
-                        ))}
-                      </datalist>
                     </div>
                     <button
                       onClick={() => {

@@ -256,7 +256,7 @@ input[class*="bg-zinc-900"] {
 .relative>div[class*='absolute'] button:hover,
 .themed-select-item:hover {
   background-color: var(--accent) !important;
-  color: var(--bg) !important;
+  color: #ffffff !important;
 }
 
 /* Selected item in dropdown */
@@ -291,12 +291,12 @@ input[class*="bg-zinc-900"] {
 
 .themed-select-item:hover {
   background-color: var(--accent) !important;
-  color: var(--bg) !important;
+  color: #ffffff !important;
 }
 
 .themed-select-item-selected {
   background-color: var(--accent) !important;
-  color: var(--bg) !important;
+  color: #ffffff !important;
 }
 
 /* ThemedSelect button styling - only when not using custom themed classes */

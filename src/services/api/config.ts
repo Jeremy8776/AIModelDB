@@ -21,12 +21,12 @@ export function proxyUrl(devPath: string, prodUrl: string): string {
 // Default API directory configuration
 export const DEFAULT_API_DIR: ApiDir = {
     openai: { enabled: false, apiKey: "", baseUrl: "https://api.openai.com/v1", model: "gpt-4o-mini" },
-    anthropic: { enabled: false, apiKey: "", baseUrl: "https://api.anthropic.com", model: "claude-3-5-sonnet" },
-    deepseek: { enabled: false, apiKey: "", baseUrl: "https://api.deepseek.com", model: "deepseek-chat" },
+    anthropic: { enabled: false, apiKey: "", baseUrl: "https://api.anthropic.com/v1", model: "claude-3-5-sonnet" },
+    deepseek: { enabled: false, apiKey: "", baseUrl: "https://api.deepseek.com/v1", model: "deepseek-chat" },
     perplexity: { enabled: false, baseUrl: "https://api.perplexity.ai", model: "sonar-pro", webSearch: true },
     openrouter: { enabled: false, baseUrl: "https://openrouter.ai/api/v1", model: "openrouter/auto" },
-    cohere: { enabled: false, baseUrl: "https://api.cohere.com", model: "command-r" },
-    google: { enabled: false, baseUrl: "https://generativelanguage.googleapis.com", model: "gemini-1.5-flash" },
+    cohere: { enabled: false, baseUrl: "https://api.cohere.com/v1", model: "command-r" },
+    google: { enabled: false, baseUrl: "https://generativelanguage.googleapis.com/v1beta", model: "gemini-1.5-flash" },
     artificialanalysis: { enabled: false, apiKey: "", endpoints: ["https://artificialanalysis.ai/api/models", "https://artificialanalysis.ai/api/providers"] }
 };
 

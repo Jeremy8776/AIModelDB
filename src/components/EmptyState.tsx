@@ -79,14 +79,14 @@ export function EmptyState({ onSetupSources, onImport }: EmptyStateProps) {
                     onClick={onSetupSources}
                     className="group relative overflow-hidden rounded-xl p-5 text-left transition-all duration-300 hover:scale-[1.02]"
                     style={{
-                        background: `linear-gradient(135deg, var(--bgCard) 0%, var(--bgElevated, var(--bgCard)) 100%)`,
+                        backgroundColor: 'var(--bgCard)',
                         border: '1px solid var(--border)',
                     }}
                 >
                     <div
-                        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                        className="absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-300"
                         style={{
-                            background: `linear-gradient(135deg, var(--accentGlow) 0%, transparent 100%)`,
+                            backgroundColor: 'var(--accent)',
                         }}
                     />
                     <div className="relative">
@@ -108,14 +108,14 @@ export function EmptyState({ onSetupSources, onImport }: EmptyStateProps) {
                     onClick={onImport}
                     className="group relative overflow-hidden rounded-xl p-5 text-left transition-all duration-300 hover:scale-[1.02]"
                     style={{
-                        background: `linear-gradient(135deg, var(--bgCard) 0%, var(--bgElevated, var(--bgCard)) 100%)`,
+                        backgroundColor: 'var(--bgCard)',
                         border: '1px solid var(--border)',
                     }}
                 >
                     <div
-                        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                        className="absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-300"
                         style={{
-                            background: `linear-gradient(135deg, var(--accentGlow) 0%, transparent 100%)`,
+                            backgroundColor: 'var(--accent)',
                         }}
                     />
                     <div className="relative">

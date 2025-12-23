@@ -275,14 +275,19 @@ ipcMain.handle('proxy-request', async (event, { url, method = 'GET', headers = {
         };
 
         console.log(`[Proxy] ${method} ${url}`);
+        console.log(`[Proxy] Headers:`, JSON.stringify(headers, null, 2));
         const response = await fetch(url, fetchOptions);
+
+        console.log(`[Proxy] Response status: ${response.status}`);
 
         if (!response.ok) {
             const text = await response.text();
-            throw new Error(`Request failed: ${response.status} ${text}`);
+            console.error(`[Proxy] Error response body: ${text}`);
+            throw new Error(`Request failed: ${response.status}`);
         }
 
         const data = await response.json();
+        console.log(`[Proxy] Success, data keys:`, Object.keys(data));
         return { success: true, data };
     } catch (error) {
         console.error('[Proxy] Request error:', error);
