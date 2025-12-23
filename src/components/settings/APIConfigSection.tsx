@@ -58,9 +58,10 @@ export function APIConfigSection() {
       key: 'perplexity',
       name: 'Perplexity',
       models: [
-        { value: 'llama-3-sonar-large-32k-online', label: 'Llama 3 Sonar Large 32k' },
-        { value: 'llama-3-sonar-small-32k-online', label: 'Llama 3 Sonar Small 32k' },
-        { value: 'mixtral-8x7b-instruct', label: 'Mixtral 8x7b Instruct' },
+        { value: 'sonar-pro', label: 'Sonar Pro' },
+        { value: 'sonar', label: 'Sonar' },
+        { value: 'sonar-reasoning-pro', label: 'Sonar Reasoning Pro' },
+        { value: 'sonar-deep-research', label: 'Sonar Deep Research' },
       ],
       showBaseUrl: true,
       defaultBaseUrl: 'https://api.perplexity.ai'
@@ -85,7 +86,7 @@ export function APIConfigSection() {
         { value: 'command', label: 'Command' },
       ],
       showBaseUrl: false, // Cohere has specific endpoints but usually fixed
-      defaultBaseUrl: 'https://api.cohere.ai/v1'
+      defaultBaseUrl: 'https://api.cohere.com/v1'
     }
   ];
 

@@ -12,6 +12,7 @@ export interface FilterOptions {
     includeTags?: string[];
     excludeTags?: string[];
     favoritesOnly?: boolean;
+    hideFlagged?: boolean;
 }
 
 /**
@@ -108,7 +109,7 @@ function parseAdvancedQuery(query: string): ParsedQuery {
 }
 
 export const filterModels = (models: Model[], options: FilterOptions): Model[] => {
-    const { query, domainPick, sortKey, sortDirection = 'asc', minDownloads, licenseTypes = [], commercialAllowed = null, includeTags = [], excludeTags = [], favoritesOnly = false } = options;
+    const { query, domainPick, sortKey, sortDirection = 'asc', minDownloads, licenseTypes = [], commercialAllowed = null, includeTags = [], excludeTags = [], favoritesOnly = false, hideFlagged = true } = options;
 
     // Early return if no models
     if (!models || models.length === 0) return [];
@@ -203,6 +204,10 @@ export const filterModels = (models: Model[], options: FilterOptions): Model[] =
 
     if (favoritesOnly) {
         list = list.filter(m => m.isFavorite);
+    }
+
+    if (hideFlagged) {
+        list = list.filter(m => !m.isNSFWFlagged);
     }
 
     if (includeTags.length) {

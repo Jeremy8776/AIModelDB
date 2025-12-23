@@ -34,6 +34,8 @@ export interface FiltersSidebarProps {
     onExcludeTagsChange: (tags: string[]) => void;
     favoritesOnly: boolean;
     onFavoritesOnlyChange: (enabled: boolean) => void;
+    hideFlagged: boolean;
+    onHideFlaggedChange: (enabled: boolean) => void;
     onClearFilters: () => void;
     theme: "light" | "dark";
 }
@@ -54,6 +56,8 @@ export function FiltersSidebar({
     onClearFilters,
     favoritesOnly,
     onFavoritesOnlyChange,
+    hideFlagged,
+    onHideFlaggedChange,
     theme
 }: FiltersSidebarProps) {
     // Available domains - consolidate Vision under VLM for selection (Vision kept for legacy data but hidden here)
@@ -82,6 +86,19 @@ export function FiltersSidebar({
                         />
                         <span className={`text-sm font-medium ${theme === 'dark' ? 'text-zinc-200 group-hover:text-white' : 'text-gray-700 group-hover:text-black'} transition-colors`}>
                             Favorites Only
+                        </span>
+                    </label>
+                </div>
+
+                {/* Hide Flagged Filter */}
+                <div className="mb-4">
+                    <label className="flex items-center gap-3 cursor-pointer select-none group">
+                        <RoundCheckbox
+                            checked={hideFlagged}
+                            onChange={(checked) => onHideFlaggedChange(checked)}
+                        />
+                        <span className={`text-sm font-medium ${theme === 'dark' ? 'text-zinc-200 group-hover:text-white' : 'text-gray-700 group-hover:text-black'} transition-colors`}>
+                            Hide Flagged
                         </span>
                     </label>
                 </div>

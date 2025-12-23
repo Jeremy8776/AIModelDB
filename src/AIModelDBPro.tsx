@@ -121,7 +121,8 @@ function AIModelDBProContent() {
     commercialAllowed: uiState.commercialAllowed,
     includeTags: uiState.includeTags,
     excludeTags: uiState.excludeTags,
-    favoritesOnly: uiState.favoritesOnly
+    favoritesOnly: uiState.favoritesOnly,
+    hideFlagged: uiState.hideFlagged
   });
 
   // Lazy loading for "All" mode
@@ -545,6 +546,8 @@ function AIModelDBProContent() {
           onExcludeTagsChange={uiState.setExcludeTags}
           favoritesOnly={uiState.favoritesOnly}
           onFavoritesOnlyChange={uiState.setFavoritesOnly}
+          hideFlagged={uiState.hideFlagged}
+          onHideFlaggedChange={uiState.setHideFlagged}
           onClearFilters={() => {
             uiState.setLicenseTypes([]);
             uiState.setCommercialAllowed(null);
@@ -553,6 +556,7 @@ function AIModelDBProContent() {
             uiState.setMinDownloads(0);
             uiState.setDomainPick('All');
             uiState.setFavoritesOnly(false);
+            uiState.setHideFlagged(true);
           }}
           models={visibleItems}
           sortKey={uiState.sortKey}
@@ -596,6 +600,10 @@ function AIModelDBProContent() {
           onBulkExport={handleBulkExport}
           onToggleFavorite={(model) => {
             setModels(prev => prev.map(m => m.id === model.id ? { ...m, isFavorite: !m.isFavorite } : m));
+          }}
+          onToggleNSFWFlag={(model) => {
+            setModels(prev => prev.map(m => m.id === model.id ? { ...m, isNSFWFlagged: !m.isNSFWFlagged } : m));
+            consoleLogging.addConsoleLog(`${model.isNSFWFlagged ? 'Unflagged' : 'Flagged'} model: ${model.name}`);
           }}
         />
 

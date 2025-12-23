@@ -39,6 +39,8 @@ export interface MainLayoutProps {
     onExcludeTagsChange: (tags: string[]) => void;
     favoritesOnly: boolean;
     onFavoritesOnlyChange: (enabled: boolean) => void;
+    hideFlagged: boolean;
+    onHideFlaggedChange: (enabled: boolean) => void;
     onClearFilters: () => void;
 
     // Table state
@@ -76,6 +78,7 @@ export interface MainLayoutProps {
     onBulkDelete?: () => void;
     onBulkExport?: () => void;
     onToggleFavorite?: (model: Model) => void;
+    onToggleNSFWFlag?: (model: Model) => void;
 }
 
 /**
@@ -108,6 +111,8 @@ export function MainLayout({
     onExcludeTagsChange,
     favoritesOnly,
     onFavoritesOnlyChange,
+    hideFlagged,
+    onHideFlaggedChange,
     onClearFilters,
     models,
     sortKey,
@@ -132,7 +137,8 @@ export function MainLayout({
     onSelectAll,
     onBulkDelete,
     onBulkExport,
-    onToggleFavorite
+    onToggleFavorite,
+    onToggleNSFWFlag
 }: MainLayoutProps) {
     // Styling based on theme
     const bgCard = theme === 'dark' ? 'border-zinc-800 bg-black' : 'border-gray-400 bg-white shadow-sm';
@@ -175,6 +181,8 @@ export function MainLayout({
                         onExcludeTagsChange={onExcludeTagsChange}
                         favoritesOnly={favoritesOnly}
                         onFavoritesOnlyChange={onFavoritesOnlyChange}
+                        hideFlagged={hideFlagged}
+                        onHideFlaggedChange={onHideFlaggedChange}
                         onClearFilters={onClearFilters}
                         theme={theme}
                     />
@@ -210,6 +218,7 @@ export function MainLayout({
                                     onSelect={onSelect}
                                     onSelectAll={onSelectAll}
                                     onToggleFavorite={onToggleFavorite}
+                                    onToggleNSFWFlag={onToggleNSFWFlag}
                                 />
 
                                 {/* Floating Bulk Actions Toolbar */}

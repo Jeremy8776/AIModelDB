@@ -10,6 +10,92 @@ import { getEffectiveApiKey } from './api-key-manager';
 import { proxyUrl, useProxy, bypassOpenAIProxy } from '../config';
 
 /**
+ * Returns known Anthropic Claude models since they don't have a public /models API
+ */
+function getAnthropicModels(): Model[] {
+    const models = [
+        { id: 'claude-opus-4-20250514', name: 'Claude Opus 4', context: '200K', released: '2025-05-14' },
+        { id: 'claude-sonnet-4-20250514', name: 'Claude Sonnet 4', context: '200K', released: '2025-05-14' },
+        { id: 'claude-3-7-sonnet-20250219', name: 'Claude 3.7 Sonnet', context: '200K', released: '2025-02-19' },
+        { id: 'claude-3-5-sonnet-20241022', name: 'Claude 3.5 Sonnet (Oct 2024)', context: '200K', released: '2024-10-22' },
+        { id: 'claude-3-5-sonnet-20240620', name: 'Claude 3.5 Sonnet', context: '200K', released: '2024-06-20' },
+        { id: 'claude-3-5-haiku-20241022', name: 'Claude 3.5 Haiku', context: '200K', released: '2024-10-22' },
+        { id: 'claude-3-opus-20240229', name: 'Claude 3 Opus', context: '200K', released: '2024-02-29' },
+        { id: 'claude-3-sonnet-20240229', name: 'Claude 3 Sonnet', context: '200K', released: '2024-02-29' },
+        { id: 'claude-3-haiku-20240307', name: 'Claude 3 Haiku', context: '200K', released: '2024-03-07' },
+    ];
+
+    return models.map(m => ({
+        id: m.id,
+        name: m.name,
+        provider: 'Anthropic',
+        domain: 'LLM' as const,
+        source: 'anthropic',
+        url: 'https://www.anthropic.com/claude',
+        license: {
+            name: 'Proprietary',
+            type: 'Proprietary' as const,
+            commercial_use: true,
+            attribution_required: false,
+            share_alike: false,
+            copyleft: false
+        },
+        pricing: [],
+        updated_at: m.released,
+        release_date: m.released,
+        tags: ['claude', 'conversational', 'reasoning'],
+        parameters: '',
+        context_window: m.context,
+        hosting: {
+            weights_available: false,
+            api_available: true,
+            on_premise_friendly: false
+        }
+    }));
+}
+
+/**
+ * Returns known Perplexity models since they don't have a public /models API
+ */
+function getPerplexityModels(): Model[] {
+    const models = [
+        { id: 'sonar-pro', name: 'Sonar Pro', context: '200K', released: '2024-11-01' },
+        { id: 'sonar', name: 'Sonar', context: '128K', released: '2024-11-01' },
+        { id: 'sonar-reasoning-pro', name: 'Sonar Reasoning Pro', context: '128K', released: '2024-12-01' },
+        { id: 'sonar-reasoning', name: 'Sonar Reasoning', context: '128K', released: '2024-12-01' },
+        { id: 'sonar-deep-research', name: 'Sonar Deep Research', context: '128K', released: '2024-12-01' },
+    ];
+
+    return models.map(m => ({
+        id: m.id,
+        name: m.name,
+        provider: 'Perplexity',
+        domain: 'LLM' as const,
+        source: 'perplexity',
+        url: 'https://www.perplexity.ai/',
+        license: {
+            name: 'Proprietary',
+            type: 'Proprietary' as const,
+            commercial_use: true,
+            attribution_required: false,
+            share_alike: false,
+            copyleft: false
+        },
+        pricing: [],
+        updated_at: m.released,
+        release_date: m.released,
+        tags: ['search', 'reasoning', 'web'],
+        parameters: '',
+        context_window: m.context,
+        hosting: {
+            weights_available: false,
+            api_available: true,
+            on_premise_friendly: false
+        }
+    }));
+}
+
+/**
  * Call a provider's models endpoint to fetch available models
  * @param key - The provider key (e.g., 'openai', 'anthropic')
  * @param cfg - Provider configuration including API key and model
@@ -33,30 +119,40 @@ export async function callProvider(key: ProviderKey, cfg: ProviderCfg, systemPro
     // Define provider-specific endpoints and headers
     switch (key) {
         case "openai":
+            // OpenAI API: GET /v1/models with Bearer auth
             url = proxyUrl("/openai-api/models", "https://api.openai.com/v1/models");
             headers = { "Authorization": `Bearer ${effectiveKey}` };
             break;
         case "anthropic":
+            // Anthropic API: GET /v1/models with x-api-key and anthropic-version headers
             url = proxyUrl("/anthropic-api/v1/models", "https://api.anthropic.com/v1/models");
-            headers = { "x-api-key": effectiveKey };
+            headers = {
+                "x-api-key": effectiveKey!,
+                "anthropic-version": "2023-06-01",
+                "Content-Type": "application/json"
+            };
             break;
         case "cohere":
-            url = proxyUrl("/cohere-api/v1/models", "https://api.cohere.ai/v1/models");
+            // Cohere API: GET /v1/models with Bearer auth (note: api.cohere.com, not .ai)
+            url = proxyUrl("/cohere-api/v1/models", "https://api.cohere.com/v1/models");
             headers = { "Authorization": `Bearer ${effectiveKey}` };
             break;
         case "google":
+            // Google Gemini API: GET /v1beta/models with x-goog-api-key header
             url = proxyUrl("/google-api/v1beta/models", "https://generativelanguage.googleapis.com/v1beta/models");
-            headers = { "Authorization": `Bearer ${effectiveKey}` };
+            headers = { "x-goog-api-key": effectiveKey! };
             break;
         case "deepseek":
+            // DeepSeek API: GET /v1/models with Bearer auth (OpenAI-compatible)
             url = proxyUrl("/deepseek-api/v1/models", "https://api.deepseek.com/v1/models");
             headers = { "Authorization": `Bearer ${effectiveKey}` };
             break;
         case "perplexity":
-            url = proxyUrl("/perplexity-api/models", "https://api.perplexity.ai/models");
-            headers = { "Authorization": `Bearer ${effectiveKey}` };
-            break;
+            // Perplexity has no /models endpoint - return known models
+            console.log('[perplexity] Returning known Perplexity models (no /models API available)');
+            return getPerplexityModels();
         case "openrouter":
+            // OpenRouter API: GET /api/v1/models with Bearer auth
             url = proxyUrl("/openrouter-api/v1/models", "https://openrouter.ai/api/v1/models");
             headers = { "Authorization": `Bearer ${effectiveKey}`, "HTTP-Referer": window.location.origin };
             break;
@@ -107,15 +203,13 @@ export async function callProvider(key: ProviderKey, cfg: ProviderCfg, systemPro
         if (key === 'openai') {
             modelsRaw = data.data || [];
         } else if (key === 'anthropic') {
-            modelsRaw = data.models || [];
+            modelsRaw = data.data || [];
         } else if (key === 'cohere') {
             modelsRaw = data.models || [];
         } else if (key === 'google') {
             modelsRaw = data.models || [];
         } else if (key === 'deepseek') {
             modelsRaw = data.data || [];
-        } else if (key === 'perplexity') {
-            modelsRaw = data.models || [];
         } else if (key === 'openrouter') {
             modelsRaw = data.data || [];
         } else {
@@ -492,9 +586,16 @@ export async function callProviderLLM(key: ProviderKey, cfg: ProviderCfg, system
                 temperature: 0
             };
         } else if (key === 'cohere') {
-            url = proxyUrl('/cohere-api/v1/chat', 'https://api.cohere.ai/v1/chat');
+            // Cohere V2 API: /v2/chat with messages array format
+            url = proxyUrl('/cohere-api/v2/chat', 'https://api.cohere.com/v2/chat');
             headers = { ...headers, 'Content-Type': 'application/json', 'Authorization': `Bearer ${effectiveKey}` };
-            body = { model: cfg.model, message: `${systemPrompt}\n\n${userPrompt}`, response_format: { type: 'json_object' } } as any;
+            body = {
+                model: cfg.model,
+                messages: [
+                    { role: 'system', content: systemPrompt },
+                    { role: 'user', content: userPrompt }
+                ]
+            } as any;
         } else if (key === 'google') {
             // Gemini via REST
             const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${cfg.model}:generateContent`;

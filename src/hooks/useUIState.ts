@@ -52,6 +52,8 @@ export interface UIState {
     setExcludeTags: (tags: string[]) => void;
     favoritesOnly: boolean;
     setFavoritesOnly: (enabled: boolean) => void;
+    hideFlagged: boolean;
+    setHideFlagged: (enabled: boolean) => void;
 
     // Detail panel
     open: Model | null;
@@ -103,6 +105,7 @@ export function useUIState(): UIState {
     const [includeTags, setIncludeTags] = useState<string[]>([]);
     const [excludeTags, setExcludeTags] = useState<string[]>([]);
     const [favoritesOnly, setFavoritesOnly] = useState<boolean>(false);
+    const [hideFlagged, setHideFlagged] = useState<boolean>(true); // Hide flagged by default
 
     // Detail panel state
     const [open, setOpen] = useState<Model | null>(null);
@@ -131,6 +134,8 @@ export function useUIState(): UIState {
         setExcludeTags,
         favoritesOnly,
         setFavoritesOnly,
+        hideFlagged,
+        setHideFlagged,
         open,
         setOpen,
         triggerElement,

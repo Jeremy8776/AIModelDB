@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { DatabaseZap, Download, AlertTriangle, CheckCircle, Star } from 'lucide-react';
+import { DatabaseZap, Download, AlertTriangle, CheckCircle, Star, Flag } from 'lucide-react';
 import ThemeContext from '../context/ThemeContext';
 import { useSettings } from '../context/SettingsContext';
 import { Model } from '../types';
@@ -15,9 +15,10 @@ interface ModelRowProps {
   onSelect?: (m: Model, selected: boolean) => void;
   isFocused?: boolean;
   onToggleFavorite?: (m: Model) => void;
+  onToggleNSFWFlag?: (m: Model) => void;
 }
 
-export const ModelRow = React.memo(function ModelRow({ m, onOpen, isSelected, onSelect, isFocused, onToggleFavorite }: ModelRowProps) {
+export const ModelRow = React.memo(function ModelRow({ m, onOpen, isSelected, onSelect, isFocused, onToggleFavorite, onToggleNSFWFlag }: ModelRowProps) {
   const { theme } = useContext(ThemeContext);
   const { settings } = useSettings();
 
@@ -312,6 +313,22 @@ export const ModelRow = React.memo(function ModelRow({ m, onOpen, isSelected, on
             <Star
               className={`w-3.5 h-3.5 transition-transform duration-300 ${m.isFavorite ? 'fill-current' : 'group-hover:fill-current'}`}
               strokeWidth={m.isFavorite ? 1.5 : 2}
+            />
+          </button>
+        )}
+        {onToggleNSFWFlag && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onToggleNSFWFlag(m); }}
+            className={`group p-1.5 rounded-full transition-all duration-300
+              ${m.isNSFWFlagged
+                ? 'bg-red-100 dark:bg-red-900/30 text-red-500 scale-100 opacity-100'
+                : 'text-zinc-300 dark:text-zinc-600 hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 scale-90 hover:scale-100 opacity-0 group-hover/row:opacity-100'
+              }`}
+            title={m.isNSFWFlagged ? "Unflag model" : "Flag as inappropriate"}
+          >
+            <Flag
+              className={`w-3.5 h-3.5 transition-transform duration-300 ${m.isNSFWFlagged ? 'fill-current' : 'group-hover:fill-current'}`}
+              strokeWidth={m.isNSFWFlagged ? 1.5 : 2}
             />
           </button>
         )}
