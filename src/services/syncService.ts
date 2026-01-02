@@ -223,7 +223,20 @@ export async function syncAllSources(
             fetchPromises.push(withProgress(fetchOpenModelDB(), 'OpenModelDB', { complete: [], flagged: [] }));
         }
         if (options.dataSources?.civitasbay) {
-            fetchPromises.push(withProgress(fetchCivitasBay(options.apiConfig), 'CivitasBay', { complete: [], flagged: [] }));
+            // Create a logger for CivitasBay that updates the toolbar status indicator
+            const civitasBayLogger = (msg: string) => {
+                if (onLog) onLog(msg);
+                // Also update progress with the message so it appears in the toolbar
+                if (onProgress) {
+                    onProgress({
+                        current: completedSources,
+                        total: totalSources,
+                        source: 'CivitasBay',
+                        statusMessage: msg
+                    });
+                }
+            };
+            fetchPromises.push(withProgress(fetchCivitasBay(options.apiConfig, civitasBayLogger), 'CivitasBay', { complete: [], flagged: [] }));
         }
         if (options.dataSources?.ollamaLibrary) {
             fetchPromises.push(withProgress(fetchOllamaLibrary(), 'Ollama Library', { complete: [], flagged: [] }));

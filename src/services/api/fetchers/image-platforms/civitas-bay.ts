@@ -38,11 +38,21 @@ function isObviouslyNSFW(title: string, description: string): boolean {
  * Uses RSS feed for discovery with STRICT NSFW filtering.
  * Fetches multiple pages to get comprehensive model list.
  * 
+ * @param apiConfig - Optional API configuration for filtering
+ * @param onLog - Optional callback to receive progress updates for UI display
  * @returns Object containing complete and flagged models
  */
-export async function fetchCivitasBay(apiConfig?: ApiDir): Promise<{ complete: Model[], flagged: Model[] }> {
+export async function fetchCivitasBay(
+    apiConfig?: ApiDir,
+    onLog?: (message: string) => void
+): Promise<{ complete: Model[], flagged: Model[] }> {
+    const log = (msg: string) => {
+        console.log(msg);
+        if (onLog) onLog(msg);
+    };
+
     try {
-        console.log('[CivitasBay] Fetching models from RSS feed...');
+        log('[CivitasBay] Fetching models from RSS feed...');
 
         const models: Model[] = [];
         const seenIds = new Set<string>();
@@ -57,7 +67,7 @@ export async function fetchCivitasBay(apiConfig?: ApiDir): Promise<{ complete: M
             const pagePromises = [];
             for (let i = 0; i < CONCURRENT_BATCH; i++) {
                 pagePromises.push((async (p) => {
-                    console.log(`[CivitasBay] Fetching page ${p}...`);
+                    log(`[CivitasBay] Fetching page ${p}...`);
                     const url = proxyUrl(
                         `/civitasbay-api/rss/page${p}`,
                         `https://civitasbay.org/rss/torrents?sort_by=recent&page=${p}`
@@ -86,10 +96,10 @@ export async function fetchCivitasBay(apiConfig?: ApiDir): Promise<{ complete: M
             for (const result of results.sort((a, b) => a.page - b.page)) {
                 if (result.items.length === 0) {
                     keepFetching = false;
-                    console.log(`[CivitasBay] Reached end at page ${result.page}`);
+                    log(`[CivitasBay] Reached end at page ${result.page}`);
                     // Don't break immediately, process earlier pages in batch, but stop future batches
                 } else {
-                    console.log(`[CivitasBay] Found ${result.items.length} items on page ${result.page}`);
+                    log(`[CivitasBay] Found ${result.items.length} items on page ${result.page}`);
 
                     // Process items (logic extracted)
                     result.items.forEach((item, index) => {
@@ -227,18 +237,18 @@ export async function fetchCivitasBay(apiConfig?: ApiDir): Promise<{ complete: M
             await new Promise(r => setTimeout(r, 1000));
         }
 
-        console.log(`[CivitasBay] Processed ${models.length} total models from RSS feed`);
+        log(`[CivitasBay] Processed ${models.length} total models from RSS feed`);
 
         // Apply corporate NSFW filtering
         // This will catch explicit names/tags but allow general-purpose models
         const corporateFiltered = await applyCorporateFilteringAsync(models, true, true, apiConfig);
-        console.log(`[CivitasBay] NSFW filter: ${corporateFiltered.complete.length} safe, ${corporateFiltered.flagged.length} blocked`);
+        log(`[CivitasBay] NSFW filter: ${corporateFiltered.complete.length} safe, ${corporateFiltered.flagged.length} blocked`);
 
         const complete = corporateFiltered.complete.filter(isModelComplete);
         const flagged = corporateFiltered.complete.filter(m => !isModelComplete(m))
             .concat(corporateFiltered.flagged);
 
-        console.log(`[CivitasBay] Final - Complete: ${complete.length}, Flagged: ${flagged.length}`);
+        log(`[CivitasBay] Final - Complete: ${complete.length}, Flagged: ${flagged.length}`);
 
         return { complete, flagged };
     } catch (err: any) {

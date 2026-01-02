@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.18] - 2026-01-02
+
+### Improved
+- **Dynamic Status Indicator**: CivitasBay now reports real-time progress to the toolbar status indicator (e.g., "CivitasBay: Fetching page 5...", "CivitasBay: Found 50 items on page 5"). Previously only visible in console.
+
+---
+
 ## [0.3.17] - 2026-01-02
 
 ### Improved
