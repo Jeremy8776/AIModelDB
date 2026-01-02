@@ -10,6 +10,7 @@ import { Model, ApiDir, ProviderKey, ProviderCfg } from '../../../types';
 import { containsChinese, containsOtherAsianLanguages } from './language-detection';
 import { callProviderText } from '../providers/provider-calls';
 import { safeJsonFromText } from '../../../utils/format';
+import { translate } from '@vitalets/google-translate-api';
 
 /**
  * Translates Chinese, Japanese, and Korean text in model names and descriptions to English.
@@ -95,8 +96,63 @@ Return ONLY a JSON array of objects with: id, name_en, description_en`;
             const user = `Translate the following AI model information to English. Focus on accuracy and professional terminology:\n${JSON.stringify(batch, null, 2)}`;
 
             try {
+                let googleTranslated = false;
+
+                // 1. Try Google Translate first (Faster, Free)
+                try {
+                    // Process in parallel with limit to avoid rate limits
+                    const googleResults = await Promise.all(batch.map(async (item) => {
+                        try {
+                            // Translate name
+                            let nameEn = item.name;
+                            if (containsChinese(item.name) || containsOtherAsianLanguages(item.name)) {
+                                const res = await translate(item.name, { to: 'en' });
+                                nameEn = res.text;
+                            }
+
+                            // Translate description
+                            let descEn = item.description;
+                            if (item.description && (containsChinese(item.description) || containsOtherAsianLanguages(item.description))) {
+                                // Truncate very long descriptions to avoid 5000 char limit
+                                const textToTranslate = item.description.slice(0, 4500);
+                                const res = await translate(textToTranslate, { to: 'en' });
+                                descEn = res.text;
+                            }
+
+                            return { ...item, name_en: nameEn, description_en: descEn };
+                        } catch (e) {
+                            return null; // Should fall back to LLM for this item or batch
+                        }
+                    }));
+
+                    // Check if we got valid results
+                    if (googleResults.every(r => r !== null)) {
+                        // Apply Google Translations
+                        for (let j = 0; j < translatedModels.length; j++) {
+                            const t = googleResults.find(r => r && r.id === translatedModels[j].id);
+                            if (t) {
+                                translatedModels[j] = {
+                                    ...translatedModels[j],
+                                    name: t.name_en || translatedModels[j].name,
+                                    description: t.description_en || translatedModels[j].description,
+                                    tags: [...new Set([...(translatedModels[j].tags || []), 'translated'])]
+                                };
+                            }
+                        }
+                        googleTranslated = true;
+                        console.log(`[Translation] Batch ${Math.floor(i / batchSize) + 1} translated via Google Translate`);
+                        // Keep delay for rate limiting
+                        if (i + batchSize < toTranslate.length) await new Promise(r => setTimeout(r, 1000));
+                        continue; // Skip LLM logic
+                    }
+                } catch (googleError) {
+                    console.warn('[Translation] Google Translate failed, falling back to LLM:', googleError);
+                    // Fall through to LLM
+                }
+
                 let translated: any = null;
-                if (providerKey && providerCfg) {
+                // 2. Fallback to LLM
+                if (!googleTranslated && providerKey && providerCfg) {
                     const text = await callProviderText(providerKey, providerCfg, system, user);
                     translated = safeJsonFromText(text);
                 }

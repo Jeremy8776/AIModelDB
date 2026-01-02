@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.21] - 2026-01-02
+
+### Added
+- **Fast Translation**: Integrated Google Translate API as the primary translation method for CJK content. This significantly speeds up syncing (processing ~25 models/sec vs LLM's ~25 models/30sec) while maintaining high accuracy. Falls back to LLM if rate-limited.
+
+---
+
 ## [0.3.20] - 2026-01-02
 
 ### Changed

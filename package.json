@@ -2,7 +2,7 @@
   "name": "ai-model-db-pro",
   "productName": "AI Model DB Pro",
   "private": true,
-  "version": "0.3.20",
+  "version": "0.3.21",
   "description": "A comprehensive database for tracking and managing AI models across multiple providers",
   "author": "AI Model DB Pro",
   "license": "MIT",
@@ -36,6 +36,7 @@
   },
   "dependencies": {
     "@tanstack/react-virtual": "^3.13.13",
+    "@vitalets/google-translate-api": "^9.2.1",
     "cheerio": "^1.0.0-rc.12",
     "electron-squirrel-startup": "^1.0.1",
     "electron-updater": "^6.6.2",
