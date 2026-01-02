@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.13] - 2026-01-02
+
+### Fixed
+- **Splash Screen Logo**: Fixed SVG logo not being centered on the loading splash screen.
+
+---
+
 ## [0.3.12] - 2026-01-02
 
 ### Removed

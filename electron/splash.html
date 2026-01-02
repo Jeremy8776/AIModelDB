@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -30,13 +31,23 @@
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .logo-container {
             position: relative;
             margin-bottom: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .logo-glow {
@@ -49,8 +60,17 @@
         }
 
         @keyframes pulse {
-            0%, 100% { opacity: 0.3; transform: scale(2); }
-            50% { opacity: 0.5; transform: scale(2.2); }
+
+            0%,
+            100% {
+                opacity: 0.3;
+                transform: scale(2);
+            }
+
+            50% {
+                opacity: 0.5;
+                transform: scale(2.2);
+            }
         }
 
         .logo {
@@ -67,8 +87,15 @@
         }
 
         @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-8px); }
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-8px);
+            }
         }
 
         .logo svg {
@@ -110,13 +137,31 @@
             animation: bounce 1.4s ease-in-out infinite;
         }
 
-        .loader-dot:nth-child(1) { animation-delay: 0s; }
-        .loader-dot:nth-child(2) { animation-delay: 0.2s; }
-        .loader-dot:nth-child(3) { animation-delay: 0.4s; }
+        .loader-dot:nth-child(1) {
+            animation-delay: 0s;
+        }
+
+        .loader-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .loader-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
 
         @keyframes bounce {
-            0%, 80%, 100% { transform: scale(0.6); opacity: 0.5; }
-            40% { transform: scale(1); opacity: 1; }
+
+            0%,
+            80%,
+            100% {
+                transform: scale(0.6);
+                opacity: 0.5;
+            }
+
+            40% {
+                transform: scale(1);
+                opacity: 1;
+            }
         }
 
         .version {
@@ -128,28 +173,30 @@
         }
     </style>
 </head>
+
 <body>
     <div class="splash-container">
         <div class="logo-container">
             <div class="logo-glow"></div>
             <div class="logo">
                 <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M8 10h16M8 16h12M8 22h8" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round"/>
-                    <circle cx="24" cy="22" r="3" fill="#8b5cf6"/>
+                    <path d="M8 10h16M8 16h12M8 22h8" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round" />
+                    <circle cx="24" cy="22" r="3" fill="#8b5cf6" />
                 </svg>
             </div>
         </div>
-        
+
         <h1 class="app-name">AI Model <span>DB Pro</span></h1>
         <p class="tagline">Loading your model database...</p>
-        
+
         <div class="loader">
             <div class="loader-dot"></div>
             <div class="loader-dot"></div>
             <div class="loader-dot"></div>
         </div>
     </div>
-    
-    <div class="version">v0.3.7</div>
+
+    <div class="version">v0.3.13</div>
 </body>
+
 </html>
