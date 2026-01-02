@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.29] - 2026-01-02
+
+### Changed
+- **NSFW Filtering Logic**: Now strictly respects the "Enable AI NSFW Filtering" setting. If enabled, basic Regex filtering is mandatory and LLM inspection is optional/confirmable. If disabled, no filtering occurs.
+- **Optimization**: Removed redundant NSFW checks during fetching to prevent double-popups slightly faster syncing.
+- **Translation**: Removed LLM translation fallback completely. Translation is now exclusively Google Translate (fast) or Original Name (fallback).
+
+---
+
 ## [0.3.28] - 2026-01-02
 
 ### Fixed
