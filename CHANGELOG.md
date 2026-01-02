@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.23] - 2026-01-02
+
+### Fixed
+- **HTML Structure**: Fixed invalid HTML validation error caused by misplaced polyfill script.
+
+---
+
 ## [0.3.22] - 2026-01-02
 
 ### Fixed
