@@ -40,11 +40,13 @@ function isObviouslyNSFW(title: string, description: string): boolean {
  * 
  * @param apiConfig - Optional API configuration for filtering
  * @param onLog - Optional callback to receive progress updates for UI display
+ * @param onConfirmLLMCheck - Optional callback to confirm large LLM checks
  * @returns Object containing complete and flagged models
  */
 export async function fetchCivitasBay(
     apiConfig?: ApiDir,
-    onLog?: (message: string) => void
+    onLog?: (message: string) => void,
+    onConfirmLLMCheck?: (modelCount: number, estimatedTimeMs: number) => Promise<boolean>
 ): Promise<{ complete: Model[], flagged: Model[] }> {
     const log = (msg: string) => {
         console.log(msg);
@@ -241,7 +243,14 @@ export async function fetchCivitasBay(
 
         // Apply corporate NSFW filtering
         // This will catch explicit names/tags but allow general-purpose models
-        const corporateFiltered = await applyCorporateFilteringAsync(models, true, true, apiConfig);
+        const corporateFiltered = await applyCorporateFilteringAsync(
+            models,
+            true,
+            true,
+            apiConfig,
+            undefined, // skipSignal
+            onConfirmLLMCheck
+        );
         log(`[CivitasBay] NSFW filter: ${corporateFiltered.complete.length} safe, ${corporateFiltered.flagged.length} blocked`);
 
         const complete = corporateFiltered.complete.filter(isModelComplete);

@@ -236,7 +236,7 @@ export async function syncAllSources(
                     });
                 }
             };
-            fetchPromises.push(withProgress(fetchCivitasBay(options.apiConfig, civitasBayLogger), 'CivitasBay', { complete: [], flagged: [] }));
+            fetchPromises.push(withProgress(fetchCivitasBay(options.apiConfig, civitasBayLogger, onConfirmLLMCheck), 'CivitasBay', { complete: [], flagged: [] }));
         }
         if (options.dataSources?.ollamaLibrary) {
             fetchPromises.push(withProgress(fetchOllamaLibrary(), 'Ollama Library', { complete: [], flagged: [] }));

@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.19] - 2026-01-02
+
+### Fixed
+- **LLM Check Skip**: Fixed issue where CivitasBay sync would run LLM NSFW checks without offering the user the option to skip.
+
+---
+
 ## [0.3.18] - 2026-01-02
 
 ### Improved
