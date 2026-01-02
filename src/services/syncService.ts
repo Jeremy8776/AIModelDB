@@ -253,24 +253,21 @@ export async function syncAllSources(
             onLog(`Collected ${allComplete.length} models from all sources`);
         }
 
-        // Apply final corporate safety filter across all results
-        // 1. Mandatory Regex Filter (Always run)
-        if (onLog) onLog(`Running mandatory safety filter on ${allComplete.length} models...`);
-
-        const regexFilter = applyCorporateFiltering(allComplete, true, options.logNSFWAttempts);
-        allComplete = regexFilter.complete;
-
-        if (onLog) {
-            if (regexFilter.flagged.length > 0) {
-                onLog(`Safety filter: ${regexFilter.flagged.length} models blocked by keyword.`);
-            }
-        }
-
-        // 2. Optional LLM Filter (User setting)
         if (options.enableNSFWFiltering) {
+            if (onLog) onLog(`Safety settings enabled. Running analysis on ${allComplete.length} models...`);
+
+            // 1. Mandatory Regex Filter (Runs if setting is ON)
+            const regexFilter = applyCorporateFiltering(allComplete, true, options.logNSFWAttempts);
+            allComplete = regexFilter.complete;
+
             if (onLog) {
-                onLog(`Running extended LLM safety inspection...`);
+                if (regexFilter.flagged.length > 0) {
+                    onLog(`Basic Safety Filter: Blocked ${regexFilter.flagged.length} models by keyword.`);
+                }
             }
+
+            // 2. Optional LLM Filter (Runs if setting is ON, confirms with user)
+            if (onLog) onLog(`Running extended LLM safety inspection...`);
 
             const finalFilter = await applyCorporateFilteringAsync(
                 allComplete,
@@ -286,9 +283,9 @@ export async function syncAllSources(
             // Log final filtering results
             if (onLog) {
                 if (finalFilter.flagged.length > 0) {
-                    onLog(`LLM inspection: ${finalFilter.flagged.length} additional models blocked`);
+                    onLog(`LLM Analysis: ${finalFilter.flagged.length} additional models flagged.`);
                 } else {
-                    onLog(`LLM inspection complete: No additional models blocked`);
+                    onLog(`LLM Analysis complete: No additional flags.`);
                 }
             }
         }
