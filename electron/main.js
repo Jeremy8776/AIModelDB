@@ -235,6 +235,19 @@ ipcMain.on('download-update', () => {
     autoUpdater.downloadUpdate();
 });
 
+// Handle translation request from renderer
+ipcMain.handle('translate-text', async (event, text) => {
+    try {
+        // Dynamic import for ESM package compatibility
+        const { translate } = await import('@vitalets/google-translate-api');
+        const res = await translate(text, { to: 'en' });
+        return { text: res.text, error: null };
+    } catch (error) {
+        console.error('Translation error:', error);
+        return { text: null, error: error.message };
+    }
+});
+
 // SafeStorage IPC handlers
 ipcMain.handle('encrypt-string', async (event, plainText) => {
     if (!safeStorage.isEncryptionAvailable()) {

@@ -31,6 +31,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // Proxy request
     proxyRequest: (options) => ipcRenderer.invoke('proxy-request', options),
 
+    // Translation
+    translateText: (text) => ipcRenderer.invoke('translate-text', text),
+
     // Window Controls
     minimize: () => ipcRenderer.send('window-minimize'),
     maximize: () => ipcRenderer.send('window-maximize'),

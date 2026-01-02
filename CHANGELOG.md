@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.24] - 2026-01-02
+
+### Fixed
+- **Translation Crash**: Moved Google Translate logic to the Main process (backend) to resolve browser compatibility issues and potential crashes.
+
+---
+
 ## [0.3.23] - 2026-01-02
 
 ### Fixed

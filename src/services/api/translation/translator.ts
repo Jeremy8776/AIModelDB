@@ -10,7 +10,6 @@ import { Model, ApiDir, ProviderKey, ProviderCfg } from '../../../types';
 import { containsChinese, containsOtherAsianLanguages } from './language-detection';
 import { callProviderText } from '../providers/provider-calls';
 import { safeJsonFromText } from '../../../utils/format';
-import { translate } from '@vitalets/google-translate-api';
 
 /**
  * Translates Chinese, Japanese, and Korean text in model names and descriptions to English.
@@ -106,7 +105,8 @@ Return ONLY a JSON array of objects with: id, name_en, description_en`;
                             // Translate name
                             let nameEn = item.name;
                             if (containsChinese(item.name) || containsOtherAsianLanguages(item.name)) {
-                                const res = await translate(item.name, { to: 'en' });
+                                const res = await (window as any).electronAPI.translateText(item.name);
+                                if (res.error) throw new Error(res.error);
                                 nameEn = res.text;
                             }
 
@@ -115,7 +115,8 @@ Return ONLY a JSON array of objects with: id, name_en, description_en`;
                             if (item.description && (containsChinese(item.description) || containsOtherAsianLanguages(item.description))) {
                                 // Truncate very long descriptions to avoid 5000 char limit
                                 const textToTranslate = item.description.slice(0, 4500);
-                                const res = await translate(textToTranslate, { to: 'en' });
+                                const res = await (window as any).electronAPI.translateText(textToTranslate);
+                                if (res.error) throw new Error(res.error);
                                 descEn = res.text;
                             }
 
