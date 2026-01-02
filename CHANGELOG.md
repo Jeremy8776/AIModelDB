@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.14] - 2026-01-02
+
+### Changed
+- **Installer**: Updates now silently uninstall previous versions without prompting. This provides a smoother, more seamless update experience.
+
+---
+
 ## [0.3.13] - 2026-01-02
 
 ### Fixed
