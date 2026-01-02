@@ -19,7 +19,8 @@ import {
     callProviderLLM,
     enrichModelsDeep,
     translateChineseModels,
-    applyCorporateFilteringAsync
+    applyCorporateFilteringAsync,
+    applyCorporateFiltering
 } from "./api";
 
 /**
@@ -253,14 +254,27 @@ export async function syncAllSources(
         }
 
         // Apply final corporate safety filter across all results
+        // 1. Mandatory Regex Filter (Always run)
+        if (onLog) onLog(`Running mandatory safety filter on ${allComplete.length} models...`);
+
+        const regexFilter = applyCorporateFiltering(allComplete, true, options.logNSFWAttempts);
+        allComplete = regexFilter.complete;
+
+        if (onLog) {
+            if (regexFilter.flagged.length > 0) {
+                onLog(`Safety filter: ${regexFilter.flagged.length} models blocked by keyword.`);
+            }
+        }
+
+        // 2. Optional LLM Filter (User setting)
         if (options.enableNSFWFiltering) {
             if (onLog) {
-                onLog(`Running NSFW filter on ${allComplete.length} models...`);
+                onLog(`Running extended LLM safety inspection...`);
             }
 
             const finalFilter = await applyCorporateFilteringAsync(
                 allComplete,
-                options.enableNSFWFiltering,
+                true, // Force enable since we are inside the 'if enabled' block
                 options.logNSFWAttempts,
                 options.apiConfig, // Pass API config for LLM validation
                 skipSignal,
@@ -272,9 +286,9 @@ export async function syncAllSources(
             // Log final filtering results
             if (onLog) {
                 if (finalFilter.flagged.length > 0) {
-                    onLog(`NSFW filter: ${finalFilter.flagged.length} blocked, ${allComplete.length} passed`);
+                    onLog(`LLM inspection: ${finalFilter.flagged.length} additional models blocked`);
                 } else {
-                    onLog(`NSFW filter complete: ${allComplete.length} models passed`);
+                    onLog(`LLM inspection complete: No additional models blocked`);
                 }
             }
         }
