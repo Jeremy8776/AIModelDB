@@ -68,6 +68,7 @@ export async function translateChineseModels(
         // Process in smaller batches for better API success rate
         const batchSize = 25;
         const translatedModels = [...models];
+        let fallbackBatchCount = 0;
 
         for (let i = 0; i < toTranslate.length; i += batchSize) {
             const batch = toTranslate.slice(i, i + batchSize).map(m => ({
@@ -130,8 +131,8 @@ Return ONLY a JSON array of objects with: id, name_en, description_en`;
                         onProgress(`Translating... (${i + batch.length}/${toTranslate.length})`);
                     }
                 } else {
-                    console.warn(`[Translation] Invalid translation response, applying ASCII/context fallback for batch ${Math.floor(i / batchSize) + 1}`);
-                    // Fallback: best-effort ASCII extraction of meaningful parts and contextual English labels
+                    // Track fallback usage instead of logging per-batch
+                    fallbackBatchCount++;
                     applyFallbackTranslation(translatedModels);
                 }
             } catch (error: any) {
@@ -148,6 +149,11 @@ Return ONLY a JSON array of objects with: id, name_en, description_en`;
         }
 
         const translatedCount = translatedModels.filter(m => m.tags?.includes('translated')).length;
+        const totalBatches = Math.ceil(toTranslate.length / batchSize);
+
+        if (fallbackBatchCount > 0) {
+            console.warn(`[Translation] Used ASCII/context fallback for ${fallbackBatchCount}/${totalBatches} batches (LLM response invalid or unavailable)`);
+        }
         console.log(`[Translation] Completed: ${translatedCount} models translated successfully`);
 
         return translatedModels;
