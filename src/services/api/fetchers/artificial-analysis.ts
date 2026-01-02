@@ -113,10 +113,23 @@ export async function fetchArtificialAnalysisIndex(apiKey?: string): Promise<{ c
                         benchmarks.push({ name: 'Price Index', score: item.price_index, unit: 'index', source: 'ArtificialAnalysis' });
                     }
 
+                    // Check for future/unreleased dates
+                    const tags: string[] = ['commercial', endpoint.type.toLowerCase(), 'benchmarked', item.model_creator?.slug].filter(Boolean) as string[];
+                    let isFutureRelease = false;
+
+                    if (normalizedRelease) {
+                        const releaseDate = new Date(normalizedRelease);
+                        // Check if release date is in the future (compared to now)
+                        if (releaseDate > new Date()) {
+                            isFutureRelease = true;
+                            tags.push('unreleased', 'leaked', 'future-release');
+                        }
+                    }
+
                     const model: Model = {
                         id: `aa-${item.id || item.slug}`,
                         name: item.name,
-                        description: `${item.name} - Artificial Analysis benchmarked ${endpoint.type} model (Rank #${item.rank}, ELO: ${item.elo})`,
+                        description: `${item.name} - Artificial Analysis benchmarked ${endpoint.type} model (Rank #${item.rank}, ELO: ${item.elo})${isFutureRelease ? ' [UNRELEASED/SPECULATIVE]' : ''}`,
                         provider: item.model_creator?.name || 'Unknown',
                         domain: endpoint.domain,
                         source: 'ArtificialAnalysis',
@@ -133,7 +146,7 @@ export async function fetchArtificialAnalysisIndex(apiKey?: string): Promise<{ c
                         pricing,
                         updated_at: normalizeDate(item.updated_at) || new Date().toISOString(),
                         release_date: normalizedRelease,
-                        tags: ['commercial', endpoint.type.toLowerCase(), 'benchmarked', item.model_creator?.slug].filter(Boolean),
+                        tags,
                         parameters: null,
                         context_window: null,
                         indemnity: 'VendorProgram',

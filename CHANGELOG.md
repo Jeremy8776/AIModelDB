@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.27] - 2026-01-02
+
+### Added
+- **Future Date Detection**: Models with release dates in the future (from Artificial Analysis or other sources) are now automatically tagged as `unreleased`, `leaked`, and `speculative` to clearly distinguish them from official releases.
+
+---
+
 ## [0.3.26] - 2026-01-02
 
 ### Fixed
