@@ -189,16 +189,6 @@ Return ONLY a JSON array of objects with: id, name_en, description_en`;
  * - Generic descriptions based on model domain and provider
  */
 function applyFallbackTranslation(models: Model[]): void {
-    const asciiOnly = (s: string): string => {
-        const cleaned = (s || '')
-            .replace(/[^\x20-\x7E]+/g, ' ') // drop non-ASCII
-            .replace(/\s+/g, ' ') // collapse whitespace
-            .replace(/^[^A-Za-z0-9]+|[^A-Za-z0-9]+$/g, '') // trim non-alnum ends
-            .trim();
-        // If result still empty, keep original to avoid losing name entirely
-        return cleaned;
-    };
-
     const englishFromContext = (m: Model): string => {
         switch (m.domain) {
             case 'LLM': return 'Chinese Language Model';
@@ -216,16 +206,22 @@ function applyFallbackTranslation(models: Model[]): void {
     for (let j = 0; j < models.length; j++) {
         const m = models[j];
         if (containsChinese(m.name) || containsOtherAsianLanguages(m.name)) {
-            const before = m.name;
-            const ascii = asciiOnly(m.name);
-            const newName = ascii && ascii.length >= 2 ? ascii : englishFromContext(m);
+            // Per user request: Keep original name if translation fails
+            // prevent "random names" from aggressive ASCII stripping (e.g. "高清.safetensors" -> "safetensors")
+            const newName = m.name;
+
+            // Only add a generic description if the current one is also unreadable/missing
             const newDesc = m.description && (containsChinese(m.description) || containsOtherAsianLanguages(m.description))
-                ? `${englishFromContext(m)} from ${m.provider || m.source || 'Chinese platform'}`
+                ? `${englishFromContext(m)} from ${m.provider || m.source || 'Chinese platform'}\n\n(Original Description: ${m.description})`
                 : m.description;
-            models[j] = { ...m, name: newName, description: newDesc, tags: [...new Set([...(m.tags || []), 'translated'])] };
-            if (before !== models[j].name) {
-                console.log(`[Translation:Fallback] "${before}" → "${models[j].name}"`);
-            }
+
+            models[j] = {
+                ...m,
+                name: newName,
+                description: newDesc,
+                // Mark as translated so we don't retry endlessly, even though we kept original
+                tags: [...new Set([...(m.tags || []), 'translated'])]
+            };
         }
     }
 }

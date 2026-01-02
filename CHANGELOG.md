@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.20] - 2026-01-02
+
+### Changed
+- **Translation Fallback**: Adjusted fallback behavior to preserve original model names when translation fails, preventing loss of meaning (e.g., keeping "高清.safetensors" instead of reducing it to just "safetensors").
+
+---
+
 ## [0.3.19] - 2026-01-02
 
 ### Fixed
