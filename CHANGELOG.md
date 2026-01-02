@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.25] - 2026-01-02
+
+### Changed
+- **Auto-Update**: Enabled automatic downloading of updates by default to prevent getting stuck if the UI becomes unresponsive.
+
+---
+
 ## [0.3.24] - 2026-01-02
 
 ### Fixed

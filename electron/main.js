@@ -14,7 +14,7 @@ let splashWindow = null;
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
 
 // Configure auto-updater
-autoUpdater.autoDownload = false; // Don't download automatically, ask user first
+autoUpdater.autoDownload = true; // Download automatically to fix black screen issues
 autoUpdater.autoInstallOnAppQuit = true;
 
 // Logging for auto-updater
