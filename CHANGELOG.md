@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.26] - 2026-01-02
+
+### Fixed
+- **Windows Download Link**: Fixed the Windows installer artifact name to match the static download link in the README (was generating versioned filenames).
+
+---
+
 ## [0.3.25] - 2026-01-02
 
 ### Changed

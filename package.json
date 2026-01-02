@@ -2,7 +2,7 @@
   "name": "ai-model-db-pro",
   "productName": "AI Model DB Pro",
   "private": true,
-  "version": "0.3.25",
+  "version": "0.3.26",
   "description": "A comprehensive database for tracking and managing AI models across multiple providers",
   "author": "AI Model DB Pro",
   "license": "MIT",
@@ -93,7 +93,8 @@
           ]
         }
       ],
-      "icon": "public/icons/win/icon.ico"
+      "icon": "public/icons/win/icon.ico",
+      "artifactName": "AI-Model-DB-Pro-Setup.exe"
     },
     "mac": {
       "target": "dmg",
