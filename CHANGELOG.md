@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.30] - 2026-01-02
+
+### Changed
+- **UI**: Models flagged as "unreleased" or "future-release" now display "Unreleased" in the "Released" column instead of a future date, effectively hiding the speculative date from the main view.
+
+---
+
 ## [0.3.29] - 2026-01-02
 
 ### Changed

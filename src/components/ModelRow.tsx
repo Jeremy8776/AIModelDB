@@ -47,6 +47,12 @@ export const ModelRow = React.memo(function ModelRow({ m, onOpen, isSelected, on
   // Format the release date
   const formatDate = (dateString: string | null | undefined) => {
     if (!dateString) return "Unknown";
+
+    // Check if flagged as unreleased/future
+    if (m.tags && (m.tags.includes('unreleased') || m.tags.includes('future-release'))) {
+      return "Unreleased";
+    }
+
     const date = new Date(dateString);
     return date.toLocaleDateString("en-US", { year: 'numeric', month: 'short', day: 'numeric' });
   };
