@@ -241,21 +241,11 @@ export async function fetchCivitasBay(
 
         log(`[CivitasBay] Processed ${models.length} total models from RSS feed`);
 
-        // Apply corporate NSFW filtering
-        // This will catch explicit names/tags but allow general-purpose models
-        const corporateFiltered = await applyCorporateFilteringAsync(
-            models,
-            true,
-            true,
-            apiConfig,
-            undefined, // skipSignal
-            onConfirmLLMCheck
-        );
-        log(`[CivitasBay] NSFW filter: ${corporateFiltered.complete.length} safe, ${corporateFiltered.flagged.length} blocked`);
+        // Skip internal corporate filtering - let the global sync service handle it once at the end
+        // This prevents double LLM checks and popups
 
-        const complete = corporateFiltered.complete.filter(isModelComplete);
-        const flagged = corporateFiltered.complete.filter(m => !isModelComplete(m))
-            .concat(corporateFiltered.flagged);
+        const complete = models.filter(isModelComplete);
+        const flagged = models.filter(m => !isModelComplete(m));
 
         log(`[CivitasBay] Final - Complete: ${complete.length}, Flagged: ${flagged.length}`);
 

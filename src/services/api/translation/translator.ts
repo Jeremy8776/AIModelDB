@@ -34,21 +34,10 @@ export async function translateChineseModels(
     onProgress?: (progress: string) => void
 ): Promise<Model[]> {
     try {
-        // Pick the first enabled text provider. Prefer Ollama for local/speed.
-        let providerEntry = Object.entries(apiConfig).find(([k, cfg]) =>
-            (cfg as any)?.enabled && ((k === 'ollama' || (cfg as any)?.protocol === 'ollama'))
-        );
-
-        // If no Ollama, look for others with API keys
-        if (!providerEntry) {
-            providerEntry = Object.entries(apiConfig).find(([, cfg]) => (cfg as any)?.enabled && (cfg as any)?.apiKey);
-        }
-
-        const providerKey = (providerEntry?.[0] as ProviderKey) || null;
-        const providerCfg = (providerEntry?.[1] as ProviderCfg) || null;
-        if (!providerKey || !providerCfg) {
-            console.log('[Translation] No LLM provider configured - using ASCII fallback for Chinese names');
-        }
+        // LLM Translation removed per user request. 
+        // We now rely solely on Google Translate with "Keep Original Name" fallback.
+        const providerKey = null;
+        const providerCfg = null;
 
         // Find models that need translation (Chinese, Japanese, or Korean)
         const toTranslate = models.filter(m =>
@@ -84,15 +73,7 @@ export async function translateChineseModels(
                 provider: m.provider || ''
             }));
 
-            const system = `You are a professional translator specializing in AI/ML technical content. 
-Translate Chinese, Japanese, or Korean text to clear, professional English suitable for technical documentation.
-- Preserve technical terms and model names when appropriate
-- Keep translations concise but descriptive
-- Maintain the professional tone for product catalogs
-- If text is already in English or mixed language, improve clarity without changing meaning
-Return ONLY a JSON array of objects with: id, name_en, description_en`;
-
-            const user = `Translate the following AI model information to English. Focus on accuracy and professional terminology:\n${JSON.stringify(batch, null, 2)}`;
+            // Prompts removed as LLM is disabled
 
             try {
                 let googleTranslated = false;
@@ -141,7 +122,8 @@ Return ONLY a JSON array of objects with: id, name_en, description_en`;
                             }
                         }
                         googleTranslated = true;
-                        console.log(`[Translation] Batch ${Math.floor(i / batchSize) + 1} translated via Google Translate`);
+                        console.log(`[Translation] Batch ${Math.floor(i / batchSize) + 1
+                            } translated via Google Translate`);
                         // Keep delay for rate limiting
                         if (i + batchSize < toTranslate.length) await new Promise(r => setTimeout(r, 1000));
                         continue; // Skip LLM logic
@@ -152,11 +134,8 @@ Return ONLY a JSON array of objects with: id, name_en, description_en`;
                 }
 
                 let translated: any = null;
-                // 2. Fallback to LLM
-                if (!googleTranslated && providerKey && providerCfg) {
-                    const text = await callProviderText(providerKey, providerCfg, system, user);
-                    translated = safeJsonFromText(text);
-                }
+                // 2. Fallback to LLM - REMOVED per user request
+                // We now strictly use Google Translate -> Fallback (Original Name)
 
                 if (Array.isArray(translated)) {
                     const byId = new Map<string, { name_en?: string; description_en?: string }>();
@@ -189,7 +168,8 @@ Return ONLY a JSON array of objects with: id, name_en, description_en`;
                         }
                     }
 
-                    console.log(`[Translation] Successfully processed batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(toTranslate.length / batchSize)}`);
+                    console.log(`[Translation] Successfully processed batch ${Math.floor(i / batchSize) + 1} /${Math.ceil(toTranslate.length / batchSize)
+                        }`);
                     if (onProgress) {
                         onProgress(`Translating... (${i + batch.length}/${toTranslate.length})`);
                     }
@@ -202,10 +182,10 @@ Return ONLY a JSON array of objects with: id, name_en, description_en`;
                     applyFallbackTranslation(translatedModels);
                 }
             } catch (error: any) {
-                console.error(`[Translation] Error in batch ${Math.floor(i / batchSize) + 1}:`, error?.message || error);
+                console.error(`[Translation] Error in batch ${Math.floor(i / batchSize) + 1}: `, error?.message || error);
                 fallbackBatchCount++;
                 if (!fallbackReason) {
-                    fallbackReason = `API error: ${error?.message || 'Unknown error'}`;
+                    fallbackReason = `API error: ${error?.message || 'Unknown error'} `;
                 }
                 // Continue with next batch even if one fails
                 // Apply ASCII/context fallback for this batch as well
@@ -222,7 +202,7 @@ Return ONLY a JSON array of objects with: id, name_en, description_en`;
         const totalBatches = Math.ceil(toTranslate.length / batchSize);
 
         if (fallbackBatchCount > 0) {
-            console.warn(`[Translation] Used ASCII/context fallback for ${fallbackBatchCount}/${totalBatches} batches. Reason: ${fallbackReason}`);
+            console.warn(`[Translation] Used ASCII / context fallback for ${fallbackBatchCount} / ${totalBatches} batches.Reason: ${fallbackReason} `);
         }
         console.log(`[Translation] Completed: ${translatedCount} models translated successfully`);
 
@@ -269,7 +249,7 @@ function applyFallbackTranslation(models: Model[]): void {
 
             // Only add a generic description if the current one is also unreadable/missing
             const newDesc = m.description && (containsChinese(m.description) || containsOtherAsianLanguages(m.description))
-                ? `${englishFromContext(m)} from ${m.provider || m.source || 'Chinese platform'}\n\n(Original Description: ${m.description})`
+                ? `${englishFromContext(m)} from ${m.provider || m.source || 'Chinese platform'} \n\n(Original Description: ${m.description})`
                 : m.description;
 
             models[j] = {
