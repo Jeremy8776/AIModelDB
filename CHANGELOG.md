@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.22] - 2026-01-02
+
+### Fixed
+- **Startup Crash**: Fixed "global is not defined" error caused by the new translation library functionality running in the browser environment.
+
+---
+
 ## [0.3.21] - 2026-01-02
 
 ### Added
