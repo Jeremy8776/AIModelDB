@@ -2,7 +2,7 @@
   "name": "ai-model-db-pro",
   "productName": "AI Model DB Pro",
   "private": true,
-  "version": "0.3.27",
+  "version": "0.3.28",
   "description": "A comprehensive database for tracking and managing AI models across multiple providers",
   "author": "AI Model DB Pro",
   "license": "MIT",
@@ -94,11 +94,17 @@
         }
       ],
       "icon": "public/icons/win/icon.ico",
-      "artifactName": "AI-Model-DB-Pro-Setup.exe"
+      "artifactName": "AI-Model-DB-Pro-Setup.exe",
+      "asarUnpack": [
+        "**/node_modules/@vitalets/google-translate-api"
+      ]
     },
     "mac": {
       "target": "dmg",
       "icon": "public/icons/mac/icon.icns",
+      "asarUnpack": [
+        "**/node_modules/@vitalets/google-translate-api"
+      ],
       "category": "public.app-category.developer-tools",
       "hardenedRuntime": true,
       "gatekeeperAssess": false,

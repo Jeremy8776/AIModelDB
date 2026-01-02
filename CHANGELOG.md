@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.28] - 2026-01-02
+
+### Fixed
+- **Production Translation**: Fixed issue where Google Translate would fail in the production app (falling back to slow LLM) by properly unpacking the translation library from the application archive.
+
+---
+
 ## [0.3.27] - 2026-01-02
 
 ### Added
