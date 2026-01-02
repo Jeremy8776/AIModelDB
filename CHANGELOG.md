@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.15] - 2026-01-02
+
+### Fixed
+- **Wizard Phantom Checkmark**: Fixed the "LLM Discovery" toggle appearing as an unlabeled checkmark in the wizard confirmation step.
+
+### Changed
+- **Installer Auto-Launch**: App now automatically launches after install/update, removing the manual "Finish" step.
+
+---
+
 ## [0.3.14] - 2026-01-02
 
 ### Changed

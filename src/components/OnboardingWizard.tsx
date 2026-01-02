@@ -533,16 +533,14 @@ export function OnboardingWizard({ isOpen, onClose, onComplete, initialStep = 1 
                                     <h4 className="font-medium mb-2">Selected Sources:</h4>
                                     <ul className="text-sm text-zinc-500 space-y-1">
                                         {Object.entries(selectedSources)
-                                            .filter(([_, enabled]) => enabled)
+                                            .filter(([key, enabled]) => enabled && key !== 'llmDiscovery') // Exclude LLM toggle from sources list
                                             .map(([key]) => {
                                                 const source = dataSources.find(s => s.key === key);
-                                                // Mock status for now as we haven't synced yet, but user requested 'actual' status
-                                                // typically this wizard is pre-sync. 
-                                                // If we want to show 'Ready to Sync', we can do that.
+                                                if (!source) return null; // Skip if no matching source definition
                                                 return (
                                                     <li key={key} className="flex items-center gap-2">
                                                         <CheckCircle size={14} className="text-green-500" />
-                                                        {source?.label} <span className="text-xs opacity-70">(Ready to Sync)</span>
+                                                        {source.label} <span className="text-xs opacity-70">(Ready to Sync)</span>
                                                     </li>
                                                 );
                                             })}
