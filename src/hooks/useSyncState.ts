@@ -18,8 +18,8 @@ export interface SyncState {
     setIsSyncing: (syncing: boolean) => void;
 
     // Sync progress
-    syncProgress: { current: number; total: number; source?: string; found?: number; statusMessage?: string; eta?: string } | null;
-    setSyncProgress: (progress: { current: number; total: number; source?: string; found?: number; statusMessage?: string; eta?: string } | null) => void;
+    syncProgress: { current: number; total: number; source?: string; found?: number; statusMessage?: string } | null;
+    setSyncProgress: (progress: { current: number; total: number; source?: string; found?: number; statusMessage?: string } | null) => void;
 
     // Last sync timestamp
     lastSync: string | null;
@@ -60,7 +60,7 @@ export function useSyncState(): SyncState & { skipSignal: MutableRefObject<boole
     const [isSyncing, setIsSyncing] = useState(false);
 
     // Sync progress state
-    const [syncProgress, setSyncProgress] = useState<{ current: number; total: number; source?: string; found?: number; statusMessage?: string; eta?: string } | null>(null);
+    const [syncProgress, setSyncProgress] = useState<{ current: number; total: number; source?: string; found?: number; statusMessage?: string } | null>(null);
 
     // Last sync timestamp state
     const [lastSync, setLastSync] = useState<string | null>(null);

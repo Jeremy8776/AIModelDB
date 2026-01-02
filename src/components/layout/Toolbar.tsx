@@ -18,7 +18,7 @@ import { ExportFormat } from "../../services/exportService";
  */
 export interface ToolbarProps {
     isSyncing: boolean;
-    syncProgress: { current: number; total: number; source?: string; found?: number; statusMessage?: string; eta?: string } | null;
+    syncProgress: { current: number; total: number; source?: string; found?: number; statusMessage?: string } | null;
     lastSync: string | null;
     pageItems: Model[];
     total: number;
@@ -94,11 +94,6 @@ export function Toolbar({
                                 {syncProgress.found !== undefined && syncProgress.found > 0 && (
                                     <span className="text-xs text-green-500 font-medium whitespace-nowrap">
                                         +{syncProgress.found} models
-                                    </span>
-                                )}
-                                {syncProgress.eta && (
-                                    <span className="text-xs opacity-60 whitespace-nowrap">
-                                        ETA: {syncProgress.eta}
                                     </span>
                                 )}
                                 {/* Show skip button during long operations */}

@@ -260,42 +260,18 @@ function AIModelDBProContent() {
         consoleLogging.addConsoleLog("Created pre-sync snapshot for rollback");
       }
 
-      // Track last log message, cumulative models found, and timing for ETA
+      // Track last log message and cumulative models found
       let lastLogMessage = '';
       let totalModelsFound = 0;
       let currentProgress: { current: number; total: number; source?: string; found?: number } | null = null;
-      const syncStartTime = Date.now();
-
-      // Helper to format remaining time
-      const formatEta = (remainingMs: number): string => {
-        if (remainingMs < 1000) return '<1s';
-        const seconds = Math.floor(remainingMs / 1000);
-        if (seconds < 60) return `${seconds}s`;
-        const minutes = Math.floor(seconds / 60);
-        const secs = seconds % 60;
-        if (minutes < 60) return secs > 0 ? `${minutes}m ${secs}s` : `${minutes}m`;
-        const hours = Math.floor(minutes / 60);
-        const mins = minutes % 60;
-        return `${hours}h ${mins}m`;
-      };
-
-      const calculateEta = (current: number, total: number): string | undefined => {
-        if (current <= 0 || total <= 0) return undefined;
-        const elapsedMs = Date.now() - syncStartTime;
-        const avgTimePerItem = elapsedMs / current;
-        const remainingItems = total - current;
-        const remainingMs = avgTimePerItem * remainingItems;
-        return formatEta(remainingMs);
-      };
 
       const updateProgressWithMessage = (progress: { current: number; total: number; source?: string; found?: number }) => {
         // Accumulate total models found
         if (progress.found && progress.found > 0) {
           totalModelsFound += progress.found;
         }
-        const eta = calculateEta(progress.current, progress.total);
         currentProgress = { ...progress, found: totalModelsFound };
-        syncState.setSyncProgress({ ...currentProgress, statusMessage: lastLogMessage, eta });
+        syncState.setSyncProgress({ ...currentProgress, statusMessage: lastLogMessage });
       };
 
       const handleLogWithProgress = (message: string) => {
@@ -303,8 +279,7 @@ function AIModelDBProContent() {
         consoleLogging.addConsoleLog(message);
         // Update progress to include latest log message
         if (currentProgress) {
-          const eta = calculateEta(currentProgress.current, currentProgress.total);
-          syncState.setSyncProgress({ ...currentProgress, statusMessage: message, eta });
+          syncState.setSyncProgress({ ...currentProgress, statusMessage: message });
         }
       };
 

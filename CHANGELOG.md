@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.12] - 2026-01-02
+
+### Removed
+- **Sync ETA Display**: Removed the inaccurate ETA timer from the sync progress indicator. The ETA calculation couldn't account for variable-time operations like CivitBay scraping which take different amounts of time in dev vs production.
+
+---
+
 ## [0.3.11] - 2026-01-02
 
 ### Fixed
