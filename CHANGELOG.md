@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.17] - 2026-01-02
+
+### Improved
+- **Translation Fallback Logging**: Now logs the specific reason for fallback (e.g., "No LLM provider configured", "LLM returned invalid JSON", or "API error: [message]") instead of generic message.
+
+---
+
 ## [0.3.16] - 2026-01-02
 
 ### Fixed

@@ -69,6 +69,12 @@ export async function translateChineseModels(
         const batchSize = 25;
         const translatedModels = [...models];
         let fallbackBatchCount = 0;
+        let fallbackReason: string | null = null;
+
+        // Check upfront if we have a provider
+        if (!providerKey || !providerCfg) {
+            fallbackReason = 'No LLM provider configured';
+        }
 
         for (let i = 0; i < toTranslate.length; i += batchSize) {
             const batch = toTranslate.slice(i, i + batchSize).map(m => ({
@@ -131,12 +137,19 @@ Return ONLY a JSON array of objects with: id, name_en, description_en`;
                         onProgress(`Translating... (${i + batch.length}/${toTranslate.length})`);
                     }
                 } else {
-                    // Track fallback usage instead of logging per-batch
+                    // Track fallback usage with reason
                     fallbackBatchCount++;
+                    if (!fallbackReason) {
+                        fallbackReason = 'LLM returned invalid JSON (not an array)';
+                    }
                     applyFallbackTranslation(translatedModels);
                 }
             } catch (error: any) {
                 console.error(`[Translation] Error in batch ${Math.floor(i / batchSize) + 1}:`, error?.message || error);
+                fallbackBatchCount++;
+                if (!fallbackReason) {
+                    fallbackReason = `API error: ${error?.message || 'Unknown error'}`;
+                }
                 // Continue with next batch even if one fails
                 // Apply ASCII/context fallback for this batch as well
                 applyFallbackTranslation(translatedModels);
@@ -152,7 +165,7 @@ Return ONLY a JSON array of objects with: id, name_en, description_en`;
         const totalBatches = Math.ceil(toTranslate.length / batchSize);
 
         if (fallbackBatchCount > 0) {
-            console.warn(`[Translation] Used ASCII/context fallback for ${fallbackBatchCount}/${totalBatches} batches (LLM response invalid or unavailable)`);
+            console.warn(`[Translation] Used ASCII/context fallback for ${fallbackBatchCount}/${totalBatches} batches. Reason: ${fallbackReason}`);
         }
         console.log(`[Translation] Completed: ${translatedCount} models translated successfully`);
 
