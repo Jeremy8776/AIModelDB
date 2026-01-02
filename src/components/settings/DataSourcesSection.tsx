@@ -27,6 +27,7 @@ export function DataSourcesSection({ onSync, addConsoleLog }: DataSourcesSection
     { key: 'civitai', label: 'Civitai', description: 'Community AI models' },
     { key: 'openmodeldb', label: 'OpenModelDB', description: 'Open model database' },
     { key: 'civitasbay', label: 'CivitasBay', description: 'AI model marketplace' },
+    { key: 'ollamaLibrary', label: 'Ollama Library', description: 'Top models from Ollama library' },
   ];
 
   const handleSync = async () => {

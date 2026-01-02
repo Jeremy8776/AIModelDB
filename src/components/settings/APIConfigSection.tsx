@@ -1,5 +1,5 @@
 import React, { useContext, useState, useEffect } from 'react';
-import { Zap, Eye, EyeOff, RefreshCw, CheckCircle, AlertCircle, Check } from 'lucide-react';
+import { Server, Eye, EyeOff, RefreshCw, CheckCircle, AlertCircle, Check, Download, Plus } from 'lucide-react';
 import ThemeContext from '../../context/ThemeContext';
 import { useSettings } from '../../context/SettingsContext';
 import { ThemedSelect } from '../ThemedSelect';
@@ -9,6 +9,14 @@ export function APIConfigSection() {
   const { settings, saveSettings } = useSettings();
 
   const apiProviders = [
+    {
+      key: 'ollama',
+      name: 'Ollama (Local)',
+      models: [],
+      showBaseUrl: true,
+      defaultBaseUrl: 'http://127.0.0.1:11434',
+      isLocal: true
+    },
     {
       key: 'anthropic',
       name: 'Anthropic',
@@ -245,7 +253,7 @@ export function APIConfigSection() {
 
       // Determine protocol
       // Default to 'openai' if 'other' is selected, as it's the most common "custom" format
-      let protocol = config.protocol || (['anthropic', 'google'].includes(providerKey) ? providerKey : 'openai');
+      let protocol = config.protocol || (['anthropic', 'google', 'ollama'].includes(providerKey) ? providerKey : 'openai');
       if (protocol === 'other') protocol = 'openai';
 
       let allModels: any[] = [];
@@ -360,6 +368,59 @@ export function APIConfigSection() {
     }
   };
 
+  // Specific handler for Ollama status check
+  const [ollamaStatus, setOllamaStatus] = useState<'unknown' | 'checking' | 'running' | 'down'>('unknown');
+  const [ollamaModelCount, setOllamaModelCount] = useState<number>(0);
+
+  const checkOllamaStatus = async (baseUrl: string) => {
+    setOllamaStatus('checking');
+    try {
+      // Clean URL
+      const cleanUrl = baseUrl.replace(/\/$/, '');
+      const result = await window.electronAPI?.proxyRequest?.({
+        url: `${cleanUrl}/api/tags`,
+        method: 'GET'
+      });
+
+      if (result?.success) {
+        setOllamaStatus('running');
+        setOllamaModelCount(result.data.models?.length || 0);
+        // Also update cached models list
+        if (result.data.models) {
+          const modelList = result.data.models.map((m: any) => ({
+            value: m.name,
+            label: m.name
+          }));
+          setFetchedModels(prev => ({ ...prev, ollama: modelList }));
+
+          // Update settings cache too
+          const oldConfig = settings.apiConfig?.ollama || {};
+          saveSettings({
+            apiConfig: {
+              ...settings.apiConfig,
+              ollama: {
+                ...oldConfig,
+                cachedModels: modelList
+              }
+            }
+          });
+        }
+      } else {
+        setOllamaStatus('down');
+      }
+    } catch (e) {
+      console.error('Ollama check failed:', e);
+      setOllamaStatus('down');
+    }
+  };
+
+  // Effect to auto-check Ollama if enabled
+  useEffect(() => {
+    if (settings.apiConfig?.ollama?.enabled) {
+      checkOllamaStatus(settings.apiConfig.ollama.baseUrl || 'http://127.0.0.1:11434');
+    }
+  }, [settings.apiConfig?.ollama?.enabled]);
+
   const handleApiKeyChange = (key: string, value: string) => {
     setLocalApiKeys(prev => ({ ...prev, [key]: value }));
     // Clear error when typing
@@ -385,7 +446,7 @@ export function APIConfigSection() {
     <div className="space-y-6">
       <div>
         <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
-          <Zap size={20} className="text-zinc-500" />
+          <Server size={20} className="text-zinc-500" />
           API Configuration
           <span className="px-2 py-0.5 text-[10px] font-bold bg-amber-500/20 text-amber-400 rounded-full uppercase">Alpha</span>
         </h3>
@@ -481,6 +542,7 @@ export function APIConfigSection() {
                   <h4 className={`font-medium text-lg transition-colors ${isEnabled ? 'text-white' : 'text-zinc-400'}`}>
                     {provider.name}
                     {isCustom && <span className="ml-2 text-xs bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded">Custom</span>}
+                    {(provider as any).isLocal && <span className="ml-2 text-xs bg-green-900/40 text-green-400 border border-green-800 px-2 py-0.5 rounded font-mono">Run Locally</span>}
                   </h4>
                   {isCustom && <div className="text-xs text-zinc-500 uppercase tracking-wider font-bold mt-0.5">{protocol}</div>}
                 </div>
@@ -497,6 +559,75 @@ export function APIConfigSection() {
 
             {isEnabled && (
               <div className="space-y-4">
+
+                {/* Special Hand-Holding for Ollama Setup */}
+                {(provider as any).isLocal && (
+                  <div className="bg-zinc-900/50 rounded-lg p-3 border border-zinc-800">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-zinc-300">Service Status</span>
+                      <div className="flex items-center gap-2">
+                        {ollamaStatus === 'checking' && <span className="text-xs text-yellow-500 animate-pulse">Checking...</span>}
+                        {ollamaStatus === 'running' && <span className="flex items-center gap-1 text-xs text-green-400"><CheckCircle size={12} /> Running</span>}
+                        {ollamaStatus === 'down' && <span className="flex items-center gap-1 text-xs text-red-400"><AlertCircle size={12} /> Not Detected</span>}
+                        <button
+                          onClick={() => checkOllamaStatus(config?.baseUrl || 'http://127.0.0.1:11434')}
+                          className="p-1 hover:bg-zinc-700 rounded text-zinc-400"
+                          title="Check again"
+                        >
+                          <RefreshCw size={12} className={ollamaStatus === 'checking' ? 'animate-spin' : ''} />
+                        </button>
+                        {/* Debug / verification tools */}
+                        <div className="flex border-l border-zinc-700 pl-2 ml-1 gap-1">
+                          <button
+                            onClick={() => setOllamaStatus('down')}
+                            className="text-[10px] px-1.5 py-0.5 bg-zinc-800 text-zinc-500 hover:text-zinc-300 rounded"
+                            title="Debug: Simulate 'Not Installed' state"
+                          >
+                            Sim Missing
+                          </button>
+                          <button
+                            onClick={() => { setOllamaStatus('running'); setOllamaModelCount(0); }}
+                            className="text-[10px] px-1.5 py-0.5 bg-zinc-800 text-zinc-500 hover:text-zinc-300 rounded"
+                            title="Debug: Simulate 'No Models' state"
+                          >
+                            Sim Empty
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {ollamaStatus === 'down' && (
+                      <div className="text-sm text-zinc-400 mb-2 p-2 bg-red-900/10 border border-red-900/30 rounded">
+                        <p className="mb-2">Ollama does not appear to be running.</p>
+                        <button
+                          onClick={() => window.electronAPI?.openExternal('https://ollama.com/download')}
+                          className="text-xs bg-red-600 hover:bg-red-500 text-white px-3 py-1.5 rounded transition-colors inline-flex items-center gap-1"
+                        >
+                          Download Installer <Download size={12} />
+                        </button>
+                        <p className="mt-2 text-xs opacity-70">Install it, run it, then click refresh above.</p>
+                      </div>
+                    )}
+
+                    {ollamaStatus === 'running' && ollamaModelCount === 0 && (
+                      <div className="text-sm text-zinc-400 mb-2 p-2 bg-yellow-900/10 border border-yellow-900/30 rounded">
+                        <p className="mb-2 text-yellow-500">Service is running but no models found!</p>
+                        <p className="text-xs mb-2">You need a model for translation/validation.</p>
+                        <div className="bg-black/50 p-2 rounded border border-zinc-700 font-mono text-xs select-all text-zinc-300 mb-2">
+                          ollama pull llama3
+                        </div>
+                        <p className="text-xs opacity-70">Copy the command above, run it in your Terminal/Powershell, wait for download, then refresh here.</p>
+                      </div>
+                    )}
+
+                    {ollamaStatus === 'running' && ollamaModelCount > 0 && (
+                      <div className="text-xs text-green-500/80 mb-2">
+                        ✅ Connected to local instance with {ollamaModelCount} available models.
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* ... API Key input ... */}
                 <div>
                   <label className="block text-sm font-medium mb-2">
@@ -557,6 +688,8 @@ export function APIConfigSection() {
                           handleSaveApiKey(provider.key);
                         } else {
                           fetchModels(provider.key);
+                          // Also refresh status for Ollama
+                          if ((provider as any).isLocal) checkOllamaStatus(config?.baseUrl || 'http://127.0.0.1:11434');
                         }
                       }}
                       disabled={fetchingModels[provider.key] || ((!config?.apiKey && !localApiKeys[provider.key]) && protocol !== 'ollama')}
@@ -607,7 +740,7 @@ export function APIConfigSection() {
       <div className={`rounded-xl border p-4 ${bgCard} border-dashed border-zinc-700`}>
         <div className="mb-4">
           <h4 className="font-medium flex items-center gap-2 mb-1">
-            <Zap size={16} /> Add Unlisted or Custom Provider
+            <Plus size={16} /> Add Unlisted or Custom Provider
           </h4>
           <p className="text-xs text-zinc-500">
             Don't see your provider listed? Connect to any other compatible API or your own local/private server (e.g. Ollama, LocalAI).

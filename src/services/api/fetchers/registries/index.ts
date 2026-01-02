@@ -6,3 +6,4 @@
 
 export { fetchModelScopeRecent } from './modelscope';
 export { fetchOpenModelDB } from './openmodeldb';
+export { fetchOllamaLibrary } from './ollama-library';

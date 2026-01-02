@@ -1,5 +1,5 @@
 import React, { useContext, useState } from 'react';
-import { X, Settings, Database, Shield, Zap, Palette, Info, History } from 'lucide-react';
+import { X, Settings, Database, Shield, Server, Palette, Info, History } from 'lucide-react';
 import ThemeContext from '../context/ThemeContext';
 import { useSettings } from '../context/SettingsContext';
 import { useUpdate } from '../context/UpdateContext';
@@ -42,7 +42,7 @@ export function SettingsModal({ isOpen, onClose, onSync, addConsoleLog, currentM
   const tabs = [
     { id: 'data-sources', label: 'Data Sources', icon: Database },
     { id: 'history', label: 'History & Rollback', icon: History },
-    { id: 'api-config', label: 'API Config', icon: Zap },
+    { id: 'api-config', label: 'API Config', icon: Server },
     { id: 'validation', label: 'Validation', icon: Shield },
     { id: 'display', label: 'Display', icon: Palette },
     { id: 'security', label: 'Security', icon: Shield },

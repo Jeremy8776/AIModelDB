@@ -10,6 +10,50 @@ import { getEffectiveApiKey } from './api-key-manager';
 import { proxyUrl, useProxy, bypassOpenAIProxy } from '../config';
 
 /**
+ * Helper to make API calls through Electron's proxy to bypass CORS
+ * Falls back to direct fetch in browser/non-Electron environments
+ */
+async function electronProxyFetch(
+    url: string,
+    options: { method: string; headers: Record<string, string>; body?: any; signal?: AbortSignal }
+): Promise<{ ok: boolean; status: number; data?: any; error?: string }> {
+    // Check if running in Electron with proxy available
+    if (typeof window !== 'undefined' && (window as any).electronAPI?.proxyRequest) {
+        try {
+            const result = await (window as any).electronAPI.proxyRequest({
+                url,
+                method: options.method,
+                headers: options.headers,
+                body: options.body
+            });
+            if (result?.success) {
+                return { ok: true, status: 200, data: result.data };
+            } else {
+                return { ok: false, status: 500, error: result?.error || 'Proxy request failed' };
+            }
+        } catch (err: any) {
+            return { ok: false, status: 500, error: err?.message || 'Proxy request error' };
+        }
+    }
+
+    // Fallback to direct fetch (will hit CORS in browser, but works in Node/SSR)
+    const response = await fetch(url, {
+        method: options.method,
+        headers: options.headers,
+        body: options.body ? JSON.stringify(options.body) : undefined,
+        signal: options.signal
+    });
+
+    if (!response.ok) {
+        const text = await response.text().catch(() => '');
+        return { ok: false, status: response.status, error: text || response.statusText };
+    }
+
+    const data = await response.json();
+    return { ok: true, status: response.status, data };
+}
+
+/**
  * Returns known Anthropic Claude models since they don't have a public /models API
  */
 function getAnthropicModels(): Model[] {
@@ -110,8 +154,6 @@ export async function callProvider(key: ProviderKey, cfg: ProviderCfg, systemPro
 
     // Apply rate limiting before making the request
     await globalRateLimiter.waitForSlot();
-    const status = globalRateLimiter.getStatus();
-    console.log(`Rate limiter status: ${status.remaining} requests remaining, reset in ${Math.round(status.resetIn / 1000)}s`);
 
     let url = '';
     let headers: Record<string, string> = {};
@@ -120,12 +162,12 @@ export async function callProvider(key: ProviderKey, cfg: ProviderCfg, systemPro
     switch (key) {
         case "openai":
             // OpenAI API: GET /v1/models with Bearer auth
-            url = proxyUrl("/openai-api/models", "https://api.openai.com/v1/models");
+            url = "https://api.openai.com/v1/models";
             headers = { "Authorization": `Bearer ${effectiveKey}` };
             break;
         case "anthropic":
             // Anthropic API: GET /v1/models with x-api-key and anthropic-version headers
-            url = proxyUrl("/anthropic-api/v1/models", "https://api.anthropic.com/v1/models");
+            url = "https://api.anthropic.com/v1/models";
             headers = {
                 "x-api-key": effectiveKey!,
                 "anthropic-version": "2023-06-01",
@@ -134,17 +176,17 @@ export async function callProvider(key: ProviderKey, cfg: ProviderCfg, systemPro
             break;
         case "cohere":
             // Cohere API: GET /v1/models with Bearer auth (note: api.cohere.com, not .ai)
-            url = proxyUrl("/cohere-api/v1/models", "https://api.cohere.com/v1/models");
+            url = "https://api.cohere.com/v1/models";
             headers = { "Authorization": `Bearer ${effectiveKey}` };
             break;
         case "google":
             // Google Gemini API: GET /v1beta/models with x-goog-api-key header
-            url = proxyUrl("/google-api/v1beta/models", "https://generativelanguage.googleapis.com/v1beta/models");
+            url = "https://generativelanguage.googleapis.com/v1beta/models";
             headers = { "x-goog-api-key": effectiveKey! };
             break;
         case "deepseek":
             // DeepSeek API: GET /v1/models with Bearer auth (OpenAI-compatible)
-            url = proxyUrl("/deepseek-api/v1/models", "https://api.deepseek.com/v1/models");
+            url = "https://api.deepseek.com/v1/models";
             headers = { "Authorization": `Bearer ${effectiveKey}` };
             break;
         case "perplexity":
@@ -153,49 +195,56 @@ export async function callProvider(key: ProviderKey, cfg: ProviderCfg, systemPro
             return getPerplexityModels();
         case "openrouter":
             // OpenRouter API: GET /api/v1/models with Bearer auth
-            url = proxyUrl("/openrouter-api/v1/models", "https://openrouter.ai/api/v1/models");
-            headers = { "Authorization": `Bearer ${effectiveKey}`, "HTTP-Referer": window.location.origin };
+            url = "https://openrouter.ai/api/v1/models";
+            headers = { "Authorization": `Bearer ${effectiveKey}`, "HTTP-Referer": typeof window !== 'undefined' ? window.location.origin : '' };
             break;
         default:
             throw new Error(`Unknown provider: ${key}`);
     }
     try {
         console.log(`[${key}] Fetching models from ${url}...`);
-        const resp = await fetch(url, { headers });
-        if (!resp.ok) {
-            const text = await resp.text();
-            console.error(`[${key}] ERROR: Status ${resp.status} ${resp.statusText}. Response: ${text}`);
+
+        // Use Electron proxy to bypass CORS
+        const result = await electronProxyFetch(url, { method: 'GET', headers });
+
+        if (!result.ok) {
+            const text = result.error || '';
+            console.error(`[${key}] ERROR: Status ${result.status}. Response: ${text}`);
 
             // Parse error response if possible
-            let errorMessage = `${key} API error: ${resp.status} ${resp.statusText}`;
+            let errorMessage = `${key} API error: ${result.status}`;
             let errorJson;
 
             try {
-                // Try to parse the error response as JSON
-                errorJson = safeJsonFromText(text);
-                if (errorJson && (errorJson.error || errorJson.message)) {
-                    // Add the specific error message from the API if available
-                    errorMessage += ` - ${errorJson.error?.message || errorJson.message || ''}`;
+                // Try to parse the error response as JSON (if text looks like JSON)
+                if (text.trim().startsWith('{')) {
+                    errorJson = safeJsonFromText(text);
+                    if (errorJson && (errorJson.error || errorJson.message)) {
+                        // Add the specific error message from the API if available
+                        errorMessage += ` - ${errorJson.error?.message || errorJson.message || ''}`;
+                    }
                 }
             } catch (e) {
-                // If parsing fails, use the status code to provide more context
-                if (resp.status === 401) {
-                    errorMessage = `${key} API unauthorized (401): API key may be invalid or expired`;
-                } else if (resp.status === 403) {
-                    errorMessage = `${key} API forbidden (403): Your account may not have access to this resource`;
-                } else if (resp.status === 404) {
-                    errorMessage = `${key} API endpoint not found (404): The API endpoint may have changed`;
-                } else if (resp.status === 429) {
-                    errorMessage = `${key} API rate limited (429): Too many requests, please try again later`;
-                } else if (resp.status >= 500) {
-                    errorMessage = `${key} API server error (${resp.status}): The provider's service may be experiencing issues`;
-                }
+                // Ignore parse errors
+            }
+
+            // If parsing fails or no message, use the status code to provide more context
+            if (result.status === 401) {
+                errorMessage = `${key} API unauthorized (401): API key may be invalid or expired`;
+            } else if (result.status === 403) {
+                errorMessage = `${key} API forbidden (403): Your account may not have access to this resource`;
+            } else if (result.status === 404) {
+                errorMessage = `${key} API endpoint not found (404): The API endpoint may have changed`;
+            } else if (result.status === 429) {
+                errorMessage = `${key} API rate limited (429): Too many requests, please try again later`;
+            } else if (result.status >= 500) {
+                errorMessage = `${key} API server error (${result.status}): The provider's service may be experiencing issues`;
             }
 
             throw new Error(errorMessage);
         }
 
-        const data = await resp.json();
+        const data = result.data;
 
         // Different providers have different response structures
         let modelsRaw: any[] = [];
@@ -295,8 +344,6 @@ export async function callProviderText(
 
     // Apply rate limiting before making the request
     await globalRateLimiter.waitForSlot();
-    const status = globalRateLimiter.getStatus();
-    console.log(`Rate limiter status: ${status.remaining} requests remaining, reset in ${Math.round(status.resetIn / 1000)}s`);
 
     // For OpenAI, try direct connection if proxy fails or if bypass is enabled
     const useDirectForOpenAI = key === 'openai' && (!useProxy || bypassOpenAIProxy);
@@ -313,7 +360,7 @@ export async function callProviderText(
 
             if (cfg.isCustom || (cfg.baseUrl && cfg.baseUrl.trim() !== '')) {
                 const baseUrl = cfg.baseUrl?.replace(/\/$/, '') || '';
-                const protocol = cfg.protocol || (['anthropic', 'google'].includes(key) ? key : 'openai');
+                const protocol = cfg.protocol || (key === 'ollama' ? 'ollama' : (['anthropic', 'google'].includes(key) ? key : 'openai'));
 
                 headers = { ...headers, 'Content-Type': 'application/json', ...(cfg.headers || {}) };
                 if (effectiveKey && protocol !== 'anthropic') headers['Authorization'] = `Bearer ${effectiveKey}`;
@@ -349,19 +396,21 @@ export async function callProviderText(
                     };
                 }
             } else if (key === 'openai' || key === 'openrouter' || key === 'deepseek' || key === 'perplexity') {
-                // OpenAI-compatible chat
-                if (key === 'openai' && useDirectForOpenAI) {
-                    // Direct connection for OpenAI to bypass proxy issues
+                // OpenAI-compatible chat - use direct URLs since electronProxyFetch handles CORS
+                if (key === 'openai') {
                     url = 'https://api.openai.com/v1/chat/completions';
+                } else if (key === 'openrouter') {
+                    url = 'https://openrouter.ai/api/v1/chat/completions';
+                } else if (key === 'deepseek') {
+                    url = 'https://api.deepseek.com/v1/chat/completions';
                 } else {
-                    const basePath = key === 'openrouter' ? '/openrouter-api' : key === 'openai' ? '/openai-api' : key === 'deepseek' ? '/deepseek-api' : '/perplexity-api';
-                    url = proxyUrl(`${basePath}/chat/completions`, (key === 'openrouter' ? 'https://openrouter.ai/api' : key === 'openai' ? 'https://api.openai.com' : key === 'deepseek' ? 'https://api.deepseek.com' : 'https://api.perplexity.ai') + '/v1/chat/completions');
+                    url = 'https://api.perplexity.ai/chat/completions';
                 }
                 headers = {
                     ...headers,
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${effectiveKey}`,
-                    ...(key === 'openrouter' ? { 'HTTP-Referer': window.location.origin } : {})
+                    ...(key === 'openrouter' ? { 'HTTP-Referer': typeof window !== 'undefined' ? window.location.origin : '' } : {})
                 };
                 body = {
                     model: cfg.model,
@@ -373,7 +422,8 @@ export async function callProviderText(
                     // Note: No response_format for text responses
                 };
             } else if (key === 'anthropic') {
-                url = proxyUrl('/anthropic-api/v1/messages', 'https://api.anthropic.com/v1/messages');
+                // Anthropic API - use direct URL since electronProxyFetch handles CORS
+                url = 'https://api.anthropic.com/v1/messages';
                 headers = {
                     ...headers,
                     'Content-Type': 'application/json',
@@ -385,79 +435,72 @@ export async function callProviderText(
                     max_tokens: 4000,
                     messages: [{ role: 'user', content: `${systemPrompt}\n\n${userPrompt}` }]
                 };
+            } else if (key === 'cohere') {
+                // Cohere API - use V2 chat endpoint
+                url = 'https://api.cohere.com/v2/chat';
+                headers = {
+                    ...headers,
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${effectiveKey}`
+                };
+                body = {
+                    model: cfg.model || 'command-r',
+                    messages: [
+                        { role: 'system', content: systemPrompt },
+                        { role: 'user', content: userPrompt }
+                    ]
+                };
+            } else if (key === 'google') {
+                // Google Gemini API
+                url = `https://generativelanguage.googleapis.com/v1beta/models/${cfg.model || 'gemini-1.5-flash'}:generateContent`;
+                headers = {
+                    ...headers,
+                    'Content-Type': 'application/json',
+                    'x-goog-api-key': effectiveKey!
+                };
+                body = {
+                    contents: [{ parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }] }]
+                };
             } else {
                 throw new Error(`Text response not supported for provider: ${key}`);
             }
 
-            // Add retry logic for rate limiting and quota
-            let attempts = 0;
-            const maxAttempts = 3;
-            let response: Response = new Response();
+            // Use Electron proxy to bypass CORS
+            const result = await electronProxyFetch(url, {
+                method: 'POST',
+                headers,
+                body,
+                signal: options?.signal
+            });
 
-            while (attempts < maxAttempts) {
-                if (options?.signal?.aborted) {
-                    throw new DOMException('Aborted', 'AbortError');
-                }
-                attempts++;
-
-                response = await fetch(url, {
-                    method: 'POST',
-                    headers,
-                    body: JSON.stringify(body),
-                    signal: options?.signal
-                });
-
-                if (response.ok) {
-                    break; // Success, exit retry loop
-                }
-
-                if (response.status === 429 || response.status === 402 || response.status === 403) {
-                    // Rate limited - wait and retry
-                    const retryAfter = response.headers.get('retry-after');
-                    const waitTime = retryAfter ? parseInt(retryAfter) * 1000 : Math.pow(2, attempts) * 1000; // Exponential backoff
-
-                    console.warn(`Limited (${response.status}). Waiting ${waitTime}ms before retry ${attempts}/${maxAttempts}`);
-
-                    if (attempts < maxAttempts) {
-                        await new Promise(resolve => setTimeout(resolve, waitTime));
-                        continue;
-                    }
-                } else if (response.status >= 500 && response.status < 600) {
-                    // Server error - retry with exponential backoff
-                    const waitTime = Math.pow(2, attempts) * 1000;
-                    console.warn(`Server error (${response.status}). Waiting ${waitTime}ms before retry ${attempts}/${maxAttempts}`);
-
-                    if (attempts < maxAttempts) {
-                        await new Promise(resolve => setTimeout(resolve, waitTime));
-                        continue;
-                    }
-                }
-
-                // Other errors or max attempts reached
-                break;
-            }
-
-            if (!response!.ok) {
-                const errorText = await response!.text().catch(() => 'Unknown error');
-                if (response!.status === 429) {
+            if (!result.ok) {
+                const errorText = result.error || 'Unknown error';
+                if (result.status === 429) {
                     throw new Error(`Rate limit exceeded. Please wait before trying again. Your API plan may have reached its limit.`);
-                } else if (response!.status === 401) {
+                } else if (result.status === 401) {
                     throw new Error(`API authentication failed. Please check your API key.`);
-                } else if (response!.status === 403) {
+                } else if (result.status === 403) {
                     throw new Error(`API access forbidden. Your API key may not have the required permissions.`);
-                } else if (response!.status === 402) {
+                } else if (result.status === 402) {
                     throw new Error(`Payment required. Please check your API billing and usage limits.`);
                 } else {
-                    throw new Error(`HTTP ${response!.status}: ${response!.statusText}${errorText ? ` - ${errorText}` : ''}`);
+                    throw new Error(`HTTP ${result.status}: ${errorText}`);
                 }
             }
-            const data = await response.json();
 
-            // Extract text content from response
+            const data = result.data;
+
+            // Extract text content from response based on provider
             if (key === 'anthropic') {
                 return data.content?.[0]?.text || '';
+            } else if (key === 'google') {
+                // Google Gemini response format
+                return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+            } else if (key === 'cohere') {
+                // Cohere V2 response format
+                return data.message?.content?.[0]?.text || data.text || '';
             } else {
-                // OpenAI-compatible
+                // OpenAI-compatible (OpenAI, OpenRouter, DeepSeek, Perplexity)
                 return data.choices?.[0]?.message?.content || '';
             }
         }
@@ -500,7 +543,6 @@ export async function callProviderText(
  * @returns Array of models parsed from JSON response
  */
 export async function callProviderLLM(key: ProviderKey, cfg: ProviderCfg, systemPrompt: string, userPrompt: string): Promise<Model[]> {
-    // Get effective API key (local or global)
     // Get effective API key (local or global)
     const effectiveKey = await getEffectiveApiKey(key, cfg.apiKey);
     const isOllama = cfg.protocol === 'ollama' || key === 'ollama';
@@ -553,13 +595,21 @@ export async function callProviderLLM(key: ProviderKey, cfg: ProviderCfg, system
             }
         } else if (key === 'openai' || key === 'openrouter' || key === 'deepseek' || key === 'perplexity') {
             // OpenAI-compatible chat
-            const basePath = key === 'openrouter' ? '/openrouter-api' : key === 'openai' ? '/openai-api' : key === 'deepseek' ? '/deepseek-api' : '/perplexity-api';
-            url = proxyUrl(`${basePath}/chat/completions`, (key === 'openrouter' ? 'https://openrouter.ai/api' : key === 'openai' ? 'https://api.openai.com' : key === 'deepseek' ? 'https://api.deepseek.com' : 'https://api.perplexity.ai') + '/v1/chat/completions');
+            if (key === 'openai') {
+                url = 'https://api.openai.com/v1/chat/completions';
+            } else if (key === 'openrouter') {
+                url = 'https://openrouter.ai/api/v1/chat/completions';
+            } else if (key === 'deepseek') {
+                url = 'https://api.deepseek.com/v1/chat/completions';
+            } else {
+                url = 'https://api.perplexity.ai/chat/completions';
+            }
+
             headers = {
                 ...headers,
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${effectiveKey}`,
-                ...(key === 'openrouter' ? { 'HTTP-Referer': window.location.origin } : {})
+                ...(key === 'openrouter' ? { 'HTTP-Referer': typeof window !== 'undefined' ? window.location.origin : '' } : {})
             };
             body = {
                 model: cfg.model,
@@ -571,7 +621,7 @@ export async function callProviderLLM(key: ProviderKey, cfg: ProviderCfg, system
                 response_format: { type: 'json_object' }
             };
         } else if (key === 'anthropic') {
-            url = proxyUrl('/anthropic-api/v1/messages', 'https://api.anthropic.com/v1/messages');
+            url = 'https://api.anthropic.com/v1/messages';
             headers = {
                 ...headers,
                 'Content-Type': 'application/json',
@@ -587,7 +637,7 @@ export async function callProviderLLM(key: ProviderKey, cfg: ProviderCfg, system
             };
         } else if (key === 'cohere') {
             // Cohere V2 API: /v2/chat with messages array format
-            url = proxyUrl('/cohere-api/v2/chat', 'https://api.cohere.com/v2/chat');
+            url = 'https://api.cohere.com/v2/chat';
             headers = { ...headers, 'Content-Type': 'application/json', 'Authorization': `Bearer ${effectiveKey}` };
             body = {
                 model: cfg.model,
@@ -598,38 +648,46 @@ export async function callProviderLLM(key: ProviderKey, cfg: ProviderCfg, system
             } as any;
         } else if (key === 'google') {
             // Gemini via REST
-            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${cfg.model}:generateContent`;
-            url = useProxy ? proxyUrl('/google-api', endpoint) : `${endpoint}?key=${effectiveKey}`;
-            headers = { ...headers, 'Content-Type': 'application/json', ...(useProxy ? { 'Authorization': `Bearer ${effectiveKey}` } : {}) };
-            body = { contents: [{ role: 'user', parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }] }], generationConfig: { temperature: 0 } };
+            url = `https://generativelanguage.googleapis.com/v1beta/models/${cfg.model || 'gemini-1.5-flash'}:generateContent`;
+            headers = {
+                ...headers,
+                'Content-Type': 'application/json',
+                'x-goog-api-key': effectiveKey!
+            };
+            body = {
+                contents: [{ role: 'user', parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }] }],
+                generationConfig: { temperature: 0, responseMimeType: 'application/json' }
+            };
         } else {
             throw new Error(`LLM validation not implemented for provider: ${key}`);
         }
 
-        const resp = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body) });
-        if (!resp.ok) {
-            const text = await resp.text();
-            throw new Error(`LLM call failed: ${resp.status} ${resp.statusText} - ${text}`);
+        // Use Electron proxy to bypass CORS
+        const result = await electronProxyFetch(url, {
+            method: 'POST',
+            headers,
+            body
+        });
+
+        if (!result.ok) {
+            throw new Error(`LLM call failed: ${result.status} ${result.error || 'Unknown error'}`);
         }
 
+        const data = result.data;
         // Parse provider-specific responses
         if (key === 'anthropic') {
-            const data = await resp.json();
             const text = data?.content?.[0]?.text || '';
             const json = safeJsonFromText(text) || {};
             return Array.isArray(json) ? json : [json];
         } else if (key === 'google') {
-            const data = await resp.json();
             const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
             const json = safeJsonFromText(text) || {};
             return Array.isArray(json) ? json : [json];
         } else if (key === 'cohere') {
-            const data = await resp.json();
-            const text = data?.text || data?.response || '';
+            const text = data?.message?.content?.[0]?.text || data?.text || data?.response || '';
             const json = safeJsonFromText(text) || {};
             return Array.isArray(json) ? json : [json];
         } else {
-            const data = await resp.json();
             const content = data?.choices?.[0]?.message?.content || data?.choices?.[0]?.message || data?.choices?.[0]?.text || '';
             const json = safeJsonFromText(typeof content === 'string' ? content : String(content)) || {};
             return Array.isArray(json) ? json : [json];

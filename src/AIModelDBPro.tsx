@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { DatabaseZap } from "lucide-react";
+import { Database } from "lucide-react";
 import { ThemeProvider, useTheme } from "./context/ThemeContext";
 import { SettingsProvider, useSettings } from "./context/SettingsContext";
 import { UpdateProvider, useUpdate } from "./context/UpdateContext";
@@ -16,6 +16,8 @@ import { OnboardingWizard } from "./components/OnboardingWizard";
 import { ValidationProgress } from "./components/ValidationProgress";
 import { ModelEditor } from "./components/ModelEditor";
 import { SimpleValidationModal } from "./components/SimpleValidationModal";
+import { ValidationResultsModal } from "./components/ValidationResultsModal";
+import { ValidationSummary } from "./hooks/useModelValidation";
 import { ExportModal } from "./components/ExportModal";
 import { filterModels } from "./utils/filterLogic";
 import { ConfirmationToast } from "./components/ConfirmationToast";
@@ -63,6 +65,20 @@ function AIModelDBProContent() {
   const uiState = useUIState();
   const syncState = useSyncState();
   const validationState = useValidationState();
+  const {
+    validationToast,
+    setValidationToast
+  } = validationState;
+
+  const [validationSummary, setValidationSummary] = useState<ValidationSummary | null>(null);
+  const [showComponentValidationResults, setShowComponentValidationResults] = useState(false);
+
+  const handleViewValidationDetails = () => {
+    if (validationToast?.summary) {
+      setValidationSummary(validationToast.summary);
+      setShowComponentValidationResults(true);
+    }
+  };
   const modalState = useModalState();
   const consoleLogging = useConsoleLogging();
   const isOnline = useOnlineStatus();
@@ -71,6 +87,8 @@ function AIModelDBProContent() {
   // Track if API keys are available
   const [hasApiProvider, setHasApiProvider] = useState(false);
   const searchRef = useRef<HTMLInputElement | null>(null);
+  // One-shot ref to prevent config version check from repeatedly triggering onboarding
+  const hasTriggeredConfigOnboarding = useRef(false);
 
   // Model management from useModels hook
   const {
@@ -194,6 +212,25 @@ function AIModelDBProContent() {
     }
   }, [validationJobs, validationState.setValidationToast]);
 
+  // Check config version and trigger onboarding update if needed (ONE-SHOT)
+  useEffect(() => {
+    // Skip if we've already triggered this once
+    if (hasTriggeredConfigOnboarding.current) return;
+
+    if (settings && typeof settings.configVersion === 'number') {
+      if (settings.configVersion < 2) {
+        if (models.length > 0) {
+          hasTriggeredConfigOnboarding.current = true; // Mark as triggered
+          consoleLogging.addConsoleLog("Detected old configuration version. Launching setup wizard for new features.");
+          modalState.setOnboardingStartStep(2);
+          modalState.setShowOnboarding(true);
+        }
+      }
+    }
+  }, [settings.configVersion, models.length]);
+
+
+
   // Show import toast after sync
   useEffect(() => {
     if (!lastMergeStats) return;
@@ -223,6 +260,87 @@ function AIModelDBProContent() {
         consoleLogging.addConsoleLog("Created pre-sync snapshot for rollback");
       }
 
+      // Track last log message, cumulative models found, and timing for ETA
+      let lastLogMessage = '';
+      let totalModelsFound = 0;
+      let currentProgress: { current: number; total: number; source?: string; found?: number } | null = null;
+      const syncStartTime = Date.now();
+
+      // Helper to format remaining time
+      const formatEta = (remainingMs: number): string => {
+        if (remainingMs < 1000) return '<1s';
+        const seconds = Math.floor(remainingMs / 1000);
+        if (seconds < 60) return `${seconds}s`;
+        const minutes = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        if (minutes < 60) return secs > 0 ? `${minutes}m ${secs}s` : `${minutes}m`;
+        const hours = Math.floor(minutes / 60);
+        const mins = minutes % 60;
+        return `${hours}h ${mins}m`;
+      };
+
+      const calculateEta = (current: number, total: number): string | undefined => {
+        if (current <= 0 || total <= 0) return undefined;
+        const elapsedMs = Date.now() - syncStartTime;
+        const avgTimePerItem = elapsedMs / current;
+        const remainingItems = total - current;
+        const remainingMs = avgTimePerItem * remainingItems;
+        return formatEta(remainingMs);
+      };
+
+      const updateProgressWithMessage = (progress: { current: number; total: number; source?: string; found?: number }) => {
+        // Accumulate total models found
+        if (progress.found && progress.found > 0) {
+          totalModelsFound += progress.found;
+        }
+        const eta = calculateEta(progress.current, progress.total);
+        currentProgress = { ...progress, found: totalModelsFound };
+        syncState.setSyncProgress({ ...currentProgress, statusMessage: lastLogMessage, eta });
+      };
+
+      const handleLogWithProgress = (message: string) => {
+        lastLogMessage = message;
+        consoleLogging.addConsoleLog(message);
+        // Update progress to include latest log message
+        if (currentProgress) {
+          const eta = calculateEta(currentProgress.current, currentProgress.total);
+          syncState.setSyncProgress({ ...currentProgress, statusMessage: message, eta });
+        }
+      };
+
+      // Helper to format time for confirmation dialog
+      const formatTime = (ms: number): string => {
+        const seconds = Math.ceil(ms / 1000);
+        if (seconds < 60) return `${seconds} seconds`;
+        const minutes = Math.ceil(seconds / 60);
+        if (minutes < 60) return `${minutes} minute${minutes > 1 ? 's' : ''}`;
+        const hours = Math.floor(minutes / 60);
+        const remainingMins = minutes % 60;
+        return `${hours}h ${remainingMins}m`;
+      };
+
+      // Callback to ask user if they want to run LLM NSFW check
+      const confirmLLMCheck = (modelCount: number, estimatedTimeMs: number): Promise<boolean> => {
+        return new Promise((resolve) => {
+          modalState.setConfirmationToast({
+            title: 'Run LLM NSFW Check?',
+            message: `Found ${modelCount.toLocaleString()} models to scan. This will take approximately ${formatTime(estimatedTimeMs)}. Skip for faster sync.`,
+            type: 'confirm',
+            confirmText: 'Run Check',
+            cancelText: 'Skip',
+            onConfirm: () => {
+              modalState.setConfirmationToast(null);
+              resolve(true);
+            },
+            onCancel: () => {
+              modalState.setConfirmationToast(null);
+              consoleLogging.addConsoleLog('LLM NSFW check skipped by user');
+              resolve(false);
+            }
+          });
+        });
+      };
+
       const result = await syncAllSources(
         {
           dataSources: settings.dataSources || {},
@@ -234,11 +352,12 @@ function AIModelDBProContent() {
           systemPrompt: settings.systemPrompt
         },
         {
-          onProgress: syncState.setSyncProgress,
-          onLog: consoleLogging.addConsoleLog,
+          onProgress: updateProgressWithMessage,
+          onLog: handleLogWithProgress,
           onModelsUpdate: (newModels) => {
             setModels(prev => dedupe([...(prev || []), ...newModels]));
-          }
+          },
+          onConfirmLLMCheck: confirmLLMCheck
         }
       );
 
@@ -442,7 +561,7 @@ function AIModelDBProContent() {
     return (
       <div className={`min-h-screen ${bgRoot} flex items-center justify-center`}>
         <div className="flex flex-col items-center gap-4 max-w-md w-full px-4">
-          <DatabaseZap className="size-16 animate-pulse text-accent" />
+          <Database className="size-16 animate-pulse text-accent" />
           <div className="text-center w-full">
             <h2 className="text-xl font-semibold mb-2">Loading Model Database</h2>
             <p className={`text-sm ${textSubtle} mb-4`}>Please wait while we load your models...</p>
@@ -612,8 +731,9 @@ function AIModelDBProContent() {
           onClose={() => modalState.setShowOnboarding(false)}
           onComplete={() => {
             modalState.setShowOnboarding(false);
-            handleLiveSync();
+            syncAll(true);
           }}
+          initialStep={modalState.onboardingStartStep}
         />
 
         <AddModelModal
@@ -696,6 +816,12 @@ function AIModelDBProContent() {
           theme={theme}
         />
 
+        <ValidationResultsModal
+          isOpen={showComponentValidationResults}
+          onClose={() => setShowComponentValidationResults(false)}
+          summary={validationSummary}
+        />
+
         <SimpleValidationModal
           isOpen={showValidationModal}
           onClose={closeValidationModal}
@@ -705,10 +831,18 @@ function AIModelDBProContent() {
               pauseMs: opts?.pauseMs ?? 60000,
               maxBatches: opts?.maxBatches ?? 0,
               apiConfig: settings.apiConfig,
-              preferredModelProvider: settings.preferredModelProvider
+              preferredModelProvider: settings.preferredModelProvider,
+              modelsOverride: opts?.modelsOverride
             });
             if (result.success && result.updatedModels) {
               setModels(result.updatedModels);
+              if (result.summary) {
+                setValidationToast({
+                  completed: result.summary.modelsUpdated,
+                  failed: result.summary.errors,
+                  summary: result.summary
+                });
+              }
             }
             return result;
           }}
@@ -727,8 +861,9 @@ function AIModelDBProContent() {
         <ToastContainer
           importToast={modalState.importToast}
           onDismissImport={() => modalState.setImportToast(null)}
-          validationToast={validationState.validationToast}
-          onDismissValidation={() => validationState.setValidationToast(null)}
+          validationToast={validationToast}
+          onDismissValidation={() => setValidationToast(null)}
+          onViewDetailsValidation={handleViewValidationDetails}
           theme={theme}
         />
 
@@ -748,7 +883,13 @@ function AIModelDBProContent() {
             modalState.confirmationToast?.onConfirm();
             modalState.setConfirmationToast(null);
           }}
-          onCancel={() => modalState.setConfirmationToast(null)}
+          onCancel={() => {
+            if (modalState.confirmationToast?.onCancel) {
+              modalState.confirmationToast.onCancel();
+            } else {
+              modalState.setConfirmationToast(null);
+            }
+          }}
         />
 
         {(isValidating || validationJobs.length > 0) && (

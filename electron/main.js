@@ -286,8 +286,19 @@ ipcMain.handle('proxy-request', async (event, { url, method = 'GET', headers = {
             throw new Error(`Request failed: ${response.status}`);
         }
 
-        const data = await response.json();
-        console.log(`[Proxy] Success, data keys:`, Object.keys(data));
+        // Check content type to determine how to parse response
+        const contentType = response.headers.get('content-type') || '';
+        let data;
+
+        if (contentType.includes('application/json')) {
+            data = await response.json();
+            console.log(`[Proxy] Success, data keys:`, Object.keys(data));
+        } else {
+            // Return as text for HTML and other content types
+            data = await response.text();
+            console.log(`[Proxy] Success, text length:`, data.length);
+        }
+
         return { success: true, data };
     } catch (error) {
         console.error('[Proxy] Request error:', error);

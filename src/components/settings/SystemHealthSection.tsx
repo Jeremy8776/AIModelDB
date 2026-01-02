@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { Zap } from 'lucide-react';
+import { Activity } from 'lucide-react';
 import ThemeContext from '../../context/ThemeContext';
 
 interface DiagResult {
@@ -29,7 +29,7 @@ export function SystemHealthSection({
         <div className="rounded-xl border p-4 border-border bg-card">
             <div className="mb-3 flex items-center justify-between">
                 <h4 className="font-medium flex items-center gap-2">
-                    <Zap size={18} className="text-green-500" />
+                    <Activity size={18} className="text-green-500" />
                     System Health
                 </h4>
                 <button

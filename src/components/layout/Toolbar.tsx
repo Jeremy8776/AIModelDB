@@ -8,7 +8,7 @@
  */
 
 import React from "react";
-import { RefreshCw, ChevronLeft, ChevronRight, Download as DownloadIcon, DatabaseZap } from "lucide-react";
+import { RefreshCw, ChevronLeft, ChevronRight, Download as DownloadIcon, Trash2, ShieldCheck } from "lucide-react";
 import { ThemedSelect } from "../ThemedSelect";
 import { Model } from "../../types";
 import { ExportFormat } from "../../services/exportService";
@@ -18,11 +18,12 @@ import { ExportFormat } from "../../services/exportService";
  */
 export interface ToolbarProps {
     isSyncing: boolean;
-    syncProgress: { current: number; total: number; source?: string; found?: number } | null;
+    syncProgress: { current: number; total: number; source?: string; found?: number; statusMessage?: string; eta?: string } | null;
     lastSync: string | null;
     pageItems: Model[];
     total: number;
     minDownloads: number;
+    onSkipFilter?: () => void;
     pageSize: number | null;
     onPageSizeChange: (size: number | null) => void;
     page: number;
@@ -58,6 +59,7 @@ export function Toolbar({
     pageItems,
     total,
     minDownloads,
+    onSkipFilter,
     pageSize,
     onPageSizeChange,
     page,
@@ -82,32 +84,40 @@ export function Toolbar({
         <div className={`flex flex-wrap items-center justify-between gap-2 text-sm ${textSubtle}`}>
             <div className="flex items-center gap-3">
                 {isSyncing ? (
-                    <div className="flex items-center gap-2">
-                        <RefreshCw className="size-4 animate-spin" />
+                    <div className="flex items-center gap-3">
+                        <RefreshCw className="size-4 animate-spin text-violet-500" />
                         {syncProgress ? (
-                            <div className="flex flex-col gap-1">
-                                <div className="flex items-center gap-2">
-                                    <span className="whitespace-nowrap">
-                                        <span className="text-violet-500 font-medium">{syncProgress.current}/{syncProgress.total}</span>
-                                        {syncProgress.source && (
-                                            <span className="ml-2 text-xs opacity-75">
-                                                {syncProgress.source}
-                                                {syncProgress.found !== undefined && syncProgress.found > 0 && (
-                                                    <span className="ml-1 text-green-500">+{syncProgress.found}</span>
-                                                )}
-                                            </span>
-                                        )}
+                            <div className="flex items-center gap-3">
+                                <span className="text-xs max-w-[400px] truncate">
+                                    {syncProgress.statusMessage || syncProgress.source || 'Syncing...'}
+                                </span>
+                                {syncProgress.found !== undefined && syncProgress.found > 0 && (
+                                    <span className="text-xs text-green-500 font-medium whitespace-nowrap">
+                                        +{syncProgress.found} models
                                     </span>
-                                </div>
-                                <div className="h-1.5 w-48 bg-zinc-700 rounded-full overflow-hidden">
-                                    <div
-                                        className="h-full bg-violet-500 rounded-full transition-all duration-300"
-                                        style={{ width: `${(syncProgress.current / syncProgress.total) * 100}%` }}
-                                    />
-                                </div>
+                                )}
+                                {syncProgress.eta && (
+                                    <span className="text-xs opacity-60 whitespace-nowrap">
+                                        ETA: {syncProgress.eta}
+                                    </span>
+                                )}
+                                {/* Show skip button during long operations */}
+                                {onSkipFilter && syncProgress.statusMessage &&
+                                    (syncProgress.statusMessage.toLowerCase().includes('nsfw') ||
+                                        syncProgress.statusMessage.toLowerCase().includes('filter') ||
+                                        syncProgress.statusMessage.toLowerCase().includes('llm') ||
+                                        syncProgress.statusMessage.toLowerCase().includes('translation') ||
+                                        syncProgress.statusMessage.toLowerCase().includes('corporate')) && (
+                                        <button
+                                            onClick={onSkipFilter}
+                                            className="text-xs px-2 py-0.5 rounded bg-zinc-700 hover:bg-zinc-600 text-zinc-300 hover:text-white transition-colors whitespace-nowrap"
+                                        >
+                                            Skip
+                                        </button>
+                                    )}
                             </div>
                         ) : (
-                            <span>Syncing…</span>
+                            <span className="text-xs">Syncing…</span>
                         )}
                     </div>
                 ) : (
@@ -188,7 +198,7 @@ export function Toolbar({
                         }}
                         title="Delete DB"
                     >
-                        <DatabaseZap className="size-3" />Delete DB
+                        <Trash2 className="size-3" />Delete DB
                     </button>
                 </div>
                 <button
@@ -201,7 +211,7 @@ export function Toolbar({
                     }}
                     title="Validate and enrich model data using LLMs"
                 >
-                    <DatabaseZap className="size-3" />Validate Models
+                    <ShieldCheck className="size-3" />Validate Models
                 </button>
             </div>
         </div>

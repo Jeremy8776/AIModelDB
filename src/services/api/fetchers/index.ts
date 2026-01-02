@@ -15,4 +15,4 @@ export { fetchArtificialAnalysisIndex } from './artificial-analysis';
 export { fetchCivitai, fetchCivitasBay } from './image-platforms';
 
 // Registry fetchers
-export { fetchModelScopeRecent, fetchOpenModelDB } from './registries';
+export { fetchModelScopeRecent, fetchOpenModelDB, fetchOllamaLibrary } from './registries';

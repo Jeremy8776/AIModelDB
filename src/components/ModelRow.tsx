@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { DatabaseZap, Download, AlertTriangle, CheckCircle, Star, Flag } from 'lucide-react';
+import { Database, Download, AlertTriangle, CheckCircle, Star, Flag } from 'lucide-react';
 import ThemeContext from '../context/ThemeContext';
 import { useSettings } from '../context/SettingsContext';
 import { Model } from '../types';
@@ -336,7 +336,7 @@ export const ModelRow = React.memo(function ModelRow({ m, onOpen, isSelected, on
 
       {/* Name Column */}
       <div className="col-span-3 flex min-w-0 items-center gap-2 overflow-hidden text-left">
-        <DatabaseZap className={`h-4 w-4 flex-shrink-0 align-middle ${textSecondary}`} />
+        <Database className={`h-4 w-4 flex-shrink-0 align-middle ${textSecondary}`} />
         <div className="flex min-w-0 flex-col">
           <span className={`truncate text-sm ${textMain}`} title={m.name || 'Unknown Model'}>{(m.name || 'Unknown Model').replace(/^[^/]+\//, '')}</span>
           <span className={`truncate text-xs ${subtleText} flex items-center gap-1`}>

@@ -1,5 +1,5 @@
 import React, { useContext, useState, useEffect } from 'react';
-import { Settings, Zap, Database, RefreshCw, Trash2, Info, Download, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { Settings, Activity, Database, RefreshCw, Trash2, Info, Download, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import ThemeContext from '../../context/ThemeContext';
 import { useSettings } from '../../context/SettingsContext';
 import { isElectron, getAppVersion, getPlatform, checkForUpdates, onUpdateStatus, removeUpdateListener, UpdateStatus } from '../../utils/electron';
@@ -130,7 +130,7 @@ export function SystemSection() {
       <div className={`rounded-xl border p-4 ${bgCard}`}>
         <div className="flex items-center justify-between mb-4">
           <h4 className="font-medium flex items-center gap-2">
-            <Zap size={18} className="text-accent" />
+            <Activity size={18} className="text-accent" />
             System Health
           </h4>
           <button

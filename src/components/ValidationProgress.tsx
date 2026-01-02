@@ -11,13 +11,13 @@ interface ValidationProgressProps {
   isPaused: boolean;
 }
 
-export function ValidationProgress({ 
-  jobs, 
-  onClear, 
-  onPause, 
-  onResume, 
+export function ValidationProgress({
+  jobs,
+  onClear,
+  onPause,
+  onResume,
   onCancelAll,
-  isPaused 
+  isPaused
 }: ValidationProgressProps) {
   const [isExpanded, setIsExpanded] = useState(true);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
@@ -32,9 +32,9 @@ export function ValidationProgress({
       window.removeEventListener('close-validation-progress', close as EventListener);
     };
   }, []);
-  
+
   if (jobs.length === 0) return null;
-  
+
   const pendingCount = jobs.filter(j => j.status === 'pending').length;
   const processingCount = jobs.filter(j => j.status === 'processing').length;
   const completedCount = jobs.filter(j => j.status === 'completed').length;
@@ -43,32 +43,32 @@ export function ValidationProgress({
   const progress = ((completedCount + failedCount) / totalCount) * 100;
   const failedJobs = jobs.filter(j => j.status === 'failed');
   const allNoProviders = failedJobs.length > 0 && failedJobs.every(j => (j.error || '').toLowerCase().includes('no api'));
-  
+
   // Calculate estimated time remaining
   const getEstimatedTimeRemaining = (): string => {
     if (completedCount === 0) return "Calculating...";
     const remainingJobs = pendingCount + processingCount;
-    if (remainingJobs === 0) return "Almost done";
-    
+    if (remainingJobs === 0) return "Finishing...";
+
     // Find earliest completed job to calculate rate
     const completedJobs = jobs.filter(j => j.status === 'completed');
     if (completedJobs.length === 0) return "Calculating...";
-    
-    const earliestCompleted = completedJobs.reduce((earliest, job) => 
+
+    const earliestCompleted = completedJobs.reduce((earliest, job) =>
       new Date(job.createdAt) < new Date(earliest.createdAt) ? job : earliest
     );
-    
+
     const timeElapsed = (new Date().getTime() - new Date(earliestCompleted.createdAt).getTime()) / 1000;
     const ratePerSecond = completedCount / timeElapsed;
-    
+
     if (ratePerSecond <= 0) return "Calculating...";
-    
+
     const estimatedSeconds = remainingJobs / ratePerSecond;
     if (estimatedSeconds < 60) return `~${Math.ceil(estimatedSeconds)}s`;
     if (estimatedSeconds < 3600) return `~${Math.ceil(estimatedSeconds / 60)}m`;
     return `~${Math.ceil(estimatedSeconds / 3600)}h`;
   };
-  
+
   // Group jobs by status for display
   const pendingJobs = jobs.filter(j => j.status === 'pending');
   const processingJobs = jobs.filter(j => j.status === 'processing');
@@ -80,7 +80,7 @@ export function ValidationProgress({
     .filter(j => j.status === 'failed')
     .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
     .slice(0, 5);
-  
+
   // Get status color
   const getStatusColor = (status: ValidationJobStatus): string => {
     switch (status) {
@@ -91,7 +91,7 @@ export function ValidationProgress({
       default: return 'bg-gray-200 dark:bg-gray-700';
     }
   };
-  
+
   // Format time elapsed
   const formatTimeElapsed = (startDate: Date): string => {
     const elapsed = Math.floor((new Date().getTime() - new Date(startDate).getTime()) / 1000);
@@ -105,12 +105,12 @@ export function ValidationProgress({
       <div className="p-3">
         <div className="flex justify-between items-center">
           <h3 className="font-semibold text-sm flex items-center">
-            <button 
+            <button
               onClick={() => setIsExpanded(!isExpanded)}
               className="mr-1 p-0.5 rounded-md hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
             >
-              {isExpanded ? 
-                <ChevronUp className="size-3.5" /> : 
+              {isExpanded ?
+                <ChevronUp className="size-3.5" /> :
                 <ChevronDown className="size-3.5" />
               }
             </button>
@@ -121,7 +121,7 @@ export function ValidationProgress({
               <span className="text-xs">{completedCount + failedCount}/{totalCount}</span>
             )}
             {isExpanded && onPause && onResume && (
-              <button 
+              <button
                 onClick={isPaused ? onResume : onPause}
                 className="text-xs px-2 py-1 rounded-md bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors"
               >
@@ -129,7 +129,7 @@ export function ValidationProgress({
               </button>
             )}
             {isExpanded && onClear && (
-              <button 
+              <button
                 onClick={onClear}
                 className="text-xs px-2 py-1 rounded-md bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors"
               >
@@ -137,7 +137,7 @@ export function ValidationProgress({
               </button>
             )}
             {isExpanded && (
-              <button 
+              <button
                 onClick={() => setShowDetailsModal(true)}
                 className="text-xs px-2 py-1 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors"
               >
@@ -145,7 +145,7 @@ export function ValidationProgress({
               </button>
             )}
             {isExpanded && onCancelAll && (
-              <button 
+              <button
                 onClick={onCancelAll}
                 className="text-xs px-2 py-1 rounded-md bg-red-600 text-white hover:bg-red-700 transition-colors"
               >
@@ -154,28 +154,28 @@ export function ValidationProgress({
             )}
           </div>
         </div>
-        
+
         <div className="mt-2">
           <div className="w-full h-1.5 bg-gray-200 dark:bg-zinc-800 rounded-full overflow-hidden">
-            <div 
+            <div
               className="h-full bg-violet-500 transition-all duration-300"
               style={{ width: `${progress}%` }}
             />
           </div>
-          
+
           {isExpanded && (
             <>
               <div className="flex justify-between text-xs text-gray-600 dark:text-gray-400 mt-1">
                 <span>{Math.round(progress)}% complete</span>
                 <span>{completedCount + failedCount} / {totalCount}</span>
               </div>
-              
+
               {pendingCount + processingCount > 0 && (
                 <div className="text-center text-xs text-gray-500 dark:text-gray-400 mt-1">
                   ETA: {getEstimatedTimeRemaining()}
                 </div>
               )}
-              
+
               <div className="flex justify-between mt-2 px-1">
                 <div className="text-center">
                   <span className="block text-sm font-semibold">{pendingCount}</span>
@@ -194,7 +194,7 @@ export function ValidationProgress({
                   <span className="text-xs text-gray-600 dark:text-gray-400">Failed</span>
                 </div>
               </div>
-            
+
               {/* Collapsible job details */}
               {(processingJobs.length > 0 || pendingJobs.length > 0) && (
                 <div className="mt-3">
@@ -215,7 +215,7 @@ export function ValidationProgress({
                   </div>
                 </div>
               )}
-              
+
               {/* Recently completed jobs */}
               {recentlyCompletedJobs.length > 0 && (
                 <div className="mt-2">
@@ -231,7 +231,7 @@ export function ValidationProgress({
                   </div>
                 </div>
               )}
-              
+
               {/* Recently failed jobs */}
               {recentlyFailedJobs.length > 0 && (
                 <div className="mt-2">
@@ -242,13 +242,13 @@ export function ValidationProgress({
                         <div className={`w-1.5 h-1.5 rounded-full mr-1.5 ${getStatusColor(job.status)}`}></div>
                         <span className="truncate">{job.model.name}</span>
                         <span className="ml-auto text-xs text-red-500" title={job.error || "Unknown error"}>
-                          {job.error?.includes("No enabled LLM providers") ? "No API configured" : 
-                           job.error?.includes("404") ? "API Not Found (404)" :
-                           job.error?.includes("401") ? "API Unauthorized (401)" :
-                           job.error?.includes("403") ? "API Forbidden (403)" :
-                           job.error?.includes("429") ? "API Rate Limited (429)" :
-                           job.error?.includes("500") ? "API Server Error (500)" :
-                           job.error?.substring(0, 20) + (job.error && job.error.length > 20 ? "..." : "")}
+                          {job.error?.includes("No enabled LLM providers") ? "No API configured" :
+                            job.error?.includes("404") ? "API Not Found (404)" :
+                              job.error?.includes("401") ? "API Unauthorized (401)" :
+                                job.error?.includes("403") ? "API Forbidden (403)" :
+                                  job.error?.includes("429") ? "API Rate Limited (429)" :
+                                    job.error?.includes("500") ? "API Server Error (500)" :
+                                      job.error?.substring(0, 20) + (job.error && job.error.length > 20 ? "..." : "")}
                         </span>
                       </div>
                     ))}
@@ -269,7 +269,7 @@ export function ValidationProgress({
           )}
         </div>
       </div>
-      
+
       {/* Details Modal */}
       {showDetailsModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -285,7 +285,7 @@ export function ValidationProgress({
                 </button>
               </div>
             </div>
-            
+
             <div className="p-4 overflow-y-auto max-h-[60vh]">
               <div className="mb-4">
                 <div className="grid grid-cols-4 gap-4 text-center">
@@ -307,12 +307,12 @@ export function ValidationProgress({
                   </div>
                 </div>
               </div>
-              
+
               <div className="space-y-4">
                 {['processing', 'pending', 'completed', 'failed'].map(status => {
                   const statusJobs = jobs.filter(j => j.status === status);
                   if (statusJobs.length === 0) return null;
-                  
+
                   return (
                     <div key={status} className="border border-gray-200 dark:border-zinc-700 rounded-lg">
                       <div className={`p-3 font-medium text-sm capitalize ${getStatusColor(status as ValidationJobStatus)} rounded-t-lg`}>
@@ -342,14 +342,14 @@ export function ValidationProgress({
                   );
                 })}
               </div>
-              
+
               {jobs.length === 0 && (
                 <div className="text-center text-gray-500 dark:text-gray-400 py-8">
                   No validation jobs found
                 </div>
               )}
             </div>
-            
+
             <div className="p-4 border-t border-gray-200 dark:border-zinc-700 flex justify-between">
               <div className="text-sm text-gray-600 dark:text-gray-400">
                 Progress: {Math.round(progress)}% • {completedCount + failedCount} of {totalCount} models

@@ -28,6 +28,7 @@ export interface ConfirmationToastData {
     confirmText?: string;
     cancelText?: string;
     onConfirm: () => void;
+    onCancel?: () => void;
 }
 
 /**
@@ -43,6 +44,8 @@ export interface ModalState {
     setShowImport: (show: boolean) => void;
     showOnboarding: boolean;
     setShowOnboarding: (show: boolean) => void;
+    onboardingStartStep: number;
+    setOnboardingStartStep: (step: number) => void;
     showFlaggedModal: boolean;
     setShowFlaggedModal: (show: boolean) => void;
     showEditModal: boolean;
@@ -114,6 +117,8 @@ export function useModalState(): ModalState {
     const [confirmationToast, setConfirmationToast] = useState<ConfirmationToastData | null>(null);
     const [undoToast, setUndoToast] = useState<UndoToastData | null>(null);
 
+    const [onboardingStartStep, setOnboardingStartStep] = useState(1);
+
     return {
         showAddModel,
         setShowAddModel,
@@ -123,6 +128,8 @@ export function useModalState(): ModalState {
         setShowImport,
         showOnboarding,
         setShowOnboarding,
+        onboardingStartStep,
+        setOnboardingStartStep,
         showFlaggedModal,
         setShowFlaggedModal,
         showEditModal,

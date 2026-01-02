@@ -1,6 +1,6 @@
-import { Model } from '../../../../types';
+import { Model, ApiDir } from '../../../../types';
 import { proxyUrl } from '../../config';
-import { applyCorporateFiltering, isModelComplete } from '../../filtering';
+import { applyCorporateFilteringAsync, isModelComplete } from '../../filtering';
 import { normalizeDate, normalizeLicenseName, determineType, determineCommercialUse } from '../../utils';
 import { fetchWrapper } from '../../../../utils/fetch-wrapper';
 
@@ -40,7 +40,7 @@ function isObviouslyNSFW(title: string, description: string): boolean {
  * 
  * @returns Object containing complete and flagged models
  */
-export async function fetchCivitasBay(): Promise<{ complete: Model[], flagged: Model[] }> {
+export async function fetchCivitasBay(apiConfig?: ApiDir): Promise<{ complete: Model[], flagged: Model[] }> {
     try {
         console.log('[CivitasBay] Fetching models from RSS feed...');
 
@@ -231,7 +231,7 @@ export async function fetchCivitasBay(): Promise<{ complete: Model[], flagged: M
 
         // Apply corporate NSFW filtering
         // This will catch explicit names/tags but allow general-purpose models
-        const corporateFiltered = applyCorporateFiltering(models, true, true);
+        const corporateFiltered = await applyCorporateFilteringAsync(models, true, true, apiConfig);
         console.log(`[CivitasBay] NSFW filter: ${corporateFiltered.complete.length} safe, ${corporateFiltered.flagged.length} blocked`);
 
         const complete = corporateFiltered.complete.filter(isModelComplete);

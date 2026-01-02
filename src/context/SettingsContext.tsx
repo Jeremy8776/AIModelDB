@@ -57,14 +57,20 @@ interface Settings {
   // Corporate safety settings
   enableNSFWFiltering: boolean;
   nsfwFilteringStrict: boolean;
-  logNSFWAttempts: boolean;
+  logNSFWAttempts: boolean; // Log NSFW attempts for compliance
+  // System state
+  configVersion: number;
 }
 
 interface SettingsContextType {
   settings: Settings;
   saveSettings: (settings: Partial<Settings>) => void;
   resetSettings: () => void;
+  // Current latest version constant
+  LATEST_CONFIG_VERSION: number;
 }
+
+export const LATEST_CONFIG_VERSION = 2;
 
 const defaultSettings: Settings = {
   apiConfig: DEFAULT_API_DIR,
@@ -121,12 +127,15 @@ const defaultSettings: Settings = {
   enableNSFWFiltering: true, // Enabled by default for corporate use
   nsfwFilteringStrict: true, // Strict filtering for corporate environment
   logNSFWAttempts: true, // Log NSFW attempts for compliance
+  // System state
+  configVersion: 1, // Default to 1 (pre-Ollama update)
 };
 
 const SettingsContext = createContext<SettingsContextType>({
   settings: defaultSettings,
   saveSettings: () => { },
-  resetSettings: () => { }
+  resetSettings: () => { },
+  LATEST_CONFIG_VERSION
 });
 
 export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -221,7 +230,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
   };
 
   return (
-    <SettingsContext.Provider value={{ settings, saveSettings, resetSettings }}>
+    <SettingsContext.Provider value={{ settings, saveSettings, resetSettings, LATEST_CONFIG_VERSION }}>
       {children}
     </SettingsContext.Provider>
   );

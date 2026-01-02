@@ -27,13 +27,23 @@ import { safeJsonFromText } from '../../../utils/format';
  * - Adds 'translated' tag to successfully translated models
  * - Preserves original models if no translation is needed or possible
  */
+
 export async function translateChineseModels(
     models: Model[],
-    apiConfig: ApiDir
+    apiConfig: ApiDir,
+    onProgress?: (progress: string) => void
 ): Promise<Model[]> {
     try {
-        // Pick the first enabled text provider with an API key
-        const providerEntry = Object.entries(apiConfig).find(([, cfg]) => (cfg as any)?.enabled && (cfg as any)?.apiKey);
+        // Pick the first enabled text provider. Prefer Ollama for local/speed.
+        let providerEntry = Object.entries(apiConfig).find(([k, cfg]) =>
+            (cfg as any)?.enabled && ((k === 'ollama' || (cfg as any)?.protocol === 'ollama'))
+        );
+
+        // If no Ollama, look for others with API keys
+        if (!providerEntry) {
+            providerEntry = Object.entries(apiConfig).find(([, cfg]) => (cfg as any)?.enabled && (cfg as any)?.apiKey);
+        }
+
         const providerKey = (providerEntry?.[0] as ProviderKey) || null;
         const providerCfg = (providerEntry?.[1] as ProviderCfg) || null;
         if (!providerKey || !providerCfg) {
@@ -116,6 +126,9 @@ Return ONLY a JSON array of objects with: id, name_en, description_en`;
                     }
 
                     console.log(`[Translation] Successfully processed batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(toTranslate.length / batchSize)}`);
+                    if (onProgress) {
+                        onProgress(`Translating... (${i + batch.length}/${toTranslate.length})`);
+                    }
                 } else {
                     console.warn(`[Translation] Invalid translation response, applying ASCII/context fallback for batch ${Math.floor(i / batchSize) + 1}`);
                     // Fallback: best-effort ASCII extraction of meaningful parts and contextual English labels

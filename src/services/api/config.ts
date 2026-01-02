@@ -27,7 +27,8 @@ export const DEFAULT_API_DIR: ApiDir = {
     openrouter: { enabled: false, baseUrl: "https://openrouter.ai/api/v1", model: "openrouter/auto" },
     cohere: { enabled: false, baseUrl: "https://api.cohere.com/v1", model: "command-r" },
     google: { enabled: false, baseUrl: "https://generativelanguage.googleapis.com/v1beta", model: "gemini-1.5-flash" },
-    artificialanalysis: { enabled: false, apiKey: "", endpoints: ["https://artificialanalysis.ai/api/models", "https://artificialanalysis.ai/api/providers"] }
+    artificialanalysis: { enabled: false, apiKey: "", endpoints: ["https://artificialanalysis.ai/api/models", "https://artificialanalysis.ai/api/providers"] },
+    ollama: { enabled: false, baseUrl: "http://127.0.0.1:11434", model: "llama3", protocol: 'ollama' as const }
 };
 
 // Model options for different providers

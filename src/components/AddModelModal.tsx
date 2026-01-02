@@ -1,5 +1,5 @@
 import React, { useContext, useState } from 'react';
-import { DatabaseZap } from 'lucide-react';
+import { PlusCircle } from 'lucide-react';
 import ThemeContext from '../context/ThemeContext';
 import { Domain, Hosting, LicenseInfo, Model } from '../types';
 import { cleanId } from '../utils/format';
@@ -110,7 +110,7 @@ export function AddModelModal({ isOpen, onClose, onAddModel, domains, addConsole
       <div className="w-full max-w-3xl max-h-[85vh] overflow-y-auto rounded-2xl border p-4 border-border bg-bg text-text">
         <div className="mb-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <DatabaseZap className="size-5" />
+            <PlusCircle className="size-5" />
             <h3 className="text-base font-semibold">Add New Model</h3>
           </div>
           <button onClick={onClose} className={`rounded-xl ${bgInput} px-3 py-1 text-xs`}>Close</button>

@@ -7,7 +7,7 @@
  * @module useSyncState
  */
 
-import { useState } from 'react';
+import { useState, useRef, useCallback, MutableRefObject } from 'react';
 
 /**
  * Sync state interface containing all sync-related state and setters
@@ -18,8 +18,8 @@ export interface SyncState {
     setIsSyncing: (syncing: boolean) => void;
 
     // Sync progress
-    syncProgress: { current: number; total: number } | null;
-    setSyncProgress: (progress: { current: number; total: number } | null) => void;
+    syncProgress: { current: number; total: number; source?: string; found?: number; statusMessage?: string; eta?: string } | null;
+    setSyncProgress: (progress: { current: number; total: number; source?: string; found?: number; statusMessage?: string; eta?: string } | null) => void;
 
     // Last sync timestamp
     lastSync: string | null;
@@ -55,18 +55,26 @@ export interface SyncState {
  * syncState.setSyncSummary({ found: 100, flagged: 5 });
  * ```
  */
-export function useSyncState(): SyncState {
+export function useSyncState(): SyncState & { skipSignal: MutableRefObject<boolean>; triggerSkip: () => void } {
     // Sync status state
     const [isSyncing, setIsSyncing] = useState(false);
 
     // Sync progress state
-    const [syncProgress, setSyncProgress] = useState<{ current: number; total: number } | null>(null);
+    const [syncProgress, setSyncProgress] = useState<{ current: number; total: number; source?: string; found?: number; statusMessage?: string; eta?: string } | null>(null);
 
     // Last sync timestamp state
     const [lastSync, setLastSync] = useState<string | null>(null);
 
     // Sync summary state (for displaying toast after sync)
     const [syncSummary, setSyncSummary] = useState<{ found: number; flagged: number; duplicates?: number } | null>(null);
+
+    // Skip signal ref - can be checked by async operations to abort early
+    const skipSignal = useRef(false);
+
+    const triggerSkip = useCallback(() => {
+        skipSignal.current = true;
+        console.log('[Sync] Skip signal triggered');
+    }, []);
 
     return {
         isSyncing,
@@ -77,5 +85,7 @@ export function useSyncState(): SyncState {
         setLastSync,
         syncSummary,
         setSyncSummary,
+        skipSignal,
+        triggerSkip,
     };
 }

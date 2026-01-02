@@ -50,7 +50,8 @@ export {
 // Registry fetchers
 export {
     fetchModelScopeRecent,
-    fetchOpenModelDB
+    fetchOpenModelDB,
+    fetchOllamaLibrary
 } from './fetchers';
 
 // ============================================================================
@@ -77,6 +78,7 @@ export {
 // ============================================================================
 export {
     applyCorporateFiltering,
+    applyCorporateFilteringAsync,
     isModelComplete
 } from './filtering';
 

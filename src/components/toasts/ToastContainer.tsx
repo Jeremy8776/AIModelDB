@@ -19,6 +19,7 @@ export interface ToastContainerProps {
     onDismissImport: () => void;
     validationToast: ValidationToastData | null;
     onDismissValidation: () => void;
+    onViewDetailsValidation?: () => void;
     theme: 'light' | 'dark';
 }
 
@@ -37,6 +38,7 @@ export function ToastContainer({
     onDismissImport,
     validationToast,
     onDismissValidation,
+    onViewDetailsValidation,
     theme
 }: ToastContainerProps) {
     return (
@@ -51,6 +53,7 @@ export function ToastContainer({
                 <ValidationToast
                     validationToast={validationToast}
                     onDismiss={onDismissValidation}
+                    onViewDetails={onViewDetailsValidation}
                     theme={theme}
                 />
             )}

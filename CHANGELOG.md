@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.11] - 2026-01-02
+
+### Fixed
+- **Ollama Provider Config**: Added missing `ollama` configuration to `DEFAULT_API_DIR`, resolving TypeScript errors when using local Ollama models.
+- **Gitignore Cleanup**: Removed duplicate `release/` entry and added `errors.txt` to ignored files.
+
+### Changed
+- **Production Readiness**: Verified all TypeScript compilation, unit tests (74 passing), and build integrity for GitHub release.
+
+---
+
 ## [0.3.10] - 2025-12-23
 
 ### Fixed

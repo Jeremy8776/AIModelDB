@@ -15,10 +15,11 @@ import {
     fetchCivitai,
     fetchCivitasBay,
     fetchOpenModelDB,
+    fetchOllamaLibrary,
     callProviderLLM,
     enrichModelsDeep,
     translateChineseModels,
-    applyCorporateFiltering
+    applyCorporateFilteringAsync
 } from "./api";
 
 /**
@@ -31,6 +32,7 @@ export interface SyncOptions {
         civitai?: boolean;
         openmodeldb?: boolean;
         civitasbay?: boolean;
+        ollamaLibrary?: boolean;
         llmDiscovery?: boolean;
     };
     artificialAnalysisApiKey?: string;
@@ -53,6 +55,10 @@ export interface SyncProgress {
     source?: string;
     /** Number of models found from current source */
     found?: number;
+    /** Live status message from console */
+    statusMessage?: string;
+    /** Estimated time remaining */
+    eta?: string;
 }
 
 /**
@@ -75,6 +81,10 @@ export interface SyncCallbacks {
     onLog?: (message: string) => void;
     /** Called when new models are available for progressive display */
     onModelsUpdate?: (models: Model[]) => void;
+    /** Signal to skip long operations */
+    skipSignal?: { current: boolean };
+    /** Called to confirm if user wants to run LLM NSFW check (returns true to proceed, false to skip) */
+    onConfirmLLMCheck?: (modelCount: number, estimatedTimeMs: number) => Promise<boolean>;
 }
 
 /**
@@ -95,12 +105,13 @@ export interface SyncCallbacks {
  * @param callbacks - Optional callback functions for progress and logging
  * @returns Promise resolving to sync results with complete and flagged models
  * @throws Error if sync operation fails
+ * @hasTurbo
  */
 export async function syncAllSources(
     options: SyncOptions,
     callbacks?: SyncCallbacks
 ): Promise<SyncResult> {
-    const { onProgress, onLog, onModelsUpdate } = callbacks || {};
+    const { onProgress, onLog, onModelsUpdate, skipSignal, onConfirmLLMCheck } = callbacks || {};
 
     try {
         // Count enabled sources dynamically
@@ -111,6 +122,7 @@ export async function syncAllSources(
             // options.dataSources?.civitai && 'Civitai', // Blocked in UK due to OSA
             options.dataSources?.openmodeldb && 'OpenModelDB',
             options.dataSources?.civitasbay && 'CivitasBay',
+            options.dataSources?.ollamaLibrary && 'OllamaLibrary',
         ].filter(Boolean);
 
         const totalSources = enabledSources.length;
@@ -124,7 +136,10 @@ export async function syncAllSources(
 
         const updateProgress = (completed: boolean, name?: string, found?: number) => {
             if (completed) completedSources++;
+            updateProgressState(name, found);
+        };
 
+        const updateProgressState = (name?: string, found?: number) => {
             // Generate status string from active sources
             const activeList = Array.from(activeSources);
             const statusSource = activeList.length > 0
@@ -143,6 +158,10 @@ export async function syncAllSources(
 
         const withProgress = async <T,>(p: Promise<T>, name: string, fallback: T): Promise<T> => {
             activeSources.add(name);
+            // Log that we're starting this source
+            if (onLog) {
+                onLog(`Fetching from ${name}...`);
+            }
             // Initial update to show this source started
             if (onProgress) {
                 onProgress({
@@ -160,7 +179,7 @@ export async function syncAllSources(
                 if (res && typeof res === 'object' && 'complete' in res && Array.isArray(res.complete)) {
                     const newModels = res.complete as Model[];
                     if (newModels.length > 0 && onLog) {
-                        onLog(`[${name}] Adding ${newModels.length} models to display`);
+                        onLog(`${name}: Found ${newModels.length} models`);
                     }
                     if (onModelsUpdate && newModels.length > 0) {
                         onModelsUpdate(newModels);
@@ -176,7 +195,7 @@ export async function syncAllSources(
                 activeSources.delete(name);
                 console.error(`Error fetching from ${name}:`, error);
                 if (onLog) {
-                    onLog(`Error fetching from ${name}: ${error instanceof Error ? error.message : String(error)}`);
+                    onLog(`${name}: Failed - ${error instanceof Error ? error.message : String(error)}`);
                 }
                 updateProgress(true, name, 0);
                 return fallback;
@@ -204,7 +223,10 @@ export async function syncAllSources(
             fetchPromises.push(withProgress(fetchOpenModelDB(), 'OpenModelDB', { complete: [], flagged: [] }));
         }
         if (options.dataSources?.civitasbay) {
-            fetchPromises.push(withProgress(fetchCivitasBay(), 'CivitasBay', { complete: [], flagged: [] }));
+            fetchPromises.push(withProgress(fetchCivitasBay(options.apiConfig), 'CivitasBay', { complete: [], flagged: [] }));
+        }
+        if (options.dataSources?.ollamaLibrary) {
+            fetchPromises.push(withProgress(fetchOllamaLibrary(), 'Ollama Library', { complete: [], flagged: [] }));
         }
 
         // Parallel fetching with individual progress updates
@@ -213,19 +235,34 @@ export async function syncAllSources(
         // Handle complete and flagged models from all sources
         let allComplete = results.map(r => r.complete || []).flat();
 
+        if (onLog) {
+            onLog(`Collected ${allComplete.length} models from all sources`);
+        }
+
         // Apply final corporate safety filter across all results
         if (options.enableNSFWFiltering) {
-            const finalFilter = applyCorporateFiltering(
+            if (onLog) {
+                onLog(`Running NSFW filter on ${allComplete.length} models...`);
+            }
+
+            const finalFilter = await applyCorporateFilteringAsync(
                 allComplete,
                 options.enableNSFWFiltering,
-                options.logNSFWAttempts
+                options.logNSFWAttempts,
+                options.apiConfig, // Pass API config for LLM validation
+                skipSignal,
+                onConfirmLLMCheck
             );
 
             allComplete = finalFilter.complete;
 
             // Log final filtering results
-            if (finalFilter.flagged.length > 0 && onLog) {
-                onLog(`[Corporate Safety] Final filter blocked ${finalFilter.flagged.length} models`);
+            if (onLog) {
+                if (finalFilter.flagged.length > 0) {
+                    onLog(`NSFW filter: ${finalFilter.flagged.length} blocked, ${allComplete.length} passed`);
+                } else {
+                    onLog(`NSFW filter complete: ${allComplete.length} models passed`);
+                }
             }
         }
 
@@ -264,7 +301,7 @@ export async function syncAllSources(
 
                 if (discoveryProvider && discoveryCfg) {
                     if (onLog) {
-                        onLog(`[LLM Discovery] Using ${discoveryProvider} (${discoveryCfg.model}) for model discovery...`);
+                        onLog(`LLM Discovery: Searching for new models using ${discoveryProvider}...`);
                     }
 
                     // Use system prompt from options, fallback to default discovery prompt
@@ -308,17 +345,17 @@ Return a JSON array of discovered models. Each model should include complete met
 
                     if (Array.isArray(llmResults) && llmResults.length) {
                         if (onLog) {
-                            onLog(`[LLM Discovery] Found ${llmResults.length} new models via ${discoveryProvider}`);
+                            onLog(`LLM Discovery: Found ${llmResults.length} new models`);
                         }
                         allComplete = allComplete.concat(llmResults as any);
                     } else {
                         if (onLog) {
-                            onLog(`[LLM Discovery] No new models discovered via ${discoveryProvider}`);
+                            onLog(`LLM Discovery: No new models found`);
                         }
                     }
                 } else {
                     if (onLog) {
-                        onLog(`[LLM Discovery] No API provider configured - skipping model discovery`);
+                        onLog(`LLM Discovery: Skipped (no API configured)`);
                     }
                 }
             } else {
@@ -335,18 +372,37 @@ Return a JSON array of discovered models. Each model should include complete met
         // Translate Chinese content to English (names/descriptions)
         try {
             if (onLog) {
-                onLog('[Translation] Starting Chinese/CJK model translation...');
+                onLog('Translation: Checking for Chinese/CJK content...');
             }
             const beforeCount = allComplete.filter(m => m.tags?.includes('translated')).length;
             if (options.apiConfig) {
-                allComplete = await translateChineseModels(allComplete, options.apiConfig);
+                if (onProgress) {
+                    onProgress({
+                        current: completedSources,
+                        total: totalSources,
+                        source: 'Translating models...'
+                    });
+                }
+                allComplete = await translateChineseModels(allComplete, options.apiConfig, (msg) => {
+                    // Update header with detailed progress
+                    if (onProgress) {
+                        onProgress({
+                            current: completedSources,
+                            total: totalSources,
+                            source: msg
+                        });
+                    }
+                });
+
+                // Restore completed state
+                updateProgressState();
             }
             const afterCount = allComplete.filter(m => m.tags?.includes('translated')).length;
             const translatedCount = afterCount - beforeCount;
             if (translatedCount > 0 && onLog) {
-                onLog(`[Translation] ✅ Successfully translated ${translatedCount} models from Chinese/CJK to English`);
+                onLog(`Translation: Translated ${translatedCount} models to English`);
             } else if (onLog) {
-                onLog('[Translation] No models required translation');
+                onLog('Translation: No translation needed');
             }
         } catch (e: any) {
             if (onLog) {
@@ -355,7 +411,8 @@ Return a JSON array of discovered models. Each model should include complete met
         }
 
         // Deep enrichment with LLM usage to fill in missing fields
-        allComplete = await enrichModelsDeep(allComplete, 80);
+        // REMOVED per user request to avoid high costs during sync
+        // allComplete = await enrichModelsDeep(allComplete, 80);
         const allFlagged = results.map(r => r.flagged || []).flat();
 
         return {

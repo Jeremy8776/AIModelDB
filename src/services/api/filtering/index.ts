@@ -1,3 +1,3 @@
 // Filtering module barrel exports
-export { applyCorporateFiltering } from './nsfw-filter';
+export { applyCorporateFiltering, applyCorporateFilteringAsync } from './nsfw-filter';
 export { isModelComplete } from './completeness-checker';
