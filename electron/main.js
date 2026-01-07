@@ -64,7 +64,13 @@ function createWindow() {
         titleBarStyle: 'hidden',
         titleBarOverlay: false,
         autoHideMenuBar: true,
+        trafficLightPosition: { x: -100, y: -100 }, // Push traffic lights off-screen just in case
     });
+
+    // Hide traffic lights on macOS to use custom controls
+    if (process.platform === 'darwin') {
+        mainWindow.setWindowButtonVisibility(false);
+    }
 
     // Load the app
     if (isDev) {
