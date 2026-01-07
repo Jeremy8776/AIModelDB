@@ -1,4 +1,5 @@
 import React, { useContext, useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Settings, Activity, Database, RefreshCw, Trash2, Info, Download, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import ThemeContext from '../../context/ThemeContext';
 import { useSettings } from '../../context/SettingsContext';
@@ -6,6 +7,7 @@ import { isElectron, getAppVersion, getPlatform, checkForUpdates, onUpdateStatus
 import { useUpdate } from '../../context/UpdateContext';
 
 export function SystemSection() {
+  const { t } = useTranslation();
   const { theme } = useContext(ThemeContext);
   const { settings } = useSettings();
   const [diagRunning, setDiagRunning] = useState(false);
@@ -79,17 +81,17 @@ export function SystemSection() {
 
     switch (updateStatus.status) {
       case 'checking-for-update':
-        return { icon: Loader2, message: 'Checking for updates...', color: 'text-zinc-400', spin: true };
+        return { icon: Loader2, message: t('settings.system.updates.checking'), color: 'text-zinc-400', spin: true };
       case 'update-available':
-        return { icon: Download, message: `Update available: v${updateStatus.version}`, color: 'text-accent' };
+        return { icon: Download, message: t('settings.system.updates.available', { version: updateStatus.version, current: appVersion }), color: 'text-accent' };
       case 'update-not-available':
-        return { icon: CheckCircle, message: 'You have the latest version!', color: 'text-green-500' };
+        return { icon: CheckCircle, message: t('settings.system.updates.latest'), color: 'text-green-500' };
       case 'download-progress':
-        return { icon: Loader2, message: `Downloading: ${Math.round(updateStatus.percent || 0)}%`, color: 'text-accent', spin: true };
+        return { icon: Loader2, message: t('settings.system.updates.downloading', { percent: Math.round(updateStatus.percent || 0) }), color: 'text-accent', spin: true };
       case 'update-downloaded':
-        return { icon: CheckCircle, message: 'Update ready to install!', color: 'text-green-500' };
+        return { icon: CheckCircle, message: t('settings.system.updates.ready'), color: 'text-green-500' };
       case 'update-error':
-        return { icon: AlertCircle, message: `Update error: ${updateStatus.message}`, color: 'text-red-500' };
+        return { icon: AlertCircle, message: t('settings.system.updates.error', { message: updateStatus.message }), color: 'text-red-500' };
       default:
         return null;
     }
@@ -100,10 +102,10 @@ export function SystemSection() {
   const handleDatabaseReset = () => {
     window.dispatchEvent(new CustomEvent('show-confirmation', {
       detail: {
-        title: 'Delete DB',
-        message: 'This will clear all local data including models, settings, and cache. This action cannot be undone.',
+        title: t('settings.system.maintenance.deleteDb'),
+        message: t('settings.system.maintenance.deleteDbDesc'),
         type: 'error',
-        confirmText: 'Delete DB',
+        confirmText: t('settings.system.maintenance.deleteDb'),
         onConfirm: () => {
           // Clear localStorage
           localStorage.clear();
@@ -119,10 +121,10 @@ export function SystemSection() {
       <div>
         <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
           <Settings size={20} className="text-zinc-500" />
-          System & Diagnostics
+          {t('settings.system.diagnostics.title')}
         </h3>
         <p className="text-sm text-zinc-700 dark:text-zinc-400">
-          System health checks, application information, and maintenance tools.
+          {t('settings.system.diagnostics.description')}
         </p>
       </div>
 
@@ -131,7 +133,7 @@ export function SystemSection() {
         <div className="flex items-center justify-between mb-4">
           <h4 className="font-medium flex items-center gap-2">
             <Activity size={18} className="text-accent" />
-            System Health
+            {t('settings.system.diagnostics.systemHealth')}
           </h4>
           <button
             onClick={runDiagnostics}
@@ -142,10 +144,10 @@ export function SystemSection() {
             {diagRunning ? (
               <>
                 <RefreshCw size={12} className="inline mr-1 animate-spin" />
-                Checking...
+                {t('settings.system.diagnostics.checking')}
               </>
             ) : (
-              'Run Diagnostics'
+              t('settings.system.diagnostics.runDiagnostics')
             )}
           </button>
         </div>
@@ -159,7 +161,7 @@ export function SystemSection() {
               >
                 <span>{r.name}</span>
                 <span className={r.ok ? 'text-green-500' : 'text-red-500'}>
-                  {r.status || (r.ok ? 'OK' : 'Error')}
+                  {r.status || (r.ok ? t('settings.system.diagnostics.ok') : t('settings.system.diagnostics.error'))}
                 </span>
               </div>
             ))}
@@ -171,32 +173,32 @@ export function SystemSection() {
       <div className={`rounded-xl border p-4 ${bgCard}`}>
         <h4 className="font-medium mb-4 flex items-center gap-2">
           <Info size={18} className="text-zinc-500" />
-          Application Info
+          {t('settings.system.appInfo.title')}
         </h4>
         <div className="space-y-4">
           <div className="space-y-3">
             <div className="flex justify-between items-center">
-              <span className="text-sm text-zinc-700 dark:text-zinc-400">Version</span>
+              <span className="text-sm text-zinc-700 dark:text-zinc-400">{t('settings.system.appInfo.version')}</span>
               <span className="text-sm font-mono bg-zinc-100 dark:bg-zinc-800 px-2 py-1 rounded">{appVersion}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-zinc-700 dark:text-zinc-400">Platform</span>
+              <span className="text-sm text-zinc-700 dark:text-zinc-400">{t('settings.system.appInfo.platform')}</span>
               <span className="text-sm font-mono bg-zinc-100 dark:bg-zinc-800 px-2 py-1 rounded capitalize">{platform}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-zinc-700 dark:text-zinc-400">Runtime</span>
+              <span className="text-sm text-zinc-700 dark:text-zinc-400">{t('settings.system.appInfo.runtime')}</span>
               <span className="text-sm font-mono bg-zinc-100 dark:bg-zinc-800 px-2 py-1 rounded">
-                {isElectronApp ? 'Desktop (Electron)' : 'Web Browser'}
+                {isElectronApp ? t('settings.system.appInfo.desktop') : t('settings.system.appInfo.browser')}
               </span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-zinc-700 dark:text-zinc-400">Language</span>
+              <span className="text-sm text-zinc-700 dark:text-zinc-400">{t('settings.system.appInfo.language')}</span>
               <span className="text-sm font-mono bg-zinc-100 dark:bg-zinc-800 px-2 py-1 rounded">{navigator.language}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-zinc-700 dark:text-zinc-400">Status</span>
+              <span className="text-sm text-zinc-700 dark:text-zinc-400">{t('settings.system.appInfo.status')}</span>
               <span className={`text-sm font-medium px-2 py-1 rounded ${navigator.onLine ? 'text-green-600 bg-green-50 dark:bg-green-900/20' : 'text-red-600 bg-red-50 dark:bg-red-900/20'}`}>
-                {navigator.onLine ? 'Online' : 'Offline'}
+                {navigator.onLine ? t('settings.system.appInfo.online') : t('settings.system.appInfo.offline')}
               </span>
             </div>
           </div>
@@ -204,14 +206,14 @@ export function SystemSection() {
           <div className="h-px bg-zinc-200 dark:bg-zinc-800" />
 
           <div className="space-y-2">
-            <h5 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-2">Resources</h5>
+            <h5 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-2">{t('settings.system.resources.title')}</h5>
             <a
               href="https://github.com/Jeremy8776/AIModelDB"
               target="_blank"
               rel="noopener noreferrer"
               className="block text-sm text-accent hover:underline"
             >
-              GitHub Repository
+              {t('settings.system.resources.github')}
             </a>
             <a
               href="https://github.com/Jeremy8776/AIModelDB/releases"
@@ -219,7 +221,7 @@ export function SystemSection() {
               rel="noopener noreferrer"
               className="block text-sm text-accent hover:underline"
             >
-              Release Notes
+              {t('settings.system.resources.releaseNotes')}
             </a>
             <a
               href="https://github.com/Jeremy8776/AIModelDB/issues"
@@ -227,7 +229,7 @@ export function SystemSection() {
               rel="noopener noreferrer"
               className="block text-sm text-accent hover:underline"
             >
-              Report an Issue
+              {t('settings.system.resources.reportIssue')}
             </a>
           </div>
         </div>
@@ -237,22 +239,21 @@ export function SystemSection() {
       <div className={`rounded-xl border p-4 ${bgCard}`}>
         <h4 className="font-medium mb-4 flex items-center gap-2">
           <Trash2 size={18} className="text-zinc-500" />
-          Maintenance
+          {t('settings.system.maintenance.title')}
         </h4>
         <div className="space-y-4">
           <div className="p-3 rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20">
             <h5 className="font-medium text-red-800 dark:text-red-200 mb-2">
-              Delete DB
+              {t('settings.system.maintenance.deleteDb')}
             </h5>
             <p className="text-sm text-red-700 dark:text-red-300 mb-3">
-              Clear all local data including models, settings, and cache. This will reset
-              the application to its initial state.
+              {t('settings.system.maintenance.deleteDbDesc')}
             </p>
             <button
               onClick={handleDatabaseReset}
               className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg transition-colors"
             >
-              Delete DB
+              {t('settings.system.maintenance.deleteDb')}
             </button>
           </div>
         </div>
@@ -276,6 +277,7 @@ function UpdatesCard({ appVersion, isCheckingUpdate, onCheckForUpdates }: {
   isCheckingUpdate: boolean;
   onCheckForUpdates: () => void;
 }) {
+  const { t } = useTranslation();
   const { updateAvailable, updateVersion, updateDownloaded, downloadProgress, downloadUpdate, installUpdate, checking, error, simulateUpdate } = useUpdate();
   const isDev = import.meta.env.DEV;
 
@@ -291,18 +293,17 @@ function UpdatesCard({ appVersion, isCheckingUpdate, onCheckForUpdates }: {
           </div>
           <div className="flex-1">
             <h4 className="font-semibold text-lg text-white mb-1">
-              New Version Detected!
+              {t('settings.system.updates.newVersion')}
             </h4>
             <p className="text-sm text-zinc-400 mb-3">
-              Version <span className="font-mono text-violet-400">{updateVersion}</span> is available.
-              You are currently on <span className="font-mono text-zinc-500">{appVersion}</span>.
+              {t('settings.system.updates.available', { version: updateVersion, current: appVersion })}
             </p>
 
             {downloadProgress !== null ? (
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-sm text-zinc-400">
                   <Loader2 size={14} className="animate-spin" />
-                  <span>Downloading... {Math.round(downloadProgress)}%</span>
+                  <span>{t('settings.system.updates.downloading', { percent: Math.round(downloadProgress) })}</span>
                 </div>
                 <div className="w-full bg-zinc-800 rounded-full h-2">
                   <div
@@ -317,7 +318,7 @@ function UpdatesCard({ appVersion, isCheckingUpdate, onCheckForUpdates }: {
                 className="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg font-medium transition-colors"
               >
                 <Download size={16} />
-                Download Update
+                {t('settings.system.updates.download')}
               </button>
             )}
           </div>
@@ -336,18 +337,17 @@ function UpdatesCard({ appVersion, isCheckingUpdate, onCheckForUpdates }: {
           </div>
           <div className="flex-1">
             <h4 className="font-semibold text-lg text-white mb-1">
-              Update Ready to Install
+              {t('settings.system.updates.ready')}
             </h4>
             <p className="text-sm text-zinc-400 mb-3">
-              Version <span className="font-mono text-green-400">{updateVersion}</span> has been downloaded.
-              Restart the application to apply the update.
+              {t('settings.system.updates.readyDesc', { version: updateVersion })}
             </p>
             <button
               onClick={installUpdate}
               className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors"
             >
               <RefreshCw size={16} />
-              Restart & Install
+              {t('settings.system.updates.restart')}
             </button>
           </div>
         </div>
@@ -360,11 +360,11 @@ function UpdatesCard({ appVersion, isCheckingUpdate, onCheckForUpdates }: {
     <div className={`rounded-xl border p-4 ${bgCard}`}>
       <h4 className="font-medium mb-4 flex items-center gap-2">
         <Download size={18} className="text-zinc-500" />
-        Updates
+        {t('settings.system.updates.title')}
       </h4>
       <div className="space-y-4">
         <p className="text-sm text-zinc-700 dark:text-zinc-400">
-          Check for new versions of AI Model DB Pro.
+          {t('settings.system.updates.description')}
         </p>
 
         {error && (
@@ -377,7 +377,7 @@ function UpdatesCard({ appVersion, isCheckingUpdate, onCheckForUpdates }: {
         {checking && (
           <div className="flex items-center gap-2 text-sm text-zinc-400">
             <Loader2 size={16} className="animate-spin" />
-            <span>Checking for updates...</span>
+            <span>{t('settings.system.updates.checking')}</span>
           </div>
         )}
 
@@ -391,7 +391,7 @@ function UpdatesCard({ appVersion, isCheckingUpdate, onCheckForUpdates }: {
               }`}
           >
             <RefreshCw size={16} className={isCheckingUpdate || checking ? 'animate-spin' : ''} />
-            {isCheckingUpdate || checking ? 'Checking...' : 'Check for Updates'}
+            {isCheckingUpdate || checking ? t('settings.system.updates.checking') : t('settings.system.updates.check')}
           </button>
 
           {isDev && (
@@ -400,7 +400,7 @@ function UpdatesCard({ appVersion, isCheckingUpdate, onCheckForUpdates }: {
               className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 border border-amber-500/30"
               title="Dev only: Simulate update flow"
             >
-              🎭 Simulate
+              🎭 {t('settings.system.updates.simulate')}
             </button>
           )}
         </div>

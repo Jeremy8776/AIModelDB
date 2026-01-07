@@ -2,6 +2,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App'
 import './index.css'
+import './i18n'; // Initialize i18n
 
 // Create and mount the React application
 const rootElement = document.getElementById('root')!;

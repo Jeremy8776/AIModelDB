@@ -1,4 +1,5 @@
 import React, { useContext, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Database, RefreshCw, Check } from 'lucide-react';
 import ThemeContext from '../../context/ThemeContext';
 import { useSettings } from '../../context/SettingsContext';
@@ -11,6 +12,7 @@ interface DataSourcesSectionProps {
 }
 
 export function DataSourcesSection({ onSync, addConsoleLog }: DataSourcesSectionProps) {
+  const { t } = useTranslation();
   const { theme } = useContext(ThemeContext);
   const { settings, saveSettings } = useSettings();
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'done' | 'error'>('idle');
@@ -21,13 +23,13 @@ export function DataSourcesSection({ onSync, addConsoleLog }: DataSourcesSection
   const bgInput = 'border-border bg-input text-text';
 
   const dataSources = [
-    { key: 'huggingface', label: 'HuggingFace', description: 'Popular open-source models' },
-    { key: 'github', label: 'GitHub', description: 'AI repositories and projects' },
-    { key: 'artificialanalysis', label: 'Artificial Analysis', description: 'Model performance benchmarks' },
-    { key: 'civitai', label: 'Civitai', description: 'Community AI models' },
-    { key: 'openmodeldb', label: 'OpenModelDB', description: 'Open model database' },
-    { key: 'civitasbay', label: 'CivitasBay', description: 'AI model marketplace' },
-    { key: 'ollamaLibrary', label: 'Ollama Library', description: 'Top models from Ollama library' },
+    { key: 'huggingface', label: t('settings.dataSources.huggingface'), description: t('settings.dataSources.descriptions.huggingface') },
+    { key: 'github', label: 'GitHub', description: t('settings.dataSources.descriptions.github') },
+    { key: 'artificialanalysis', label: t('settings.dataSources.artificialanalysis'), description: t('settings.dataSources.descriptions.artificialanalysis') },
+    { key: 'civitai', label: t('settings.dataSources.civitai'), description: t('settings.dataSources.descriptions.civitai') },
+    { key: 'openmodeldb', label: t('settings.dataSources.openmodeldb'), description: t('settings.dataSources.descriptions.openmodeldb') },
+    { key: 'civitasbay', label: t('settings.dataSources.civitasbay'), description: t('settings.dataSources.descriptions.civitasbay') },
+    { key: 'ollamaLibrary', label: t('settings.dataSources.ollama'), description: t('settings.dataSources.descriptions.ollamaLibrary') },
   ];
 
   const handleSync = async () => {
@@ -51,10 +53,10 @@ export function DataSourcesSection({ onSync, addConsoleLog }: DataSourcesSection
       <div>
         <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
           <Database size={20} className="text-zinc-500" />
-          Data Sources
+          {t('settings.dataSources.title')}
         </h3>
         <p className="text-sm text-zinc-700 dark:text-zinc-400">
-          Configure which data sources to sync models from.
+          {t('settings.dataSources.description')}
         </p>
       </div>
 
@@ -62,9 +64,9 @@ export function DataSourcesSection({ onSync, addConsoleLog }: DataSourcesSection
       <div className={`rounded-xl border p-4 ${bgCard}`}>
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h4 className="font-medium">Sync Models</h4>
+            <h4 className="font-medium">{t('settings.dataSources.syncModels')}</h4>
             <p className="text-sm text-zinc-700 dark:text-zinc-400">
-              Fetch latest models from enabled sources
+              {t('settings.dataSources.syncModelsDesc')}
             </p>
           </div>
           <button
@@ -79,17 +81,17 @@ export function DataSourcesSection({ onSync, addConsoleLog }: DataSourcesSection
             {syncStatus === 'syncing' ? (
               <>
                 <RefreshCw size={16} className="animate-spin" />
-                Syncing...
+                {t('settings.dataSources.syncing')}
               </>
             ) : syncStatus === 'done' ? (
               <>
                 <Check size={16} />
-                Done
+                {t('settings.dataSources.done')}
               </>
             ) : (
               <>
                 <RefreshCw size={16} />
-                Sync Now
+                {t('settings.dataSources.syncNow')}
               </>
             )}
           </button>
@@ -98,7 +100,7 @@ export function DataSourcesSection({ onSync, addConsoleLog }: DataSourcesSection
 
       {/* Data Sources Grid */}
       <div className={`rounded-xl border p-4 ${bgCard}`}>
-        <h4 className="font-medium mb-4">Available Sources</h4>
+        <h4 className="font-medium mb-4">{t('settings.dataSources.availableSources')}</h4>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {dataSources.map((source) => {
             const isEnabled = settings.dataSources?.[source.key as keyof typeof settings.dataSources] ?? false;
@@ -202,10 +204,10 @@ export function DataSourcesSection({ onSync, addConsoleLog }: DataSourcesSection
 
       {/* Sync Settings */}
       <div className={`rounded-xl border p-4 ${bgCard}`}>
-        <h4 className="font-medium mb-4">Sync Settings</h4>
+        <h4 className="font-medium mb-4">{t('settings.dataSources.syncSettings')}</h4>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-2">Default Page Size</label>
+            <label className="block text-sm font-medium mb-2">{t('settings.display.defaultPageSize')}</label>
             <ThemedSelect
               value={String(settings.defaultPageSize || 50)}
               onChange={(value) => {
@@ -213,9 +215,9 @@ export function DataSourcesSection({ onSync, addConsoleLog }: DataSourcesSection
                 saveSettings({ defaultPageSize: num });
               }}
               options={[
-                { value: '50', label: '50' },
+                { value: '50', label: t('settings.display.defaultPageSize') + ': 50' },
                 { value: '100', label: '100' },
-                { value: '0', label: 'All' }
+                { value: '0', label: t('common.all') || 'All' }
               ]}
               ariaLabel="Default page size"
             />

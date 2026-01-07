@@ -30,7 +30,11 @@ export interface ConsoleButtonProps {
  * @param props - ConsoleButton component props
  * @returns JSX.Element or null if console is open
  */
+import { useTranslation } from "react-i18next";
+
 export function ConsoleButton({ showConsole, onShowConsole, theme = "dark" }: ConsoleButtonProps) {
+    const { t } = useTranslation();
+
     if (showConsole) {
         return null;
     }
@@ -45,12 +49,12 @@ export function ConsoleButton({ showConsole, onShowConsole, theme = "dark" }: Co
                 borderRadius: '8px'
             }}
             onClick={onShowConsole}
-            title="Show API Console"
+            title={t('console.title')}
         >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <text x="3" y="17" fontSize="16" fontFamily="monospace" fill="currentColor">&gt;_</text>
             </svg>
-            <span>Console</span>
+            <span>{t('console.title')}</span>
         </button>
     );
 }

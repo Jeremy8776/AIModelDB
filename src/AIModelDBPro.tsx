@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { Database } from "lucide-react";
 import { ThemeProvider, useTheme } from "./context/ThemeContext";
 import { SettingsProvider, useSettings } from "./context/SettingsContext";
@@ -48,6 +49,7 @@ import { UpdateProgress } from "./components/UpdateProgress";
  * Manages model browsing, filtering, synchronization, validation, and export functionality.
  */
 function AIModelDBProContent() {
+  const { t } = useTranslation();
   const { theme } = useTheme();
   const { settings } = useSettings();
   const { updateAvailable, updateVersion, checking, downloadProgress, updateDownloaded, error } = useUpdate();
@@ -62,7 +64,7 @@ function AIModelDBProContent() {
   }, [updateAvailable, checking, downloadProgress, updateDownloaded, error]);
 
   // Custom hooks for state management
-  const uiState = useUIState();
+  const uiState = useUIState({ initialHideFlagged: settings.enableNSFWFiltering ?? true });
   const syncState = useSyncState();
   const validationState = useValidationState();
   const {
@@ -229,7 +231,10 @@ function AIModelDBProContent() {
     }
   }, [settings.configVersion, models.length]);
 
-
+  // Sync hideFlagged filter with enableNSFWFiltering setting
+  useEffect(() => {
+    uiState.setHideFlagged(settings.enableNSFWFiltering ?? true);
+  }, [settings.enableNSFWFiltering]);
 
   // Show import toast after sync
   useEffect(() => {
@@ -298,11 +303,11 @@ function AIModelDBProContent() {
       const confirmLLMCheck = (modelCount: number, estimatedTimeMs: number): Promise<boolean> => {
         return new Promise((resolve) => {
           modalState.setConfirmationToast({
-            title: 'Run LLM NSFW Check?',
-            message: `Found ${modelCount.toLocaleString()} models to scan. This will take approximately ${formatTime(estimatedTimeMs)}. Skip for faster sync.`,
+            title: t('common.runLlmCheck'),
+            message: t('common.runLlmCheckMessage', { modelCount: modelCount.toLocaleString(), time: formatTime(estimatedTimeMs) }),
             type: 'confirm',
-            confirmText: 'Run Check',
-            cancelText: 'Skip',
+            confirmText: t('common.runCheck'),
+            cancelText: t('common.skip'),
             onConfirm: () => {
               modalState.setConfirmationToast(null);
               resolve(true);
@@ -538,8 +543,8 @@ function AIModelDBProContent() {
         <div className="flex flex-col items-center gap-4 max-w-md w-full px-4">
           <Database className="size-16 animate-pulse text-accent" />
           <div className="text-center w-full">
-            <h2 className="text-xl font-semibold mb-2">Loading Model Database</h2>
-            <p className={`text-sm ${textSubtle} mb-4`}>Please wait while we load your models...</p>
+            <h2 className="text-xl font-semibold mb-2">{t('app.loadingTitle')}</h2>
+            <p className={`text-sm ${textSubtle} mb-4`}>{t('app.loadingDesc')}</p>
             {loadingProgress && (
               <div className="w-full">
                 <div className="flex justify-between text-xs mb-1">
@@ -572,7 +577,7 @@ function AIModelDBProContent() {
 
         {!isOnline && (
           <div className="bg-amber-500/90 backdrop-blur text-white text-xs font-bold text-center py-1 sticky top-0 z-50">
-            ⚠️ OFFLINE MODE - Network features disabled
+            {t('app.offlineMode')}
           </div>
         )}
         <Header
@@ -608,10 +613,10 @@ function AIModelDBProContent() {
             onExport={() => modalState.setShowExportModal(true)}
             onDeleteDatabase={() => {
               modalState.setConfirmationToast({
-                title: 'Delete Database',
-                message: 'Wipe all local data, caches and IndexedDB for this app? This CANNOT be undone.',
+                title: t('settings.system.maintenance.deleteDbConfirmTitle'),
+                message: t('settings.system.maintenance.deleteDbConfirmMessage'),
                 type: 'error',
-                confirmText: 'Delete All Data',
+                confirmText: t('settings.system.maintenance.deleteDbConfirmButton'),
                 onConfirm: async () => {
                   try {
                     await (window as any).__hardReset?.();

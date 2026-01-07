@@ -1,15 +1,18 @@
 import { useContext, useRef, useState, useMemo, useEffect } from 'react';
-import { Palette, Check, Upload, RotateCcw, Trash2, Edit2, Save, Download, AlertTriangle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { Palette, Check, Upload, RotateCcw, Trash2, Edit2, Save, Download, AlertTriangle, Globe } from 'lucide-react';
 import ThemeContext, { ThemePreset } from '../../context/ThemeContext';
 import { useSettings } from '../../context/SettingsContext';
 import { RoundCheckbox } from '../RoundCheckbox';
 import { ThemedSelect } from '../ThemedSelect';
 import { CURRENCY_NAMES, CurrencyCode } from '../../utils/currency';
+import { LanguageSelector } from './LanguageSelector';
 
 import { SYSTEM_PRESETS, TEMPLATE_CSS } from '../../data/themePresets';
 
 
 export function DisplaySection() {
+  const { t } = useTranslation();
   const {
     theme, toggleTheme, setTheme,
     customColors, setCustomColors, resetColors,
@@ -156,13 +159,13 @@ export function DisplaySection() {
   const displayOptions = [
     {
       key: 'showConsoleButton',
-      label: 'Show Console Button',
-      description: 'Display the console button for debugging'
+      label: t('settings.display.showConsoleButton'),
+      description: t('settings.display.showConsoleButtonDesc')
     },
     {
       key: 'autoExpandSections',
-      label: 'Auto-expand Sections',
-      description: 'Automatically expand collapsible sections'
+      label: t('settings.display.autoExpandSections'),
+      description: t('settings.display.autoExpandSectionsDesc')
     }
   ];
 
@@ -176,23 +179,30 @@ export function DisplaySection() {
       <div>
         <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
           <Palette size={20} className="text-zinc-500" />
-          Display & Appearance
+          {t('settings.display.title')}
         </h3>
         <p className="text-sm text-zinc-600 dark:text-zinc-400">
-          Customize the appearance and behavior of the interface.
+          {t('settings.display.description')}
         </p>
       </div>
 
-
+      {/* Language Settings */}
+      <div className={`rounded-xl border p-4 ${bgCard}`}>
+        <h4 className="font-medium mb-4 flex items-center gap-2">
+          <Globe size={16} className="text-zinc-500" />
+          {t('settings.display.language')}
+        </h4>
+        <LanguageSelector />
+      </div>
 
       {/* UI Customization */}
       <div className={`rounded-xl border p-4 ${bgCard}`}>
         <div className="flex items-center justify-between mb-4">
-          <h4 className="font-medium">Custom UI Colors</h4>
+          <h4 className="font-medium">{t('settings.display.customColors')}</h4>
           <div className="flex items-center gap-2">
             {activePresetId && !activePreset.isSystem && (
               <span className="text-[10px] text-zinc-500 bg-zinc-900 px-2 py-1 rounded border border-zinc-800">
-                Auto-saving to preset
+                {t('settings.display.autoSaving')}
               </span>
             )}
             <button
@@ -205,9 +215,9 @@ export function DisplaySection() {
                 }
               }}
               className="text-xs flex items-center gap-1 px-3 py-1.5 rounded border border-zinc-700 text-zinc-500 hover:text-zinc-300 transition-colors"
-              title={`Reset to ${activePreset?.name || 'default'} colors`}
+              title={`${t('common.reset')} ${activePreset?.name || 'default'}`}
             >
-              <RotateCcw size={12} /> Reset
+              <RotateCcw size={12} /> {t('common.reset')}
             </button>
           </div>
         </div>
@@ -215,11 +225,11 @@ export function DisplaySection() {
         {/* Color Pickers Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           {[
-            { label: 'Accent Color', key: 'accent', desc: 'Buttons, borders, highlights' },
-            { label: 'Background', key: 'background', desc: 'Main app background' },
-            { label: 'Card Background', key: 'card', desc: 'Panels and sections' },
-            { label: 'Text Color', key: 'text', desc: 'Primary text content' },
-            { label: 'Border Color', key: 'border', desc: 'Dividers and input borders' }
+            { label: t('settings.display.accentColor'), key: 'accent', desc: t('settings.display.accentColorDesc') },
+            { label: t('settings.display.background'), key: 'background', desc: t('settings.display.backgroundDesc') },
+            { label: t('settings.display.cardBackground'), key: 'card', desc: t('settings.display.cardBackgroundDesc') },
+            { label: t('settings.display.textColor'), key: 'text', desc: t('settings.display.textColorDesc') },
+            { label: t('settings.display.borderColor'), key: 'border', desc: t('settings.display.borderColorDesc') }
           ].map(({ label, key, desc }) => (
             <div key={key} className="flex items-start gap-3 p-3 rounded-lg border border-zinc-800/50 bg-zinc-900/20">
               <input
@@ -259,7 +269,7 @@ export function DisplaySection() {
       {/* Style Presets & Custom CSS */}
       <div className={`rounded-xl border p-4 ${bgCard}`}>
         <div className="flex items-center justify-between mb-4">
-          <h4 className="font-medium">Interface Style</h4>
+          <h4 className="font-medium">{t('settings.display.interfaceStyle')}</h4>
           {/* Custom Preset Management Actions */}
           {!activePreset.isSystem && (
             <div className="flex items-center gap-2">
@@ -285,26 +295,26 @@ export function DisplaySection() {
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-2">Style Preset</label>
+            <label className="block text-sm font-medium mb-2">{t('settings.display.stylePreset')}</label>
             <ThemedSelect
               value={activePreset.id}
               onChange={handlePresetChange}
               options={allPresets.map(p => ({
                 value: p.id,
-                label: p.name + (p.isSystem ? '' : ' (Custom)')
+                label: (p.isSystem ? t(`settings.display.presets.${p.id === 'none' ? 'default' : p.id}`) : p.name) + (p.isSystem ? '' : t('settings.display.customSuffix'))
               }))}
-              ariaLabel="Style Preset"
+              ariaLabel={t('settings.display.stylePreset')}
             />
             <p className="text-xs text-zinc-500 mt-2">
-              Choose a pre-defined visual style for the application.
+              {t('settings.display.stylePresetHint')}
             </p>
           </div>
 
           <div className="pt-2 border-t border-zinc-800/50">
             <div className="flex items-center justify-between">
               <div>
-                <h5 className="text-sm font-medium mb-1">Upload New Style</h5>
-                <p className="text-xs text-zinc-500">Upload a .css file. It will be saved as a new preset.</p>
+                <h5 className="text-sm font-medium mb-1">{t('settings.display.uploadNewStyle')}</h5>
+                <p className="text-xs text-zinc-500">{t('settings.display.uploadNewStyleHint')}</p>
               </div>
               <div className="flex items-center gap-2">
                 <button
@@ -313,7 +323,7 @@ export function DisplaySection() {
                   title="Download formatting template"
                 >
                   <Download size={14} />
-                  Template
+                  {t('settings.display.template')}
                 </button>
                 <input
                   type="file"
@@ -327,7 +337,7 @@ export function DisplaySection() {
                   className="text-xs flex items-center gap-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 hover:border-zinc-600 px-3 py-2 rounded-lg transition-all"
                 >
                   <Upload size={14} />
-                  Upload CSS
+                  {t('settings.display.uploadCSS')}
                 </button>
               </div>
             </div>
@@ -354,10 +364,10 @@ export function DisplaySection() {
 
       {/* Currency Settings */}
       <div className={`rounded-xl border p-4 ${bgCard}`}>
-        <h4 className="font-medium mb-4">Currency & Costs</h4>
+        <h4 className="font-medium mb-4">{t('settings.display.currencyAndCosts')}</h4>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-2">Default Currency</label>
+            <label className="block text-sm font-medium mb-2">{t('settings.display.defaultCurrency')}</label>
             <ThemedSelect
               value={settings.currency || 'USD'}
               onChange={(value) => saveSettings({ currency: value as CurrencyCode })}
@@ -371,10 +381,10 @@ export function DisplaySection() {
               checked={settings.showCostValidation ?? true}
               onChange={(checked) => saveSettings({ showCostValidation: checked })}
               size="lg"
-              ariaLabel="Show cost validation"
+              ariaLabel={t('settings.display.showCostValidation')}
             />
             <span className="text-sm">
-              Show cost validation and estimates
+              {t('settings.display.showCostValidation')}
             </span>
           </label>
         </div>
@@ -382,7 +392,7 @@ export function DisplaySection() {
 
       {/* Display Options */}
       <div className={`rounded-xl border p-4 ${bgCard}`}>
-        <h4 className="font-medium mb-4">Interface Options</h4>
+        <h4 className="font-medium mb-4">{t('settings.display.interfaceOptions')}</h4>
         <div className="space-y-4">
           {displayOptions.map((option) => (
             <label key={option.key} htmlFor={option.key} className="flex items-start gap-3 cursor-pointer group select-none">
@@ -409,9 +419,9 @@ export function DisplaySection() {
 
       {/* Page Size Settings */}
       <div className={`rounded-xl border p-4 ${bgCard}`}>
-        <h4 className="font-medium mb-4">Pagination</h4>
+        <h4 className="font-medium mb-4">{t('settings.display.pagination')}</h4>
         <div>
-          <label className="block text-sm font-medium mb-2">Default Page Size</label>
+          <label className="block text-sm font-medium mb-2">{t('settings.display.defaultPageSize')}</label>
           <ThemedSelect
             value={String(settings.defaultPageSize || 50)}
             onChange={(value) => saveSettings({ defaultPageSize: parseInt(value) })}

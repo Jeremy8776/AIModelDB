@@ -9,6 +9,7 @@
 
 import React from "react";
 import { Search, RefreshCw, Plus, Upload, Wrench } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 /**
  * Props for the Header component
@@ -51,6 +52,7 @@ export function Header({
     theme,
     hasUpdate = false
 }: HeaderProps) {
+    const { t } = useTranslation();
     // Styling based on theme
     const bgHeader = theme === "dark" ? "border-zinc-900/80 bg-black/80" : "border-gray-400 bg-white shadow-sm";
     const bgInput = theme === "dark"
@@ -69,7 +71,7 @@ export function Header({
                         ref={searchRef}
                         value={query}
                         onChange={e => onQueryChange(e.target.value)}
-                        placeholder="Search (? for help) • domain:LLM license:MIT downloads:>1000"
+                        placeholder={t('header.searchPlaceholder')}
                         className="w-full h-full bg-transparent text-sm search-input-reset shadow-none appearance-none placeholder:opacity-70"
                     />
                 </div>
@@ -79,10 +81,10 @@ export function Header({
                         onClick={onSync}
                         disabled={isSyncing}
                         className="header-action-btn inline-flex items-center gap-2 rounded-xl px-4 h-10 text-sm font-semibold bg-accent hover:bg-accent-dark hover:text-white disabled:opacity-60"
-                        title="Update Database"
+                        title={t('header.syncModels')}
                     >
                         <RefreshCw className={`size-4 ${isSyncing ? 'animate-spin' : ''}`} />
-                        <span>Update Database</span>
+                        <span>{t('header.syncModels')}</span>
                     </button>
                     <button
                         onClick={onAddModel}
@@ -92,7 +94,7 @@ export function Header({
                             borderColor: 'var(--border)',
                             color: 'var(--text)'
                         }}
-                        title="Add Model"
+                        title={t('header.addModel')}
                     >
                         <Plus className="size-4" />
                     </button>
@@ -104,7 +106,7 @@ export function Header({
                             borderColor: 'var(--border)',
                             color: 'var(--text)'
                         }}
-                        title="Import data"
+                        title={t('header.importModels')}
                     >
                         <Upload className="size-4" />
                     </button>
@@ -116,7 +118,7 @@ export function Header({
                             borderColor: 'var(--border)',
                             color: 'var(--text)'
                         }}
-                        title="Settings"
+                        title={t('header.openSettings')}
                     >
                         <Wrench className="size-4" />
                         {hasUpdate && (

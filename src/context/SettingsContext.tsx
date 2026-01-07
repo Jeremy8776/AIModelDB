@@ -2,6 +2,7 @@ import React, { createContext, useState, ReactNode, useContext, useEffect } from
 import { ApiDir } from '../types';
 import { DEFAULT_API_DIR } from '../services/api';
 import { CurrencyCode } from '../utils/currency';
+import { LanguageCode } from '../i18n';
 
 interface Settings {
   apiConfig: ApiDir;
@@ -46,6 +47,7 @@ interface Settings {
   artificialAnalysisApiKey: string;
   gitHubToken: string;  // Optional: For higher GitHub API rate limits
   // UI preferences
+  language: LanguageCode;
   theme: 'auto' | 'light' | 'dark';
   compactMode: boolean;
   showAdvancedFilters: boolean;
@@ -115,6 +117,7 @@ const defaultSettings: Settings = {
   artificialAnalysisApiKey: "",
   gitHubToken: "",  // Optional: For higher GitHub API rate limits
   // UI preferences
+  language: 'en',
   theme: 'auto',
   compactMode: false,
   showAdvancedFilters: false,
@@ -184,6 +187,18 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
 
     loadSettings();
   }, []);
+
+  // Sync i18n language when language setting changes
+  useEffect(() => {
+    const updateLanguage = async () => {
+      if (settings.language) {
+        // Import dynamically to avoid circular dependency
+        const { translateToLanguage } = await import('../i18n');
+        await translateToLanguage(settings.language);
+      }
+    };
+    updateLanguage();
+  }, [settings.language]);
 
   // Save settings to localStorage whenever they change
   const saveSettings = async (newSettings: Partial<Settings>) => {

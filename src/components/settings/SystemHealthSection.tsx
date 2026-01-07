@@ -1,4 +1,5 @@
 import React, { useContext } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Activity } from 'lucide-react';
 import ThemeContext from '../../context/ThemeContext';
 
@@ -23,6 +24,7 @@ export function SystemHealthSection({
     diagResults,
     onRunDiagnostics
 }: SystemHealthSectionProps) {
+    const { t } = useTranslation();
     const { theme } = useContext(ThemeContext);
 
     return (
@@ -30,7 +32,7 @@ export function SystemHealthSection({
             <div className="mb-3 flex items-center justify-between">
                 <h4 className="font-medium flex items-center gap-2">
                     <Activity size={18} className="text-green-500" />
-                    System Health
+                    {t('settings.system.diagnostics.systemHealth')}
                 </h4>
                 <button
                     onClick={onRunDiagnostics}
@@ -38,11 +40,11 @@ export function SystemHealthSection({
                     className={`text-xs px-3 py-1 rounded-md ${diagRunning ? 'opacity-60' : ''} ${theme === 'dark' ? 'bg-zinc-800 hover:bg-zinc-700' : 'bg-gray-100 hover:bg-gray-200'
                         }`}
                 >
-                    {diagRunning ? 'Checking…' : 'Run Diagnostics'}
+                    {diagRunning ? t('settings.system.diagnostics.checking') : t('settings.system.diagnostics.runDiagnostics')}
                 </button>
             </div>
             <p className="mb-2 text-sm text-gray-600 dark:text-gray-400">
-                Check connectivity to all data sources and API providers.
+                {t('settings.system.diagnostics.checkConnectivity')}
             </p>
             {diagResults.length > 0 && (
                 <div className="grid grid-cols-2 gap-2 text-sm">
@@ -55,7 +57,7 @@ export function SystemHealthSection({
                         >
                             <span>{r.name}</span>
                             <span className={`${r.ok ? 'text-green-500' : 'text-red-500'}`}>
-                                {r.ok ? 'OK' : (r.status || r.note || 'Error')}
+                                {r.ok ? t('settings.system.diagnostics.ok') : (r.status || r.note || t('settings.system.diagnostics.error'))}
                             </span>
                         </div>
                     ))}

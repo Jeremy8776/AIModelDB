@@ -32,7 +32,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     proxyRequest: (options) => ipcRenderer.invoke('proxy-request', options),
 
     // Translation
-    translateText: (text) => ipcRenderer.invoke('translate-text', text),
+    translateText: (text, targetLang) => ipcRenderer.invoke('translate-text', text, targetLang),
 
     // Window Controls
     minimize: () => ipcRenderer.send('window-minimize'),

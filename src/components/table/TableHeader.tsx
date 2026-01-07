@@ -11,6 +11,7 @@ import React from 'react';
 import { ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
 import { SortKey } from '../../hooks/useUIState';
 import { RoundCheckbox } from '../RoundCheckbox';
+import { useTranslation } from 'react-i18next';
 
 /**
  * Props for the TableHeader component
@@ -32,6 +33,7 @@ export function TableHeader({
     isAllSelected,
     onSelectAll
 }: TableHeaderProps) {
+    const { t } = useTranslation();
     const textSubtle = theme === 'dark' ? 'text-zinc-400' : 'text-gray-800';
     const checkboxBorder = theme === 'dark' ? 'border-zinc-700 bg-zinc-900' : 'border-gray-300 bg-white';
     const checkboxChecked = 'bg-accent border-accent';
@@ -84,15 +86,15 @@ export function TableHeader({
                     checked={!!isAllSelected}
                     onChange={(checked) => onSelectAll && onSelectAll(checked)}
                     size="sm"
-                    ariaLabel="Select all models"
+                    ariaLabel={t('common.select')}
                 />
             </div>
 
-            {renderSortButton('name', 'Model', 'col-span-3')}
-            {renderSortButton('release_date', 'Released', 'col-span-2')}
-            {renderSortButton('domain', 'Domain', 'col-span-2')}
-            {renderSortButton('parameters', 'Costs/1M Tokens', 'col-span-2')}
-            {renderSortButton('license', 'License', 'col-span-2')}
+            {renderSortButton('name', t('table.name'), 'col-span-3')}
+            {renderSortButton('release_date', t('table.releaseDate'), 'col-span-2')}
+            {renderSortButton('domain', t('table.domain'), 'col-span-2')}
+            {renderSortButton('parameters', t('modelDetail.pricing'), 'col-span-2')}
+            {renderSortButton('license', t('table.license'), 'col-span-2')}
         </div>
     );
 }

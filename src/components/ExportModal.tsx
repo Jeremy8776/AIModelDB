@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Download, FileJson, FileSpreadsheet, FileText, Database, FileCode } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import ThemeContext from '../context/ThemeContext';
 import { ExportFormat } from '../services/exportService';
 import { RoundCheckbox } from './RoundCheckbox';
@@ -27,6 +28,7 @@ export function ExportModal({
     currentFilters,
     theme
 }: ExportModalProps) {
+    const { t } = useTranslation();
     const [scope, setScope] = useState<ExportScope>('custom');
     const [format, setFormat] = useState<ExportFormat>('json');
 
@@ -84,7 +86,7 @@ export function ExportModal({
 
                 {/* Header */}
                 <div className="flex items-center justify-between p-4 border-b border-zinc-200 dark:border-zinc-800">
-                    <h2 className={`text-lg font-semibold ${textPrimary}`}>Export Models</h2>
+                    <h2 className={`text-lg font-semibold ${textPrimary}`}>{t('export.title')}</h2>
                     <button
                         onClick={onClose}
                         className={`p-2 rounded-full transition-colors ${theme === 'dark' ? 'hover:bg-zinc-800 text-zinc-400' : 'hover:bg-zinc-100 text-zinc-500'}`}
@@ -99,7 +101,7 @@ export function ExportModal({
                     <div className={`w-1/2 p-6 overflow-y-auto border-r border-zinc-200 dark:border-zinc-800 space-y-6`}>
                         {/* Scope Selection */}
                         <section>
-                            <h3 className={`text-sm font-medium mb-3 ${textPrimary}`}>1. Select Data Source</h3>
+                            <h3 className={`text-sm font-medium mb-3 ${textPrimary}`}>1. {t('export.scope')}</h3>
                             <div className="space-y-2">
 
 
@@ -110,8 +112,8 @@ export function ExportModal({
                                         {scope === 'all' && <div className="w-2 h-2 rounded-full bg-violet-500" />}
                                     </div>
                                     <div>
-                                        <div className={`font-medium ${textPrimary}`}>Entire Database</div>
-                                        <div className={`text-xs ${textSecondary}`}>{totalModels.toLocaleString()} models</div>
+                                        <div className={`font-medium ${textPrimary}`}>{t('export.entireDatabase')}</div>
+                                        <div className={`text-xs ${textSecondary}`}>{totalModels.toLocaleString()} {t('toolbar.models')}</div>
                                     </div>
                                     <input type="radio" name="scope" value="all" checked={scope === 'all'} onChange={() => setScope('all')} className="hidden" />
                                 </label>
@@ -123,8 +125,8 @@ export function ExportModal({
                                         {scope === 'custom' && <div className="w-2 h-2 rounded-full bg-violet-500" />}
                                     </div>
                                     <div>
-                                        <div className={`font-medium ${textPrimary}`}>Custom Filter</div>
-                                        <div className={`text-xs ${textSecondary}`}>Define specific criteria for this export</div>
+                                        <div className={`font-medium ${textPrimary}`}>{t('export.customFilter')}</div>
+                                        <div className={`text-xs ${textSecondary}`}>{t('export.customFilterDesc')}</div>
                                     </div>
                                     <input type="radio" name="scope" value="custom" checked={scope === 'custom'} onChange={() => setScope('custom')} className="hidden" />
                                 </label>
@@ -133,7 +135,7 @@ export function ExportModal({
 
                         {/* Format Selection */}
                         <section>
-                            <h3 className={`text-sm font-medium mb-3 ${textPrimary}`}>2. Select Format</h3>
+                            <h3 className={`text-sm font-medium mb-3 ${textPrimary}`}>2. {t('export.format')}</h3>
                             <div className="grid grid-cols-2 gap-2">
                                 {formats.map((fmt) => (
                                     <button
@@ -157,12 +159,12 @@ export function ExportModal({
 
                     {/* Right Column: Custom Filters (Only if Custom Scope selected) */}
                     <div className={`w-1/2 p-6 overflow-y-auto ${scope !== 'custom' ? 'opacity-50 pointer-events-none grayscale' : ''} transition-all`}>
-                        <h3 className={`text-sm font-medium mb-4 ${textPrimary}`}>3. Custom Filters</h3>
+                        <h3 className={`text-sm font-medium mb-4 ${textPrimary}`}>3. {t('filters.title')}</h3>
 
                         <div className="space-y-4">
                             {/* Domain */}
                             <div>
-                                <label className={`block text-xs font-medium mb-1 ${textSecondary}`}>Domain</label>
+                                <label className={`block text-xs font-medium mb-1 ${textSecondary}`}>{t('filters.domain')}</label>
                                 <ThemedSelect
                                     value={customFilters.domainPick as any || 'All'}
                                     onChange={(v) => updateCustomFilter('domainPick', v as any)}
@@ -177,13 +179,13 @@ export function ExportModal({
                                         checked={customFilters.favoritesOnly || false}
                                         onChange={(checked) => updateCustomFilter('favoritesOnly', checked)}
                                     />
-                                    <span className={`text-sm font-medium ${textPrimary}`}>Favorites Only</span>
+                                    <span className={`text-sm font-medium ${textPrimary}`}>{t('filters.favoritesOnly')}</span>
                                 </label>
                             </div>
 
                             {/* Min Downloads */}
                             <div>
-                                <label className={`block text-xs font-medium mb-1 ${textSecondary}`}>Min Downloads: {customFilters.minDownloads}</label>
+                                <label className={`block text-xs font-medium mb-1 ${textSecondary}`}>{t('filters.minDownloads')}: {customFilters.minDownloads}</label>
                                 <input
                                     type="range"
                                     min="0"
@@ -197,31 +199,31 @@ export function ExportModal({
 
                             {/* License Type */}
                             <div>
-                                <label className={`block text-xs font-medium mb-1 ${textSecondary}`}>License Type</label>
+                                <label className={`block text-xs font-medium mb-1 ${textSecondary}`}>{t('filters.licenseType')}</label>
                                 <ThemedSelect
                                     value={customFilters.licenseTypes && customFilters.licenseTypes.length === 1 ? customFilters.licenseTypes[0] : ""}
                                     onChange={(v) => updateCustomFilter('licenseTypes', v ? [v as any] : [])}
                                     options={[
-                                        { value: "", label: "All Licenses" },
-                                        { value: "OSI", label: "OSI Approved" },
-                                        "Copyleft",
-                                        "Non-Commercial",
-                                        "Proprietary",
-                                        "Custom"
+                                        { value: "", label: t('filters.allLicenses') },
+                                        { value: "OSI", label: t('licenses.OSI') },
+                                        t('licenses.Copyleft'),
+                                        t('licenses.Non-Commercial'),
+                                        t('licenses.Proprietary'),
+                                        t('licenses.Custom')
                                     ]}
                                 />
                             </div>
 
                             {/* Commercial Use */}
                             <div>
-                                <label className={`block text-xs font-medium mb-1 ${textSecondary}`}>Commercial Use</label>
+                                <label className={`block text-xs font-medium mb-1 ${textSecondary}`}>{t('filters.commercialUse')}</label>
                                 <ThemedSelect
                                     value={customFilters.commercialAllowed === null ? "" : String(customFilters.commercialAllowed)}
                                     onChange={(v) => updateCustomFilter('commercialAllowed', v === "" ? null : v === "true")}
                                     options={[
-                                        { value: "", label: "All" },
-                                        { value: "true", label: "Allowed" },
-                                        { value: "false", label: "Not Allowed" }
+                                        { value: "", label: t('common.all') },
+                                        { value: "true", label: t('filters.allowed') },
+                                        { value: "false", label: t('filters.notAllowed') }
                                     ]}
                                 />
                             </div>
@@ -235,14 +237,14 @@ export function ExportModal({
                         onClick={onClose}
                         className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${theme === 'dark' ? 'text-zinc-300 hover:bg-zinc-800' : 'text-zinc-600 hover:bg-zinc-100'}`}
                     >
-                        Cancel
+                        {t('common.cancel')}
                     </button>
                     <button
                         onClick={handleExport}
                         className="px-6 py-2 rounded-xl text-sm font-medium bg-violet-600 hover:bg-violet-700 text-white shadow-lg shadow-violet-500/20 transition-all flex items-center gap-2"
                     >
                         <Download size={16} />
-                        Export Data
+                        {t('export.exportButton')}
                     </button>
                 </div>
             </div>

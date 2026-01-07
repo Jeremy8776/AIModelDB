@@ -1,5 +1,6 @@
 import React, { useContext, useState } from 'react';
 import { X, Settings, Database, Shield, Server, Palette, Info, History } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import ThemeContext from '../context/ThemeContext';
 import { useSettings } from '../context/SettingsContext';
 import { useUpdate } from '../context/UpdateContext';
@@ -25,6 +26,7 @@ interface SettingsModalProps {
 }
 
 export function SettingsModal({ isOpen, onClose, onSync, addConsoleLog, currentModels, onRestore }: SettingsModalProps) {
+  const { t } = useTranslation();
   const { theme } = useContext(ThemeContext);
   const { settings } = useSettings();
   const { updateAvailable } = useUpdate();
@@ -40,13 +42,13 @@ export function SettingsModal({ isOpen, onClose, onSync, addConsoleLog, currentM
   const bgActiveTab = 'bg-card border-border text-text';
 
   const tabs = [
-    { id: 'data-sources', label: 'Data Sources', icon: Database },
-    { id: 'history', label: 'History & Rollback', icon: History },
-    { id: 'api-config', label: 'API Config', icon: Server },
-    { id: 'validation', label: 'Validation', icon: Shield },
-    { id: 'display', label: 'Display', icon: Palette },
-    { id: 'security', label: 'Security', icon: Shield },
-    { id: 'system', label: 'System', icon: Settings, hasNotification: updateAvailable },
+    { id: 'data-sources', label: t('settings.tabs.dataSources'), icon: Database },
+    { id: 'history', label: t('settings.tabs.history'), icon: History },
+    { id: 'api-config', label: t('settings.tabs.apiConfig'), icon: Server },
+    { id: 'validation', label: t('settings.tabs.validation'), icon: Shield },
+    { id: 'display', label: t('settings.tabs.display'), icon: Palette },
+    { id: 'security', label: t('settings.tabs.security'), icon: Shield },
+    { id: 'system', label: t('settings.tabs.system'), icon: Settings, hasNotification: updateAvailable },
   ];
 
   const renderActiveSection = () => {
@@ -81,7 +83,7 @@ export function SettingsModal({ isOpen, onClose, onSync, addConsoleLog, currentM
         <div className="settings-modal-header flex items-center justify-between p-4 border-b border-border">
           <div className="flex items-center gap-2">
             <Settings size={20} />
-            <h2 className="text-lg font-semibold">Settings</h2>
+            <h2 className="text-lg font-semibold">{t('settings.title')}</h2>
           </div>
           <button
             onClick={onClose}

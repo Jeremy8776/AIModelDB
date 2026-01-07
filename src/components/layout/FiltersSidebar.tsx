@@ -10,6 +10,7 @@
 import { ThemedSelect } from "../ThemedSelect";
 import { RoundCheckbox } from "../RoundCheckbox";
 import { Domain } from "../../types";
+import { useTranslation } from 'react-i18next';
 
 /**
  * Available license type filters
@@ -60,6 +61,7 @@ export function FiltersSidebar({
     onHideFlaggedChange,
     theme
 }: FiltersSidebarProps) {
+    const { t } = useTranslation();
     // Available domains - consolidate Vision under VLM for selection (Vision kept for legacy data but hidden here)
     const DOMAINS: (Domain | "All")[] = [
         "All", "LLM", "VLM", "ImageGen", "VideoGen",
@@ -75,7 +77,7 @@ export function FiltersSidebar({
     return (
         <aside className="w-full lg:w-72 flex-shrink-0 lg:sticky lg:top-20 h-max">
             <div className={`rounded-2xl border p-4 ${bgCard}`}>
-                <div className="text-lg font-semibold mb-4 text-center">Filters</div>
+                <div className="text-lg font-semibold mb-4 text-center">{t('filters.title')}</div>
 
                 {/* Favorites Filter */}
                 <div className="mb-4">
@@ -85,7 +87,7 @@ export function FiltersSidebar({
                             onChange={(checked) => onFavoritesOnlyChange(checked)}
                         />
                         <span className={`text-sm font-medium ${theme === 'dark' ? 'text-zinc-200 group-hover:text-white' : 'text-gray-700 group-hover:text-black'} transition-colors`}>
-                            Favorites Only
+                            {t('filters.favoritesOnly')}
                         </span>
                     </label>
                 </div>
@@ -98,14 +100,14 @@ export function FiltersSidebar({
                             onChange={(checked) => onHideFlaggedChange(checked)}
                         />
                         <span className={`text-sm font-medium ${theme === 'dark' ? 'text-zinc-200 group-hover:text-white' : 'text-gray-700 group-hover:text-black'} transition-colors`}>
-                            Hide Flagged
+                            {t('filters.hideFlagged')}
                         </span>
                     </label>
                 </div>
 
                 {/* Domain Filter */}
                 <div className="mb-4">
-                    <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text)' }}>Domain</label>
+                    <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text)' }}>{t('filters.domain')}</label>
                     <ThemedSelect
                         value={domainPick as any}
                         onChange={(v: any) => onDomainChange(v)}
@@ -114,7 +116,7 @@ export function FiltersSidebar({
                 </div>
                 {/* Downloads Filter */}
                 <div className="mb-4">
-                    <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text)' }}>Min Downloads</label>
+                    <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text)' }}>{t('filters.minDownloads')}</label>
                     <input
                         type="number"
                         value={minDownloads}
@@ -127,13 +129,13 @@ export function FiltersSidebar({
 
                 {/* License Type Filter */}
                 <div className="mb-4">
-                    <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text)' }}>License Type</label>
+                    <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text)' }}>{t('filters.licenseType')}</label>
                     <ThemedSelect
                         value={licenseTypes.length === 1 ? (licenseTypes[0] as string) : ""}
                         onChange={(v) => onLicenseTypesChange(v ? [v as any] : [])}
                         options={[
-                            { value: "", label: "All Licenses" },
-                            { value: "OSI", label: "OSI Approved" },
+                            { value: "", label: t('filters.allLicenses') },
+                            { value: "OSI", label: t('licenses.OSI') },
                             "Copyleft",
                             "Non-Commercial",
                             "Proprietary",
@@ -145,14 +147,14 @@ export function FiltersSidebar({
 
                 {/* Commercial Use Filter */}
                 <div className="mb-4">
-                    <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text)' }}>Commercial Use</label>
+                    <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text)' }}>{t('filters.commercialUse')}</label>
                     <ThemedSelect
                         value={commercialAllowed === null ? "" : commercialAllowed.toString()}
                         onChange={(v) => onCommercialAllowedChange(v === "" ? null : v === "true")}
                         options={[
-                            { value: "", label: "All" },
-                            { value: "true", label: "Allowed" },
-                            { value: "false", label: "Not Allowed" }
+                            { value: "", label: t('common.all') },
+                            { value: "true", label: t('filters.allowed') },
+                            { value: "false", label: t('filters.notAllowed') }
                         ]}
                         ariaLabel="Commercial use"
                     />
@@ -160,7 +162,7 @@ export function FiltersSidebar({
 
                 {/* Tags Filter */}
                 <div className="mb-4">
-                    <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text)' }}>Include Tags</label>
+                    <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text)' }}>{t('filters.includeTags')}</label>
                     <input
                         value={includeTags.join(", ")}
                         onChange={e => onIncludeTagsChange(e.target.value.split(",").map(t => t.trim()).filter(Boolean))}
@@ -170,7 +172,7 @@ export function FiltersSidebar({
                 </div>
 
                 <div className="mb-4">
-                    <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text)' }}>Exclude Tags</label>
+                    <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text)' }}>{t('filters.excludeTags')}</label>
                     <input
                         value={excludeTags.join(", ")}
                         onChange={e => onExcludeTagsChange(e.target.value.split(",").map(t => t.trim()).filter(Boolean))}
@@ -184,7 +186,7 @@ export function FiltersSidebar({
                     onClick={onClearFilters}
                     className={`w-full rounded-xl px-4 py-2 text-sm font-medium transition-colors ${bgInput} hover:bg-gray-200 dark:hover:bg-gray-700`}
                 >
-                    Clear All Filters
+                    {t('filters.clearFilters')}
                 </button>
             </div>
         </aside>

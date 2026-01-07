@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Model, Domain } from '../types';
 import ThemeContext from '../context/ThemeContext';
 
@@ -11,6 +12,7 @@ interface ModelEditorProps {
 
 export function ModelEditor({ model, onSave, onClose, isOpen }: ModelEditorProps) {
   const { theme } = useContext(ThemeContext);
+  const { t } = useTranslation();
   const [editedModel, setEditedModel] = useState<Model | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -103,7 +105,7 @@ export function ModelEditor({ model, onSave, onClose, isOpen }: ModelEditorProps
 
     // Basic validation
     if (!editedModel?.name || !editedModel.provider || !editedModel.domain) {
-      setError('Name, provider, and domain are required fields');
+      setError(t('modelEditor.validationError'));
       return;
     }
 
@@ -117,7 +119,7 @@ export function ModelEditor({ model, onSave, onClose, isOpen }: ModelEditorProps
         className="w-full max-w-3xl max-h-[85vh] overflow-y-auto rounded-2xl border p-4 border-border bg-bg text-text"
       >
         <div className="p-6">
-          <h2 className="text-xl font-semibold mb-4">Edit Model: {model?.name}</h2>
+          <h2 className="text-xl font-semibold mb-4">{t('modelEditor.title', { name: model?.name })}</h2>
 
           {error && (
             <div className="text-red-700 dark:bg-red-900/30 dark:text-red-200 p-3 rounded-md mb-4 border border-red-600 dark:border-red-700">
@@ -129,10 +131,10 @@ export function ModelEditor({ model, onSave, onClose, isOpen }: ModelEditorProps
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Basic Information */}
               <div className="space-y-3 md:col-span-2">
-                <h3 className="font-medium text-lg border-b pb-1 border-border">Basic Information</h3>
+                <h3 className="font-medium text-lg border-b pb-1 border-border">{t('modelEditor.sections.basic')}</h3>
 
                 <div className="flex flex-col">
-                  <label className="text-sm text-text-secondary">Name</label>
+                  <label className="text-sm text-text-secondary">{t('table.name')}</label>
                   <input
                     type="text"
                     name="name"
@@ -143,7 +145,7 @@ export function ModelEditor({ model, onSave, onClose, isOpen }: ModelEditorProps
                 </div>
 
                 <div className="flex flex-col">
-                  <label className="text-sm text-zinc-600 dark:text-zinc-400">Provider</label>
+                  <label className="text-sm text-zinc-600 dark:text-zinc-400">{t('table.provider')}</label>
                   <input
                     type="text"
                     name="provider"
@@ -155,7 +157,7 @@ export function ModelEditor({ model, onSave, onClose, isOpen }: ModelEditorProps
                 </div>
 
                 <div className="flex flex-col">
-                  <label className="text-sm text-text-secondary">Domain</label>
+                  <label className="text-sm text-text-secondary">{t('table.domain')}</label>
                   <select
                     name="domain"
                     value={editedModel.domain || ''}
@@ -163,7 +165,7 @@ export function ModelEditor({ model, onSave, onClose, isOpen }: ModelEditorProps
 
                     className="w-full rounded-lg border px-2 py-1.5 text-sm border-border bg-input text-text"
                   >
-                    <option value="" disabled>Select domain</option>
+                    <option value="" disabled>{t('modelEditor.placeholders.selectDomain')}</option>
                     {domains.map(domain => (
                       <option key={domain} value={domain}>{domain}</option>
                     ))}
@@ -171,72 +173,72 @@ export function ModelEditor({ model, onSave, onClose, isOpen }: ModelEditorProps
                 </div>
 
                 <div className="flex flex-col">
-                  <label className="text-sm text-text-secondary">Parameters</label>
+                  <label className="text-sm text-text-secondary">{t('modelEditor.parameters')}</label>
                   <input
                     type="text"
                     name="parameters"
                     value={editedModel.parameters || ''}
                     onChange={handleChange}
                     className="w-full rounded-lg border px-2 py-1.5 text-sm border-border bg-input text-text"
-                    placeholder="e.g., 7B, 13B, etc."
+                    placeholder={t('modelEditor.placeholders.params')}
                   />
                 </div>
 
                 <div className="flex flex-col">
-                  <label className="text-sm text-text-secondary">Context Window</label>
+                  <label className="text-sm text-text-secondary">{t('modelEditor.contextWindow')}</label>
                   <input
                     type="text"
                     name="context_window"
                     value={editedModel.context_window || ''}
                     onChange={handleChange}
                     className="w-full rounded-lg border px-2 py-1.5 text-sm border-border bg-input text-text"
-                    placeholder="e.g., 8K, 32K, etc."
+                    placeholder={t('modelEditor.placeholders.context')}
                   />
                 </div>
 
                 <div className="flex flex-col">
-                  <label className="text-sm text-text-secondary">Tags (comma separated)</label>
+                  <label className="text-sm text-text-secondary">{t('modelEditor.tags')}</label>
                   <input
                     type="text"
                     name="tags"
                     value={editedModel.tags?.join(', ') || ''}
                     onChange={handleTagsChange}
                     className="w-full rounded-lg border px-2 py-1.5 text-sm border-border bg-input text-text"
-                    placeholder="tag1, tag2, tag3..."
+                    placeholder={t('modelEditor.placeholders.tags')}
                   />
                 </div>
               </div>
 
               {/* License Information */}
               <div className="space-y-3 md:col-span-2">
-                <h3 className="font-medium text-lg border-b pb-1 border-border">License Information</h3>
+                <h3 className="font-medium text-lg border-b pb-1 border-border">{t('modelEditor.sections.license')}</h3>
 
                 <div className="flex flex-col">
-                  <label className="text-sm text-text-secondary">License Name</label>
+                  <label className="text-sm text-text-secondary">{t('modelEditor.licenseName')}</label>
                   <input
                     type="text"
                     name="license.name"
                     value={editedModel.license?.name || ''}
                     onChange={handleChange}
                     className="w-full rounded-lg border px-2 py-1.5 text-sm border-border bg-input text-text"
-                    placeholder="e.g., MIT, Apache-2.0, etc."
+                    placeholder={t('modelEditor.placeholders.license')}
                   />
                 </div>
 
                 <div className="flex flex-col">
-                  <label className="text-sm text-text-secondary">License Type</label>
+                  <label className="text-sm text-text-secondary">{t('modelEditor.licenseType')}</label>
                   <select
                     name="license.type"
                     value={editedModel.license?.type || ''}
                     onChange={handleChange}
                     className="w-full rounded-lg border px-2 py-1.5 text-sm border-border bg-input text-text"
                   >
-                    <option value="" disabled>Select type</option>
-                    <option value="OSI">Open Source (OSI)</option>
-                    <option value="Proprietary">Proprietary</option>
-                    <option value="Copyleft">Copyleft</option>
-                    <option value="Non-Commercial">Non-Commercial</option>
-                    <option value="Custom">Custom</option>
+                    <option value="" disabled>{t('modelEditor.placeholders.selectType')}</option>
+                    <option value="OSI">{t('modelEditor.licenseTypes.OSI')}</option>
+                    <option value="Proprietary">{t('modelEditor.licenseTypes.Proprietary')}</option>
+                    <option value="Copyleft">{t('modelEditor.licenseTypes.Copyleft')}</option>
+                    <option value="Non-Commercial">{t('modelEditor.licenseTypes.NonCommercial')}</option>
+                    <option value="Custom">{t('modelEditor.licenseTypes.Custom')}</option>
                   </select>
                 </div>
 
@@ -250,7 +252,7 @@ export function ModelEditor({ model, onSave, onClose, isOpen }: ModelEditorProps
                       onChange={handleCheckboxChange}
                       className="mr-2"
                     />
-                    <label htmlFor="commercial_use" className="text-sm">Commercial use allowed</label>
+                    <label htmlFor="commercial_use" className="text-sm">{t('modelEditor.commercialUse')}</label>
                   </div>
 
                   <div className="flex items-center">
@@ -262,7 +264,7 @@ export function ModelEditor({ model, onSave, onClose, isOpen }: ModelEditorProps
                       onChange={handleCheckboxChange}
                       className="mr-2"
                     />
-                    <label htmlFor="attribution_required" className="text-sm">Attribution required</label>
+                    <label htmlFor="attribution_required" className="text-sm">{t('modelEditor.attribution')}</label>
                   </div>
 
                   <div className="flex items-center">
@@ -274,7 +276,7 @@ export function ModelEditor({ model, onSave, onClose, isOpen }: ModelEditorProps
                       onChange={handleCheckboxChange}
                       className="mr-2"
                     />
-                    <label htmlFor="share_alike" className="text-sm">Share alike required</label>
+                    <label htmlFor="share_alike" className="text-sm">{t('modelEditor.shareAlike')}</label>
                   </div>
 
                   <div className="flex items-center">
@@ -286,41 +288,41 @@ export function ModelEditor({ model, onSave, onClose, isOpen }: ModelEditorProps
                       onChange={handleCheckboxChange}
                       className="mr-2"
                     />
-                    <label htmlFor="copyleft" className="text-sm">Copyleft</label>
+                    <label htmlFor="copyleft" className="text-sm">{t('modelEditor.copyleft')}</label>
                   </div>
                 </div>
               </div>
 
               {/* URL and Date Information */}
               <div className="space-y-3 md:col-span-2">
-                <h3 className="font-medium text-lg border-b pb-1 border-border">Links & Dates</h3>
+                <h3 className="font-medium text-lg border-b pb-1 border-border">{t('modelEditor.sections.links')}</h3>
 
                 <div className="flex flex-col">
-                  <label className="text-sm text-text-secondary">Model URL</label>
+                  <label className="text-sm text-text-secondary">{t('modelEditor.modelUrl')}</label>
                   <input
                     type="text"
                     name="url"
                     value={editedModel.url || ''}
                     onChange={handleChange}
                     className="w-full rounded-lg border px-2 py-1.5 text-sm border-border bg-input text-text"
-                    placeholder="https://..."
+                    placeholder={t('modelEditor.placeholders.url')}
                   />
                 </div>
 
                 <div className="flex flex-col">
-                  <label className="text-sm text-text-secondary">Repository URL</label>
+                  <label className="text-sm text-text-secondary">{t('modelEditor.repoUrl')}</label>
                   <input
                     type="text"
                     name="repo"
                     value={editedModel.repo || ''}
                     onChange={handleChange}
                     className="w-full rounded-lg border px-2 py-1.5 text-sm border-border bg-input text-text"
-                    placeholder="https://github.com/..."
+                    placeholder={t('modelEditor.placeholders.repo')}
                   />
                 </div>
 
                 <div className="flex flex-col">
-                  <label className="text-sm text-text-secondary">Release Date</label>
+                  <label className="text-sm text-text-secondary">{t('modelEditor.releaseDate')}</label>
                   <input
                     type="date"
                     name="release_date"
@@ -331,7 +333,7 @@ export function ModelEditor({ model, onSave, onClose, isOpen }: ModelEditorProps
                 </div>
 
                 <div className="flex flex-col">
-                  <label className="text-sm text-text-secondary">Updated At</label>
+                  <label className="text-sm text-text-secondary">{t('modelEditor.updatedAt')}</label>
                   <input
                     type="date"
                     name="updated_at"
@@ -342,7 +344,7 @@ export function ModelEditor({ model, onSave, onClose, isOpen }: ModelEditorProps
                 </div>
 
                 <div className="flex flex-col">
-                  <label className="text-sm text-text-secondary">Downloads (approximate)</label>
+                  <label className="text-sm text-text-secondary">{t('modelEditor.downloads')}</label>
                   <input
                     type="number"
                     name="downloads"
@@ -360,13 +362,13 @@ export function ModelEditor({ model, onSave, onClose, isOpen }: ModelEditorProps
                 onClick={onClose}
                 className="px-4 py-2 rounded-lg border transition-colors border-border bg-card text-text hover:bg-accent hover:text-white"
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 type="submit"
                 className="px-4 py-2 rounded-lg border-0 bg-accent text-white hover:bg-accent-dark transition-colors"
               >
-                Save Changes
+                {t('modelEditor.saveChanges')}
               </button>
             </div>
           </form>

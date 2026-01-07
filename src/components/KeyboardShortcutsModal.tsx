@@ -8,48 +8,11 @@
  */
 
 import React, { useContext } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Keyboard } from 'lucide-react';
 import ThemeContext from '../context/ThemeContext';
 
-interface ShortcutGroup {
-    title: string;
-    shortcuts: { keys: string[]; description: string }[];
-}
 
-const SHORTCUT_GROUPS: ShortcutGroup[] = [
-    {
-        title: 'Navigation',
-        shortcuts: [
-            { keys: ['↓', 'J'], description: 'Move to next model' },
-            { keys: ['↑', 'K'], description: 'Move to previous model' },
-            { keys: ['Enter'], description: 'Open selected model details' },
-            { keys: ['Esc'], description: 'Close modal/panel' },
-        ]
-    },
-    {
-        title: 'Selection',
-        shortcuts: [
-            { keys: ['Space', 'X'], description: 'Toggle model selection' },
-            { keys: ['Ctrl', 'A'], description: 'Select all visible models' },
-        ]
-    },
-    {
-        title: 'Actions',
-        shortcuts: [
-            { keys: ['Ctrl', 'F'], description: 'Focus search bar' },
-            { keys: ['Ctrl', 'R'], description: 'Refresh/Sync models' },
-            { keys: ['Ctrl', 'E'], description: 'Export selected/all' },
-            { keys: ['Del'], description: 'Delete selected models' },
-        ]
-    },
-    {
-        title: 'General',
-        shortcuts: [
-            { keys: ['?'], description: 'Show this help' },
-            { keys: ['Ctrl', ','], description: 'Open settings' },
-        ]
-    }
-];
 
 interface KeyboardShortcutsModalProps {
     isOpen: boolean;
@@ -58,6 +21,42 @@ interface KeyboardShortcutsModalProps {
 
 export function KeyboardShortcutsModal({ isOpen, onClose }: KeyboardShortcutsModalProps) {
     const { theme } = useContext(ThemeContext);
+    const { t } = useTranslation();
+
+    const SHORTCUT_GROUPS = [
+        {
+            title: t('shortcutsModal.navigation'),
+            shortcuts: [
+                { keys: ['↓', 'J'], description: t('shortcutsModal.navNext') },
+                { keys: ['↑', 'K'], description: t('shortcutsModal.navPrev') },
+                { keys: ['Enter'], description: t('shortcutsModal.navOpen') },
+                { keys: ['Esc'], description: t('shortcutsModal.navClose') },
+            ]
+        },
+        {
+            title: t('shortcutsModal.selection'),
+            shortcuts: [
+                { keys: ['Space', 'X'], description: t('shortcutsModal.selToggle') },
+                { keys: ['Ctrl', 'A'], description: t('shortcutsModal.selAll') },
+            ]
+        },
+        {
+            title: t('shortcutsModal.actions'),
+            shortcuts: [
+                { keys: ['Ctrl', 'F'], description: t('shortcutsModal.actFocus') },
+                { keys: ['Ctrl', 'R'], description: t('shortcutsModal.actRefresh') },
+                { keys: ['Ctrl', 'E'], description: t('shortcutsModal.actExport') },
+                { keys: ['Del'], description: t('shortcutsModal.actDelete') },
+            ]
+        },
+        {
+            title: t('shortcutsModal.general'),
+            shortcuts: [
+                { keys: ['?'], description: t('shortcutsModal.genHelp') },
+                { keys: ['Ctrl', ','], description: t('shortcutsModal.genSettings') },
+            ]
+        }
+    ];
 
     if (!isOpen) return null;
 
@@ -84,12 +83,12 @@ export function KeyboardShortcutsModal({ isOpen, onClose }: KeyboardShortcutsMod
                         <div className="p-2 rounded-xl" style={{ backgroundColor: 'var(--accentGlow)' }}>
                             <Keyboard className="w-5 h-5" style={{ color: 'var(--accent)' }} />
                         </div>
-                        <h2 className="text-xl font-bold">Keyboard Shortcuts</h2>
+                        <h2 className="text-xl font-bold">{t('shortcutsModal.title')}</h2>
                     </div>
                     <button
                         onClick={onClose}
                         className="p-2 rounded-lg hover:bg-zinc-800/50 transition-colors"
-                        title="Close (Esc)"
+                        title={t('common.close')}
                     >
                         <X className="w-5 h-5" />
                     </button>
@@ -134,23 +133,23 @@ export function KeyboardShortcutsModal({ isOpen, onClose }: KeyboardShortcutsMod
                 <div className="px-5 pb-5">
                     <div className="border-t pt-5" style={{ borderColor: 'var(--border)' }}>
                         <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--accent)' }}>
-                            🔍 Advanced Search Syntax
+                            🔍 {t('shortcutsModal.searchSyntax')}
                         </h3>
                         <p className={`text-xs ${textMuted} mb-3`}>
-                            Use these operators in the search bar to filter results:
+                            {t('shortcutsModal.searchSyntaxDesc')}
                         </p>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
                             {[
-                                { syntax: 'domain:ImageGen', desc: 'Filter by domain' },
-                                { syntax: 'license:MIT', desc: 'Filter by license' },
-                                { syntax: 'downloads:>1000', desc: 'Min downloads (>, <, >=, <=)' },
-                                { syntax: 'tag:transformer', desc: 'Include models with tag' },
-                                { syntax: '-tag:deprecated', desc: 'Exclude models with tag' },
-                                { syntax: 'source:huggingface', desc: 'Filter by source' },
-                                { syntax: 'provider:openai', desc: 'Filter by provider' },
-                                { syntax: 'is:favorite', desc: 'Only favorites' },
-                                { syntax: 'is:commercial', desc: 'Commercial use allowed' },
-                                { syntax: '"exact phrase"', desc: 'Match exact phrase' },
+                                { syntax: 'domain:ImageGen', desc: t('shortcutsModal.operators.domain') },
+                                { syntax: 'license:MIT', desc: t('shortcutsModal.operators.license') },
+                                { syntax: 'downloads:>1000', desc: t('shortcutsModal.operators.downloads') },
+                                { syntax: 'tag:transformer', desc: t('shortcutsModal.operators.tag') },
+                                { syntax: '-tag:deprecated', desc: t('shortcutsModal.operators.excludeTag') },
+                                { syntax: 'source:huggingface', desc: t('shortcutsModal.operators.source') },
+                                { syntax: 'provider:openai', desc: t('shortcutsModal.operators.provider') },
+                                { syntax: 'is:favorite', desc: t('shortcutsModal.operators.isFavorite') },
+                                { syntax: 'is:commercial', desc: t('shortcutsModal.operators.isCommercial') },
+                                { syntax: '"exact phrase"', desc: t('shortcutsModal.operators.exactPhrase') },
                             ].map((item, idx) => (
                                 <div key={idx} className="flex items-center gap-2 py-1.5 px-2 rounded" style={{ backgroundColor: 'var(--bgCard)' }}>
                                     <code className={`px-1.5 py-0.5 rounded text-xs font-mono ${bgKey}`} style={{ color: 'var(--accent)' }}>
@@ -168,7 +167,7 @@ export function KeyboardShortcutsModal({ isOpen, onClose }: KeyboardShortcutsMod
 
                 {/* Footer */}
                 <div className={`p-4 border-t text-center text-sm ${textMuted}`} style={{ borderColor: 'var(--border)' }}>
-                    Press <kbd className={`px-2 py-0.5 text-xs font-mono rounded border ${bgKey}`}>Esc</kbd> to close
+                    {t('shortcutsModal.pressEsc')}
                 </div>
             </div>
         </div>

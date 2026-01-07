@@ -1,35 +1,11 @@
 import { Model, ApiDir } from '../../../../types';
 import { proxyUrl } from '../../config';
-import { applyCorporateFilteringAsync, isModelComplete } from '../../filtering';
+import { isModelComplete } from '../../filtering';
 import { normalizeDate, normalizeLicenseName, determineType, determineCommercialUse } from '../../utils';
 import { fetchWrapper } from '../../../../utils/fetch-wrapper';
 
-/**
- * Strict NSFW filtering for CivitasBay - blocks obvious explicit content
- * Returns true if content should be BLOCKED
- */
-function isObviouslyNSFW(title: string, description: string): boolean {
-    const combined = `${title} ${description}`.toLowerCase();
-
-    // Explicit anatomical terms
-    const explicitTerms = [
-        'penis', 'vagina', 'pussy', 'cock', 'dick', 'boob', 'tit', 'nipple',
-        'nude', 'naked', 'nsfw', 'xxx', 'porn', 'hentai', 'sex', 'sexual',
-        'erotic', 'fetish', 'bdsm', 'kink', 'orgasm', 'cum', 'ejaculation',
-        'masturbat', 'penetrat', 'anal', 'oral', 'blowjob', 'handjob',
-        'lingerie', 'underwear', 'panties', 'bra', 'bikini',
-        'tentacle', 'ahegao', 'ecchi', 'lewd', 'r18', 'rule34', 'yiff',
-    ];
-
-    // Check for explicit terms
-    for (const term of explicitTerms) {
-        if (combined.includes(term)) {
-            return true;
-        }
-    }
-
-    return false;
-}
+// Note: NSFW filtering is now handled by the global sync service based on user settings
+// Individual fetchers return all models, and filtering happens in syncService.ts if enabled
 
 /**
  * Fetch preserved AI models from CivitasBay torrent platform
@@ -124,10 +100,7 @@ export async function fetchCivitasBay(
 
                             if (!title || !link) return;
 
-                            if (isObviouslyNSFW(title, description)) {
-                                console.log(`[CivitasBay] Blocked explicit content: ${title}`);
-                                return;
-                            }
+                            // Note: NSFW filtering is now handled by the global sync service based on user settings
 
                             const modelId = guid || link.split('/').pop() || `civitasbay-${result.page}-${index}`;
                             if (seenIds.has(modelId)) return;

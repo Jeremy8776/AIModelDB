@@ -266,8 +266,8 @@ export async function syncAllSources(
                 }
             }
 
-            // 2. Optional LLM Filter (Runs if setting is ON, confirms with user)
-            if (onLog) onLog(`Running extended LLM safety inspection...`);
+            // 2. Optional LLM Filter (Runs if LLM API is configured)
+            if (onLog) onLog(`Checking LLM safety inspection availability...`);
 
             const finalFilter = await applyCorporateFilteringAsync(
                 allComplete,
@@ -283,9 +283,9 @@ export async function syncAllSources(
             // Log final filtering results
             if (onLog) {
                 if (finalFilter.flagged.length > 0) {
-                    onLog(`LLM Analysis: ${finalFilter.flagged.length} additional models flagged.`);
+                    onLog(`Safety Analysis: ${finalFilter.flagged.length} models flagged.`);
                 } else {
-                    onLog(`LLM Analysis complete: No additional flags.`);
+                    onLog(`Safety Analysis complete.`);
                 }
             }
         }

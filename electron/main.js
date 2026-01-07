@@ -236,11 +236,12 @@ ipcMain.on('download-update', () => {
 });
 
 // Handle translation request from renderer
-ipcMain.handle('translate-text', async (event, text) => {
+// Handle translation request from renderer
+ipcMain.handle('translate-text', async (event, text, targetLang = 'en') => {
     try {
         // Dynamic import for ESM package compatibility
         const { translate } = await import('@vitalets/google-translate-api');
-        const res = await translate(text, { to: 'en' });
+        const res = await translate(text, { to: targetLang });
         return { text: res.text, error: null };
     } catch (error) {
         console.error('Translation error:', error);

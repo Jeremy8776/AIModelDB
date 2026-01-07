@@ -1,4 +1,5 @@
 import React, { useState, useContext, useMemo, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, CheckCircle, AlertTriangle, Settings, Clock, Coins, Filter, Search } from 'lucide-react';
 import ThemeContext from '../context/ThemeContext';
 import { Model } from '../types';
@@ -28,6 +29,7 @@ export function SimpleValidationModal({
   isBusy
 }: SimpleValidationModalProps) {
   const { theme } = useContext(ThemeContext);
+  const { t } = useTranslation();
   const { settings } = useSettings();
   const [isValidating, setIsValidating] = useState(false);
   const [result, setResult] = useState<{ success: boolean; message: string; summary?: ValidationSummary } | null>(null);
@@ -254,7 +256,7 @@ export function SimpleValidationModal({
 
   const handleValidate = async () => {
     if (!hasApiProvider) {
-      setResult({ success: false, message: 'Please configure an API provider in Sync settings.' });
+      setResult({ success: false, message: t('simpleValidation.configureProvider') });
       return;
     }
     setIsValidating(true);
@@ -270,12 +272,12 @@ export function SimpleValidationModal({
       if (validationResult.success && validationResult.updatedModels) {
         setResult({
           success: true,
-          message: `Success! Validated ${validationResult.updatedModels.length} models.`,
+          message: t('simpleValidation.successMessage', { count: validationResult.updatedModels.length }),
           summary: validationResult.summary
         });
         setTimeout(() => { onClose(); setResult(null); }, 5000);
       } else {
-        setResult({ success: false, message: validationResult.error || 'Validation failed' });
+        setResult({ success: false, message: validationResult.error || t('simpleValidation.failedMessage') });
       }
     } catch (error) {
       setResult({ success: false, message: String(error) });
@@ -298,8 +300,8 @@ export function SimpleValidationModal({
               <CheckCircle className="size-6 text-violet-500" />
             </div>
             <div>
-              <h2 className={`text-xl font-bold ${textPrimary}`}>Validate Model Data</h2>
-              <div className={`text-sm ${textSecondary} mt-0.5`}>Enrich and verify metadata using {providerKey} • {modelName}</div>
+              <h2 className={`text-xl font-bold ${textPrimary}`}>{t('simpleValidation.title')}</h2>
+              <div className={`text-sm ${textSecondary} mt-0.5`}>{t('simpleValidation.description', { provider: providerKey, model: modelName })}</div>
             </div>
           </div>
           <button onClick={onClose} className={`rounded-xl ${bgInput} p-2.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors`}>
@@ -315,21 +317,21 @@ export function SimpleValidationModal({
             <div className="flex flex-col gap-4">
               <div className="flex items-center gap-2 mb-1">
                 <Filter className="size-4 text-violet-500" />
-                <h3 className="text-sm font-semibold uppercase tracking-wide opacity-80">Filters & Scope</h3>
+                <h3 className="text-sm font-semibold uppercase tracking-wide opacity-80">{t('simpleValidation.filtersScope')}</h3>
               </div>
 
               <div className={`flex-1 p-4 rounded-xl border ${cardBg} shadow-sm space-y-5`}>
 
                 {/* 1. Filters */}
                 <div className="space-y-3">
-                  <label className="text-xs font-bold opacity-60 uppercase tracking-wider">Filter Candidates</label>
+                  <label className="text-xs font-bold opacity-60 uppercase tracking-wider">{t('simpleValidation.filterCandidates')}</label>
 
                   {/* Provider Filter with Search */}
                   <div>
                     <div className="text-[10px] uppercase opacity-50 mb-1.5 flex justify-between">
-                      <span>Provider</span>
+                      <span>{t('table.provider')}</span>
                       {filterProvider !== 'all' && (
-                        <button onClick={() => { setFilterProvider('all'); setProviderSearch(''); }} className="text-violet-500 hover:underline">Clear</button>
+                        <button onClick={() => { setFilterProvider('all'); setProviderSearch(''); }} className="text-violet-500 hover:underline">{t('common.clear') || 'Clear'}</button>
                       )}
                     </div>
                     <div className="relative">
@@ -339,7 +341,7 @@ export function SimpleValidationModal({
                         <div className="relative">
                           <input
                             type="text"
-                            placeholder="Search providers..."
+                            placeholder={t('table.search') + "..."}
                             value={providerSearch}
                             onChange={e => setProviderSearch(e.target.value)}
                             className={`w-full ${bgInput} rounded-lg py-2 pl-9 pr-3 text-xs`}
@@ -373,10 +375,10 @@ export function SimpleValidationModal({
                   {/* Missing Fields Filter */}
                   <div className="flex flex-wrap gap-2 mt-4">
                     {[
-                      { id: 'parameters', label: 'Params' },
-                      { id: 'license', label: 'License' },
-                      { id: 'release_date', label: 'Date' },
-                      { id: 'description', label: 'Desc' },
+                      { id: 'parameters', label: t('simpleValidation.missingFields.parameters') },
+                      { id: 'license', label: t('simpleValidation.missingFields.license') },
+                      { id: 'release_date', label: t('simpleValidation.missingFields.date') },
+                      { id: 'description', label: t('simpleValidation.missingFields.description') },
                     ].map(f => (
                       <button
                         key={f.id}
@@ -386,7 +388,7 @@ export function SimpleValidationModal({
                           : 'bg-transparent border-zinc-300 dark:border-zinc-700 opacity-60 hover:opacity-100'
                           }`}
                       >
-                        Missing {f.label}
+                        {t('simpleValidation.missing')} {f.label}
                       </button>
                     ))}
                   </div>
@@ -397,8 +399,8 @@ export function SimpleValidationModal({
                 {/* 2. Scope & Limit (No Sorting) */}
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
-                    <label className="text-xs font-bold opacity-60 uppercase tracking-wider">Validation Scope</label>
-                    <span className="text-[10px] opacity-50">{totalCandidateCount} matching filters</span>
+                    <label className="text-xs font-bold opacity-60 uppercase tracking-wider">{t('simpleValidation.validationScope')}</label>
+                    <span className="text-[10px] opacity-50">{t('simpleValidation.matchingFilters', { count: totalCandidateCount })}</span>
                   </div>
 
                   <div className="grid grid-cols-2 gap-2 p-1 bg-zinc-100 dark:bg-zinc-900/50 rounded-lg">
@@ -406,13 +408,13 @@ export function SimpleValidationModal({
                       onClick={() => setScopeMode('all')}
                       className={`text-xs font-medium py-1.5 px-3 rounded-md transition-all ${scopeMode === 'all' ? 'bg-white dark:bg-zinc-800 shadow-sm text-violet-600' : 'opacity-60 hover:opacity-100'}`}
                     >
-                      All Matches
+                      {t('simpleValidation.allMatches')}
                     </button>
                     <button
                       onClick={() => setScopeMode('limit')}
                       className={`text-xs font-medium py-1.5 px-3 rounded-md transition-all ${scopeMode === 'limit' ? 'bg-white dark:bg-zinc-800 shadow-sm text-violet-600' : 'opacity-60 hover:opacity-100'}`}
                     >
-                      Limit Count
+                      {t('simpleValidation.limitCount')}
                     </button>
                   </div>
 
@@ -428,20 +430,20 @@ export function SimpleValidationModal({
                           />
                           <div className={`w-12 text-center text-xs font-mono font-bold`}>{limitCount}</div>
                         </div>
-                        <div className="text-[10px] text-center opacity-40 mt-1">Processing limit applied</div>
+                        <div className="text-[10px] text-center opacity-40 mt-1">{t('simpleValidation.limitApplied')}</div>
                       </div>
 
                       {/* Ordering Selection */}
                       <div className="space-y-1.5">
-                        <label className="text-[10px] uppercase font-bold opacity-60">Prioritize By</label>
+                        <label className="text-[10px] uppercase font-bold opacity-60">{t('simpleValidation.prioritizeBy')}</label>
                         <select
                           value={ordering}
                           onChange={(e) => setOrdering(e.target.value as any)}
                           className={`w-full ${bgInput} text-xs rounded-lg p-2 outline-none focus:ring-1 focus:ring-violet-500`}
                         >
-                          <option value="incomplete">Most Incomplete First</option>
-                          <option value="recent">Most Recent First</option>
-                          <option value="oldest">Oldest First</option>
+                          <option value="incomplete">{t('simpleValidation.ordering.incomplete')}</option>
+                          <option value="recent">{t('simpleValidation.ordering.recent')}</option>
+                          <option value="oldest">{t('simpleValidation.ordering.oldest')}</option>
                         </select>
                       </div>
                     </div>
@@ -455,10 +457,10 @@ export function SimpleValidationModal({
               <div className="flex items-center justify-between mb-1">
                 <div className="flex items-center gap-2">
                   <Settings className="size-4 text-violet-500" />
-                  <h3 className="text-sm font-semibold uppercase tracking-wide opacity-80">Execution</h3>
+                  <h3 className="text-sm font-semibold uppercase tracking-wide opacity-80">{t('simpleValidation.execution')}</h3>
                 </div>
                 <button onClick={() => setIsManualConfig(!isManualConfig)} className="text-[10px] text-violet-500 underline decoration-dotted">
-                  {isManualConfig ? 'Default Settings' : 'Advanced'}
+                  {isManualConfig ? t('simpleValidation.defaultSettings') : t('simpleValidation.advanced')}
                 </button>
               </div>
 
@@ -468,30 +470,30 @@ export function SimpleValidationModal({
                   <div className="relative z-10">
                     <div className="flex justify-between items-start mb-2">
                       <div className="text-[10px] font-bold opacity-70 uppercase tracking-wide flex items-center gap-1.5">
-                        <Coins className="size-3 text-violet-500" /> Estimated Cost
+                        <Coins className="size-3 text-violet-500" /> {t('simpleValidation.estimatedCost')}
                       </div>
                       {dynamicPrice && (
                         <span className="text-[9px] bg-violet-500/10 text-violet-600 px-1.5 py-0.5 rounded border border-violet-500/20">
-                          Live Pricing
+                          {t('simpleValidation.livePricing')}
                         </span>
                       )}
                     </div>
 
                     <div className="flex items-baseline gap-1 mb-1">
                       <span className={`text-3xl font-bold ${isCostSignificant ? 'text-text' : 'text-zinc-500'}`}>
-                        {estCostUsd > 0 ? formatCurrency(estCostUsd, currency) : 'Free'}
+                        {estCostUsd > 0 ? formatCurrency(estCostUsd, currency) : t('simpleValidation.free')}
                       </span>
                       {estCostUsd > 0 && estCostUsd < 0.01 && <span className="text-xs text-zinc-400">(&lt;$0.01)</span>}
                     </div>
-                    <div className="text-[11px] opacity-60 mb-3">{targetCount} models via {providerKey}</div>
+                    <div className="text-[11px] opacity-60 mb-3">{t('simpleValidation.modelsVia', { count: targetCount, provider: providerKey })}</div>
 
                     <div className="grid grid-cols-2 gap-3 text-xs border-t border-border pt-3">
                       <div>
-                        <div className="opacity-50 text-[10px]">ETA</div>
+                        <div className="opacity-50 text-[10px]">{t('simpleValidation.eta')}</div>
                         <div className="font-semibold flex items-center gap-1"><Clock className="size-3 text-violet-500" />{formatEta(etaSeconds)}</div>
                       </div>
                       <div>
-                        <div className="opacity-50 text-[10px]">Tokens</div>
+                        <div className="opacity-50 text-[10px]">{t('simpleValidation.tokens')}</div>
                         <div className="font-semibold">~{Math.round((totalInTokens + totalOutTokens) / 1000)}k</div>
                       </div>
                     </div>
@@ -503,19 +505,19 @@ export function SimpleValidationModal({
                   {isManualConfig ? (
                     <div className="space-y-4">
                       <div>
-                        <div className="flex justify-between mb-1"><label>Batch Size</label><span className="font-mono">{batchSize}</span></div>
+                        <div className="flex justify-between mb-1"><label>{t('simpleValidation.batchSize')}</label><span className="font-mono">{batchSize}</span></div>
                         <input type="range" min={1} max={200} value={batchSize} onChange={e => setBatchSize(Number(e.target.value))} className="w-full h-1.5 bg-zinc-200 dark:bg-zinc-700 rounded-lg appearance-none" />
                       </div>
                       <div>
-                        <div className="flex justify-between mb-1"><label>Pause (ms)</label><span className="font-mono">{pauseMs}</span></div>
+                        <div className="flex justify-between mb-1"><label>{t('simpleValidation.pauseMs')}</label><span className="font-mono">{pauseMs}</span></div>
                         <input type="range" min={0} max={60000} step={1000} value={pauseMs} onChange={e => setPauseMs(Number(e.target.value))} className="w-full h-1.5 bg-zinc-200 dark:bg-zinc-700 rounded-lg appearance-none" />
-                        <div className="text-[9px] opacity-40 mt-1">Manual delay between batches</div>
+                        <div className="text-[9px] opacity-40 mt-1">{t('simpleValidation.manualDelay')}</div>
                       </div>
                     </div>
                   ) : (
                     <div className="flex items-center justify-between opacity-80">
-                      <span>Auto-Optimization Active</span>
-                      <span className="bg-green-100 dark:bg-green-900/30 text-green-700 px-2 py-0.5 rounded text-[10px]">Enabled</span>
+                      <span>{t('simpleValidation.autoOptimization')}</span>
+                      <span className="bg-green-100 dark:bg-green-900/30 text-green-700 px-2 py-0.5 rounded text-[10px]">{t('simpleValidation.enabled')}</span>
                     </div>
                   )}
                 </div>
@@ -535,10 +537,10 @@ export function SimpleValidationModal({
 
         {/* Footer */}
         <div className="p-5 border-t border-border bg-card/30 flex justify-end gap-3">
-          <button onClick={onClose} className={`px-4 py-2 rounded-xl border text-sm font-medium hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors`}>Cancel</button>
+          <button onClick={onClose} className={`px-4 py-2 rounded-xl border text-sm font-medium hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors`}>{t('simpleValidation.cancel')}</button>
           <button onClick={handleValidate} disabled={isValidating || !hasApiProvider} className="px-6 py-2 rounded-xl bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 shadow-md shadow-violet-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2">
             {isValidating && <div className="size-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />}
-            {isValidating ? 'Running...' : `Validate ${targetCount} Models`}
+            {isValidating ? t('simpleValidation.running') : t('simpleValidation.validateModels', { count: targetCount })}
           </button>
         </div>
       </div>

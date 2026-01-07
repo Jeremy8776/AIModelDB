@@ -1,5 +1,6 @@
 
 import React, { useContext } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, CheckCircle, AlertTriangle, FileText } from 'lucide-react';
 import ThemeContext from '../context/ThemeContext';
 import { ValidationSummary } from '../hooks/useModelValidation';
@@ -16,6 +17,7 @@ export function ValidationResultsModal({
     summary
 }: ValidationResultsModalProps) {
     const { theme } = useContext(ThemeContext);
+    const { t } = useTranslation();
 
     if (!isOpen || !summary) return null;
 
@@ -77,11 +79,11 @@ export function ValidationResultsModal({
                     <div className="flex items-center gap-3">
                         <CheckCircle className="size-6 text-green-500" />
                         <h2 className={`text-lg font-semibold ${textPrimary}`}>
-                            Validation Results
+                            {t('validationResults.title')}
                         </h2>
                         {isSimulated && (
                             <span className="text-xs px-2 py-0.5 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 rounded-full border border-yellow-200 dark:border-yellow-800">
-                                Simulated View
+                                {t('validationResults.simulated')}
                             </span>
                         )}
                     </div>
@@ -99,11 +101,11 @@ export function ValidationResultsModal({
                         <div className="flex items-center gap-2">
                             {summary.webSearchUsed && (
                                 <span className="text-xs px-2 py-1 rounded-md bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 font-medium">
-                                    Web Search Used
+                                    {t('validationResults.webSearchUsed')}
                                 </span>
                             )}
                             <span className={`text-sm ${textSecondary}`}>
-                                Processed {summary.totalModels} models
+                                {t('validationResults.processedModels', { count: summary.totalModels })}
                             </span>
                         </div>
                     </div>
@@ -111,13 +113,13 @@ export function ValidationResultsModal({
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className={`rounded-lg border p-4 ${summary.errors > 0 ? 'bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800/40' : 'bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800/40'}`}>
                             <div className="flex justify-between items-center mb-2">
-                                <span className="font-semibold text-lg">{summary.modelsUpdated} Models Updated</span>
-                                {summary.errors > 0 && <span className="text-red-500 text-sm font-medium">{summary.errors} Errors</span>}
+                                <span className="font-semibold text-lg">{summary.modelsUpdated} {t('validationResults.modelsUpdated')}</span>
+                                {summary.errors > 0 && <span className="text-red-500 text-sm font-medium">{summary.errors} {t('validationResults.errors')}</span>}
                             </div>
                         </div>
 
                         <div className="rounded-lg border border-border p-4 bg-card">
-                            <div className="text-sm font-medium opacity-80 mb-2">Fields Enhanced Summary</div>
+                            <div className="text-sm font-medium opacity-80 mb-2">{t('validationResults.fieldsEnhanced')}</div>
                             <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
                                 {Object.entries(summary.fieldsUpdated).map(([field, count]) => (
                                     count > 0 && (
@@ -129,7 +131,7 @@ export function ValidationResultsModal({
                                 ))}
                                 {Object.values(summary.fieldsUpdated).every(c => c === 0) && (
                                     <div className="col-span-2 text-center text-sm opacity-60 italic">
-                                        No specific fields modified
+                                        {t('validationResults.noSpecificFields')}
                                     </div>
                                 )}
                             </div>
@@ -139,7 +141,7 @@ export function ValidationResultsModal({
                     {/* Change Log Table */}
                     <div className="space-y-2">
                         <h3 className="text-sm font-semibold flex items-center gap-2">
-                            Detailed Change Log
+                            {t('validationResults.changeLog')}
                             <span className="px-1.5 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-xs font-normal opacity-70">
                                 {displayUpdates.length}
                             </span>
@@ -149,10 +151,10 @@ export function ValidationResultsModal({
                                 <table className="w-full text-left text-xs">
                                     <thead className="sticky top-0 bg-zinc-100 dark:bg-zinc-800/80 backdrop-blur z-10 border-b border-border shadow-sm">
                                         <tr>
-                                            <th className="p-3 font-semibold w-[200px]">Model</th>
-                                            <th className="p-3 font-semibold w-[120px]">Field</th>
-                                            <th className="p-3 font-semibold">Old Value</th>
-                                            <th className="p-3 font-semibold">New Value</th>
+                                            <th className="p-3 font-semibold w-[200px]">{t('validationResults.model')}</th>
+                                            <th className="p-3 font-semibold w-[120px]">{t('validationResults.field')}</th>
+                                            <th className="p-3 font-semibold">{t('validationResults.oldValue')}</th>
+                                            <th className="p-3 font-semibold">{t('validationResults.newValue')}</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-border/50">
@@ -175,7 +177,7 @@ export function ValidationResultsModal({
                                         {displayUpdates.length === 0 && (
                                             <tr>
                                                 <td colSpan={4} className="p-8 text-center text-zinc-500 italic">
-                                                    No detailed updates recorded for this session.
+                                                    {t('validationResults.noUpdates')}
                                                 </td>
                                             </tr>
                                         )}
@@ -193,7 +195,7 @@ export function ValidationResultsModal({
                         onClick={onClose}
                         className="px-4 py-2 rounded-lg bg-violet-600 text-white hover:bg-violet-700 transition-colors text-sm font-medium"
                     >
-                        Done
+                        {t('comparison.done')}
                     </button>
                 </div>
             </div>

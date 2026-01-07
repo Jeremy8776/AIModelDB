@@ -86,7 +86,7 @@ export interface UIState {
  * uiState.setSortDirection('desc');
  * ```
  */
-export function useUIState(): UIState {
+export function useUIState(options?: { initialHideFlagged?: boolean }): UIState {
     // Search and domain state
     const [query, setQuery] = useState("");
     const [domainPick, setDomainPick] = useState<Domain | "All">("All");
@@ -105,7 +105,7 @@ export function useUIState(): UIState {
     const [includeTags, setIncludeTags] = useState<string[]>([]);
     const [excludeTags, setExcludeTags] = useState<string[]>([]);
     const [favoritesOnly, setFavoritesOnly] = useState<boolean>(false);
-    const [hideFlagged, setHideFlagged] = useState<boolean>(true); // Hide flagged by default
+    const [hideFlagged, setHideFlagged] = useState<boolean>(options?.initialHideFlagged ?? true); // Sync with settings
 
     // Detail panel state
     const [open, setOpen] = useState<Model | null>(null);

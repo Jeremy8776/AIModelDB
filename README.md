@@ -109,6 +109,28 @@ Enable any of these sources in Settings:
 
 ---
 
+## macOS Installation
+
+> **Note**: When first opening the app on macOS, you may see an error saying **"AI Model DB Pro is damaged and can't be opened"**. This is because the app is not signed with an Apple Developer certificate.
+
+### Fix: Remove Quarantine Attribute
+
+Open **Terminal** and run:
+
+```bash
+xattr -cr /Applications/AI\ Model\ DB\ Pro.app
+```
+
+After running this command, you should be able to open the app normally.
+
+### Alternative: Right-Click to Open
+
+1. Right-click (or Control-click) on the app in Finder
+2. Select **Open** from the context menu
+3. Click **Open** in the dialog that appears
+
+---
+
 ## Development
 
 ### Prerequisites

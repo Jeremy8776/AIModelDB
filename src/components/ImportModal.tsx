@@ -1,4 +1,5 @@
 import React, { useContext, useState } from "react";
+import { useTranslation } from 'react-i18next';
 import { Model } from "../types";
 import { parseCSV, safeJsonFromText, parseTSV } from "../utils/format";
 import { X, Upload, AlertTriangle, Download, FileText, Globe, Clipboard } from "lucide-react";
@@ -14,6 +15,7 @@ interface ImportModalProps {
 }
 
 export function ImportModal({ isOpen, onClose, onImport, addConsoleLog }: ImportModalProps) {
+  const { t } = useTranslation();
   const { theme } = useContext(ThemeContext);
 
   // Lock body scroll when modal is open
@@ -70,7 +72,7 @@ export function ImportModal({ isOpen, onClose, onImport, addConsoleLog }: Import
           }
           setPreview(Array.isArray(data) ? data : []);
         } catch (err) {
-          setError("Failed to parse file: " + (err as Error).message);
+          setError(t('errors.parseFile', { error: (err as Error).message }));
         }
       };
       if (isBinary) reader.readAsArrayBuffer(f); else reader.readAsText(f);
@@ -80,7 +82,7 @@ export function ImportModal({ isOpen, onClose, onImport, addConsoleLog }: Import
   // Handle URL import
   const handleUrlImport = async () => {
     if (!url.trim()) {
-      setError("Please enter a URL");
+      setError(t('errors.emptyUrl'));
       return;
     }
 
@@ -122,14 +124,14 @@ export function ImportModal({ isOpen, onClose, onImport, addConsoleLog }: Import
       }
       setPreview(Array.isArray(data) ? data : []);
     } catch (err) {
-      setError("Failed to fetch or parse URL: " + (err as Error).message);
+      setError(t('errors.fetchError', { error: (err as Error).message }));
     }
   };
 
   // Handle paste
   const handlePasteImport = () => {
     if (!pasteText.trim()) {
-      setError("Please paste some content");
+      setError(t('errors.emptyPaste'));
       return;
     }
 
@@ -147,7 +149,7 @@ export function ImportModal({ isOpen, onClose, onImport, addConsoleLog }: Import
 
       setPreview(Array.isArray(data) ? data : []);
     } catch (err) {
-      setError("Failed to parse pasted content: " + (err as Error).message);
+      setError(t('errors.parsePaste', { error: (err as Error).message }));
     }
   };
 
@@ -159,7 +161,7 @@ export function ImportModal({ isOpen, onClose, onImport, addConsoleLog }: Import
       onClose();
     } else {
       addConsoleLog('ImportModal: No valid data to import');
-      setError("No valid data to import");
+      setError(t('errors.noDataToImport'));
     }
   };
 
@@ -176,14 +178,14 @@ export function ImportModal({ isOpen, onClose, onImport, addConsoleLog }: Import
         <div className="mb-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Download size={18} />
-            <h3 className="text-base font-semibold">Import Models</h3>
+            <h3 className="text-base font-semibold">{t('import.title')}</h3>
           </div>
-          <button onClick={onClose} className={`rounded-xl ${bgInput} px-3 py-1 text-xs`}>Close</button>
+          <button onClick={onClose} className={`rounded-xl ${bgInput} px-3 py-1 text-xs`}>{t('common.close')}</button>
         </div>
 
         <div className="space-y-4">
           <p className="mb-4 text-sm text-gray-600 dark:text-gray-400">
-            Import models from multiple sources. Supports CSV, TSV, JSON, XLSX formats.
+            {t('import.description')}
           </p>
 
           {/* Tab navigation */}
@@ -193,21 +195,21 @@ export function ImportModal({ isOpen, onClose, onImport, addConsoleLog }: Import
               onClick={() => setActiveTab("file")}
             >
               <FileText size={16} />
-              File Upload
+              {t('import.tabs.file')}
             </button>
             <button
               className={`${tabStyle} ${activeTab === "url" ? tabActiveStyle : ""} flex items-center gap-1`}
               onClick={() => setActiveTab("url")}
             >
               <Globe size={16} />
-              From URL
+              {t('import.tabs.url')}
             </button>
             <button
               className={`${tabStyle} ${activeTab === "paste" ? tabActiveStyle : ""} flex items-center gap-1`}
               onClick={() => setActiveTab("paste")}
             >
               <Clipboard size={16} />
-              Paste
+              {t('import.tabs.paste')}
             </button>
           </div>
 
@@ -232,8 +234,8 @@ export function ImportModal({ isOpen, onClose, onImport, addConsoleLog }: Import
                     </div>
                   ) : (
                     <div className={`rounded-lg ${bgInput} p-4 text-center`}>
-                      <p className="mb-2">Drag & drop a file here, or click to select</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">CSV, TSV, JSON, XLSX formats supported</p>
+                      <p className="mb-2">{t('import.dropzone')}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{t('import.supportedFormats')}</p>
                     </div>
                   )}
                 </div>
@@ -242,7 +244,7 @@ export function ImportModal({ isOpen, onClose, onImport, addConsoleLog }: Import
                   onClick={() => document.getElementById('file-upload')?.click()}
                 >
                   <Upload size={16} />
-                  Browse Files
+                  {t('import.browse')}
                 </button>
               </div>
 
@@ -285,7 +287,7 @@ export function ImportModal({ isOpen, onClose, onImport, addConsoleLog }: Import
                   }}
                 >
                   <Upload size={16} />
-                  Process File
+                  {t('import.process')}
                 </button>
               )}
             </div>
@@ -295,7 +297,7 @@ export function ImportModal({ isOpen, onClose, onImport, addConsoleLog }: Import
           {activeTab === "url" && (
             <div className="rounded-xl border p-4 border-border bg-card">
               <div className="mb-2">
-                <label className="block text-xs mb-1">Enter URL</label>
+                <label className="block text-xs mb-1">{t('import.enterUrl')}</label>
                 <input
                   type="text"
                   value={url}
@@ -305,7 +307,7 @@ export function ImportModal({ isOpen, onClose, onImport, addConsoleLog }: Import
                 />
               </div>
               <p className="text-xs mb-3 text-gray-500 dark:text-gray-400">
-                Enter a direct URL to a CSV, TSV, or JSON file containing model data
+                {t('import.supportedFormats')}
               </p>
               <button
                 className={`rounded-xl ${bgInput} px-4 py-2 w-full flex items-center justify-center gap-1 hover:bg-zinc-800 disabled:opacity-50`}
@@ -313,7 +315,7 @@ export function ImportModal({ isOpen, onClose, onImport, addConsoleLog }: Import
                 disabled={!url.trim()}
               >
                 <Globe size={16} />
-                Fetch from URL
+                {t('import.fetch')}
               </button>
             </div>
           )}
@@ -322,11 +324,11 @@ export function ImportModal({ isOpen, onClose, onImport, addConsoleLog }: Import
           {activeTab === "paste" && (
             <div className="rounded-xl border p-4 border-border bg-card">
               <div className="mb-3">
-                <label className="block text-xs mb-1">Paste Data</label>
+                <label className="block text-xs mb-1">{t('import.pasteData')}</label>
                 <textarea
                   value={pasteText}
                   onChange={(e) => setPasteText(e.target.value)}
-                  placeholder="Paste JSON or CSV data here..."
+                  placeholder={t('import.pastePlaceholder')}
                   className={`w-full rounded-lg ${bgInput} px-2 py-1.5 text-sm h-40 font-mono`}
                 />
               </div>
@@ -336,7 +338,7 @@ export function ImportModal({ isOpen, onClose, onImport, addConsoleLog }: Import
                 disabled={!pasteText.trim()}
               >
                 <Clipboard size={16} />
-                Process Pasted Data
+                {t('import.process')}
               </button>
             </div>
           )}
@@ -355,7 +357,7 @@ export function ImportModal({ isOpen, onClose, onImport, addConsoleLog }: Import
             <div className="rounded-xl border p-4 border-border bg-card">
               <h4 className="mb-3 font-medium flex items-center gap-2">
                 <FileText size={18} />
-                Preview ({preview.length} items found)
+                {t('import.preview', { count: preview.length })}
               </h4>
 
               <div className={`max-h-40 overflow-y-auto rounded-lg ${bgInput} p-2 mb-3`}>
@@ -374,7 +376,7 @@ export function ImportModal({ isOpen, onClose, onImport, addConsoleLog }: Import
                   onClick={handleConfirmImport}
                 >
                   <Download size={16} />
-                  Import {preview.length} Models
+                  {t('import.importButton')} {preview.length} {t('toolbar.models')}
                 </button>
               </div>
             </div>
@@ -383,13 +385,13 @@ export function ImportModal({ isOpen, onClose, onImport, addConsoleLog }: Import
 
         <div className="border-t pt-4 mt-4 flex justify-between border-border">
           <div className="text-sm">
-            <span className="opacity-70">Supported formats:</span> CSV, TSV, JSON, XLSX
+            <span className="opacity-70">{t('import.supportedFormats')}</span>
           </div>
           <button
             className={`rounded-xl ${bgInput} px-4 py-2 text-sm`}
             onClick={onClose}
           >
-            Cancel
+            {t('common.cancel')}
           </button>
         </div>
       </div>

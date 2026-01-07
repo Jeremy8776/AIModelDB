@@ -1,5 +1,5 @@
 import { Model } from '../../../../types';
-import { applyCorporateFiltering, isModelComplete } from '../../filtering';
+import { isModelComplete } from '../../filtering';
 import { safeFetch } from '../../utils/http-utils';
 
 /**
@@ -201,13 +201,11 @@ export async function fetchCivitai(limit = 500): Promise<{ complete: Model[], fl
         console.log(`  - LoRA: ${models.filter(m => m.domain === 'LoRA').length}`);
         console.log(`  - Upscaler: ${models.filter(m => m.domain === 'Upscaler').length}`);
 
-        // Apply corporate safety filtering
-        const corporateFiltered = applyCorporateFiltering(models, true, true);
-        console.log(`[Civitai] Corporate filter: ${corporateFiltered.complete.length} safe, ${corporateFiltered.flagged.length} blocked`);
+        // Note: NSFW filtering is now handled by the global sync service based on user settings
+        // This fetcher returns all models, and filtering happens in syncService.ts if enabled
 
-        const complete = corporateFiltered.complete.filter(isModelComplete);
-        const flagged = corporateFiltered.complete.filter(m => !isModelComplete(m))
-            .concat(corporateFiltered.flagged);
+        const complete = models.filter(isModelComplete);
+        const flagged = models.filter(m => !isModelComplete(m));
 
         console.log(`[Civitai] Final - Complete: ${complete.length}, Flagged: ${flagged.length}`);
 

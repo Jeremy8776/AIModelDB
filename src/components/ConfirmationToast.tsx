@@ -1,4 +1,5 @@
 import React, { useContext } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AlertTriangle, Check, X } from 'lucide-react';
 import ThemeContext from '../context/ThemeContext';
 
@@ -18,12 +19,16 @@ export function ConfirmationToast({
   title,
   message,
   type = 'confirm',
-  confirmText = 'Confirm',
-  cancelText = 'Cancel',
+  confirmText,
+  cancelText,
   onConfirm,
   onCancel
 }: ConfirmationToastProps) {
+  const { t } = useTranslation();
   const { theme } = useContext(ThemeContext);
+
+  const finalConfirmText = confirmText || t('common.confirm');
+  const finalCancelText = cancelText || t('common.cancel');
 
   if (!isOpen) return null;
 
@@ -77,14 +82,14 @@ export function ConfirmationToast({
               onClick={onCancel}
               className={`px-3 py-1.5 text-xs rounded-lg transition-colors ${theme === 'dark' ? 'hover:bg-zinc-800 text-zinc-400' : 'hover:bg-zinc-100 text-zinc-600'}`}
             >
-              {cancelText}
+              {finalCancelText}
             </button>
           )}
           <button
             onClick={onConfirm}
             className={`px-3 py-1.5 text-xs rounded-lg transition-colors ${getConfirmButtonStyle()}`}
           >
-            {confirmText}
+            {finalConfirmText}
           </button>
         </div>
       </div>

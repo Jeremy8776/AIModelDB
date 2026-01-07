@@ -1,4 +1,5 @@
 import React, { useContext, useEffect, useState, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FileText, DollarSign, Info, ExternalLink, Loader2 } from 'lucide-react';
 import ThemeContext from '../context/ThemeContext';
 import { Model } from '../types';
@@ -30,6 +31,7 @@ interface DetailPanelProps {
 
 export function DetailPanel({ model, onClose, onDelete, triggerElement }: DetailPanelProps) {
   const { theme } = useContext(ThemeContext);
+  const { t } = useTranslation();
   const [isAnimating, setIsAnimating] = useState(false);
   const [civitasBayDetails, setCivitasBayDetails] = useState<CivitasBayDetails | null>(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
@@ -126,7 +128,7 @@ export function DetailPanel({ model, onClose, onDelete, triggerElement }: Detail
                 {loadingDetails && (
                   <div className="flex items-center gap-2 text-sm text-blue-500">
                     <Loader2 className="size-4 animate-spin" />
-                    <span>Loading details...</span>
+                    <span>{t('detailPanel.loadingDetails')}</span>
                   </div>
                 )}
                 {civitasBayDetails?.imageUrl && (
@@ -143,7 +145,7 @@ export function DetailPanel({ model, onClose, onDelete, triggerElement }: Detail
                     onClick={(e) => handleExternalLink(e, civitasBayDetails.civitaiUrl!)}
                     className="mt-2 inline-flex items-center gap-1 text-sm text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300"
                   >
-                    View on CivitAI <ExternalLink className="size-3" />
+                    {t('detailPanel.viewOnCivitAI')} <ExternalLink className="size-3" />
                   </a>
                 )}
               </div>
@@ -154,15 +156,15 @@ export function DetailPanel({ model, onClose, onDelete, triggerElement }: Detail
               onClick={() => window.dispatchEvent(new CustomEvent('edit-model', { detail: model }))}
               className={`rounded-xl ${bgInput} px-3 py-1 text-xs whitespace-nowrap`}
             >
-              Edit
+              {t('common.edit')}
             </button>
             <button
               onClick={() => {
                 if (!model?.id) return;
                 window.dispatchEvent(new CustomEvent('show-confirmation', {
                   detail: {
-                    title: 'Delete Model',
-                    message: `Are you sure you want to delete "${model.name}"? This action cannot be undone.`,
+                    title: t('detailPanel.deleteTitle'),
+                    message: t('detailPanel.deleteMessage', { name: model.name }),
                     onConfirm: () => {
                       onDelete(model.id);
                       onClose();
@@ -172,51 +174,51 @@ export function DetailPanel({ model, onClose, onDelete, triggerElement }: Detail
               }}
               className={`rounded-xl ${bgInput} px-3 py-1 text-xs whitespace-nowrap`}
             >
-              Delete
+              {t('common.delete')}
             </button>
             <button
               onClick={onClose}
               className={`rounded-xl ${bgInput} px-3 py-1 text-xs whitespace-nowrap`}
             >
-              Close
+              {t('common.close')}
             </button>
           </div>
         </div>        <section className={`mt-4 rounded-xl border p-4`}
           style={{ borderColor: theme === 'dark' ? '#27272a' : '#e4e4e7' }}>
           <div className="mb-2 flex items-center gap-2">
             <FileText className="size-4" />
-            <strong className="text-sm">License & IP</strong>
+            <strong className="text-sm">{t('detailPanel.licenseIP')}</strong>
           </div>
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div>
-              <span className={textSubtle}>License</span>
+              <span className={textSubtle}>{t('detailPanel.license')}</span>
               <div>
                 <LicenseHover name={model.license.name} />
               </div>
             </div>
             <div>
-              <span className={textSubtle}>Type</span>
+              <span className={textSubtle}>{t('detailPanel.type')}</span>
               <div>{model.license.type}</div>
             </div>
             <div>
-              <span className={textSubtle}>Commercial</span>
-              <div>{model.license.commercial_use ? "Allowed" : "Not allowed"}</div>
+              <span className={textSubtle}>{t('detailPanel.commercial')}</span>
+              <div>{model.license.commercial_use ? t('detailPanel.allowed') : t('detailPanel.notAllowed')}</div>
             </div>
             <div>
-              <span className={textSubtle}>Attribution</span>
-              <div>{model.license.attribution_required ? "Required" : "Not required"}</div>
+              <span className={textSubtle}>{t('detailPanel.attribution')}</span>
+              <div>{model.license.attribution_required ? t('detailPanel.required') : t('detailPanel.notRequired')}</div>
             </div>
             <div>
-              <span className={textSubtle}>Copyleft</span>
-              <div>{model.license.copyleft ? "Yes" : "No"}</div>
+              <span className={textSubtle}>{t('detailPanel.copyleft')}</span>
+              <div>{model.license.copyleft ? t('common.yes') : t('common.no')}</div>
             </div>
             <div>
-              <span className={textSubtle}>Indemnity</span>
-              <div>{model.indemnity || "None"}</div>
+              <span className={textSubtle}>{t('detailPanel.indemnity')}</span>
+              <div>{model.indemnity || t('common.none')}</div>
             </div>
             {model.provider && (
               <div>
-                <span className={textSubtle}>Author</span>
+                <span className={textSubtle}>{t('detailPanel.author')}</span>
                 <div>{model.provider}</div>
               </div>
             )}
@@ -229,7 +231,7 @@ export function DetailPanel({ model, onClose, onDelete, triggerElement }: Detail
             style={{ borderColor: theme === 'dark' ? '#27272a' : '#e4e4e7' }}>
             <div className="mb-2 flex items-center gap-2">
               <DollarSign className="size-4" />
-              <strong className="text-sm">Pricing</strong>
+              <strong className="text-sm">{t('detailPanel.pricing.title')}</strong>
             </div>
             <div className="grid grid-cols-1 gap-3 text-sm">
               {/* Group pricing by type */}
@@ -243,7 +245,7 @@ export function DetailPanel({ model, onClose, onDelete, triggerElement }: Detail
                     {/* API Pricing */}
                     {apiPricing.length > 0 && (
                       <div>
-                        <div className={`text-xs font-medium mb-1 ${textSubtle}`}>API Usage</div>
+                        <div className={`text-xs font-medium mb-1 ${textSubtle}`}>{t('detailPanel.pricing.apiUsage')}</div>
                         {apiPricing.map((p, i) => (
                           <div
                             key={`api-${i}`}
@@ -261,14 +263,14 @@ export function DetailPanel({ model, onClose, onDelete, triggerElement }: Detail
                                   const currency = p.currency || '$';
                                   if (p.flat != null) {
                                     const per1K = Number(p.flat) / 1000;
-                                    return `~${currency}${per1K.toFixed(3)} per 1K requests`;
+                                    return `~${currency}${per1K.toFixed(3)} ${t('detailPanel.pricing.per1k')}`;
                                   } else if (p.input != null && p.output != null) {
                                     const inputPer1K = Number(p.input) / 1000;
                                     const outputPer1K = Number(p.output) / 1000;
                                     const blended = (inputPer1K * 3 + outputPer1K) / 4;
-                                    return `~${currency}${blended.toFixed(3)} per 1K requests (blended)`;
+                                    return `~${currency}${blended.toFixed(3)} ${t('detailPanel.pricing.per1kBlended')}`;
                                   }
-                                  return 'API pricing';
+                                  return t('detailPanel.pricing.apiPricing');
                                 })()}{p.notes ? ` • ${p.notes}` : ''}
                               </div>
                             </div>
@@ -287,7 +289,7 @@ export function DetailPanel({ model, onClose, onDelete, triggerElement }: Detail
                     {/* Subscription Pricing */}
                     {subPricing.length > 0 && (
                       <div>
-                        <div className={`text-xs font-medium mb-1 ${textSubtle}`}>📅 Subscription Plans</div>
+                        <div className={`text-xs font-medium mb-1 ${textSubtle}`}>{t('detailPanel.pricing.subscription')}</div>
                         {subPricing.map((p, i) => (
                           <div
                             key={`sub-${i}`}
@@ -300,7 +302,7 @@ export function DetailPanel({ model, onClose, onDelete, triggerElement }: Detail
                             <div className="min-w-0">
                               <div className="truncate font-medium">{p.model || 'Subscription'}</div>
                               <div className={`truncate text-xs ${textSubtle}`}>
-                                {p.unit || 'Monthly'}{p.notes ? ` • ${p.notes}` : ''}
+                                {p.unit || t('detailPanel.pricing.monthly')}{p.notes ? ` • ${p.notes}` : ''}
                               </div>
                             </div>
                             <div className="text-right">
@@ -314,7 +316,7 @@ export function DetailPanel({ model, onClose, onDelete, triggerElement }: Detail
                     {/* Other Pricing */}
                     {otherPricing.length > 0 && (
                       <div>
-                        <div className={`text-xs font-medium mb-1 ${textSubtle}`}>💰 Other Costs</div>
+                        <div className={`text-xs font-medium mb-1 ${textSubtle}`}>{t('detailPanel.pricing.other')}</div>
                         {otherPricing.map((p, i) => (
                           <div
                             key={`other-${i}`}
@@ -352,30 +354,30 @@ export function DetailPanel({ model, onClose, onDelete, triggerElement }: Detail
           style={{ borderColor: theme === 'dark' ? '#27272a' : '#e4e4e7' }}>
           <div className="mb-2 flex items-center gap-2">
             <Info className="size-4" />
-            <strong className="text-sm">Meta</strong>
+            <strong className="text-sm">{t('detailPanel.meta.title')}</strong>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <span className={textSubtle}>Updated</span>
+              <span className={textSubtle}>{t('detailPanel.meta.updated')}</span>
               <div>{fmtDate(model.updated_at)}</div>
             </div>
             <div>
-              <span className={textSubtle}>Released</span>
+              <span className={textSubtle}>{t('detailPanel.meta.released')}</span>
               <div>{fmtDate(model.release_date)}</div>
             </div>
             <div>
-              <span className={textSubtle}>Parameters</span>
+              <span className={textSubtle}>{t('detailPanel.meta.parameters')}</span>
               <div>{model.parameters || "—"}</div>
             </div>
             <div>
-              <span className={textSubtle}>Context</span>
+              <span className={textSubtle}>{t('detailPanel.meta.context')}</span>
               <div>{model.context_window || "—"}</div>
             </div>
           </div>
 
           {model.benchmarks && model.benchmarks.length > 0 && (
             <div className="mt-3">
-              <div className={`text-xs font-medium mb-1 ${textSubtle}`}>Benchmarks</div>
+              <div className={`text-xs font-medium mb-1 ${textSubtle}`}>{t('detailPanel.meta.benchmarks')}</div>
               <div className="space-y-1">
                 {model.benchmarks.slice(0, 6).map((b, i) => (
                   <div key={i} className={`flex justify-between rounded-md px-2 py-1 border ${theme === 'dark' ? 'border-zinc-800' : 'border-zinc-200'}`}>
@@ -450,7 +452,7 @@ export function DetailPanel({ model, onClose, onDelete, triggerElement }: Detail
                 onClick={(e) => handleExternalLink(e, model.url!)}
                 className={`inline-flex items-center gap-1 rounded-lg ${bgInput} px-3 py-1.5 text-xs cursor-pointer hover:opacity-80 transition-opacity`}
               >
-                Model Page <ExternalLink className="size-3" />
+                {t('detailPanel.links.modelPage')} <ExternalLink className="size-3" />
               </a>
             )}
           </div>
@@ -475,8 +477,9 @@ const LICENSE_TIPS: Record<string, string> = {
 };
 
 function LicenseHover({ name }: { name?: string | null }) {
-  const label = name || 'Unknown';
-  const tip = LICENSE_TIPS[label] || 'Review the license terms for commercial rights, attribution, and restrictions.';
+  const { t } = useTranslation();
+  const label = name || t('common.unknown');
+  const tip = (name && t(`detailPanel.licenseTips.${name}`, { defaultValue: t('detailPanel.licenseTipDefault') })) || t('detailPanel.licenseTipDefault');
   return (
     <span className="inline-flex items-center gap-1" title={tip}>
       {label}

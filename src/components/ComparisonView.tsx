@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Check, Minus, ChevronDown, ChevronUp, Star, Sparkles, ArrowUpDown, Eye, EyeOff } from 'lucide-react';
 import { Model } from '../types';
 
@@ -18,6 +19,7 @@ interface Attribute {
 }
 
 export function ComparisonView({ models, onClose, theme }: ComparisonViewProps) {
+    const { t } = useTranslation();
     const [expandedCategories, setExpandedCategories] = useState<Set<AttributeCategory>>(
         new Set(['basic', 'capabilities', 'licensing', 'pricing', 'technical'])
     );
@@ -46,7 +48,7 @@ export function ComparisonView({ models, onClose, theme }: ComparisonViewProps) 
         const p = m.pricing[0];
         if (p.input && p.output) return `$${p.input}/$${p.output}`;
         if (p.flat) return `$${p.flat} ${p.unit}`;
-        return 'Free';
+        return t('comparison.free');
     };
 
     // Helper to format downloads
@@ -59,37 +61,37 @@ export function ComparisonView({ models, onClose, theme }: ComparisonViewProps) 
 
     const attributes: Attribute[] = [
         // Basic Info
-        { label: 'Provider', category: 'basic', render: (m) => m.provider || '—', getValue: (m) => m.provider ?? undefined },
-        { label: 'Domain', category: 'basic', render: (m) => m.domain || '—', getValue: (m) => m.domain ?? undefined },
-        { label: 'Source', category: 'basic', render: (m) => m.source || '—', getValue: (m) => m.source ?? undefined },
-        { label: 'Release Date', category: 'basic', render: (m) => m.release_date || '—', getValue: (m) => m.release_date ?? undefined },
-        { label: 'Downloads', category: 'basic', render: (m) => formatDownloads(m.downloads), getValue: (m) => m.downloads ?? undefined },
+        { label: t('comparison.attributes.provider'), category: 'basic', render: (m) => m.provider || '—', getValue: (m) => m.provider ?? undefined },
+        { label: t('comparison.attributes.domain'), category: 'basic', render: (m) => m.domain || '—', getValue: (m) => m.domain ?? undefined },
+        { label: t('comparison.attributes.source'), category: 'basic', render: (m) => m.source || '—', getValue: (m) => m.source ?? undefined },
+        { label: t('comparison.attributes.releaseDate'), category: 'basic', render: (m) => m.release_date || '—', getValue: (m) => m.release_date ?? undefined },
+        { label: t('comparison.attributes.downloads'), category: 'basic', render: (m) => formatDownloads(m.downloads), getValue: (m) => m.downloads ?? undefined },
 
         // Technical
-        { label: 'Parameters', category: 'technical', render: (m) => m.parameters || '—', getValue: (m) => m.parameters ?? undefined },
-        { label: 'Context Window', category: 'technical', render: (m) => m.context_window ? `${m.context_window.toLocaleString()} tokens` : '—', getValue: (m) => m.context_window ?? undefined },
+        { label: t('comparison.attributes.parameters'), category: 'technical', render: (m) => m.parameters || '—', getValue: (m) => m.parameters ?? undefined },
+        { label: t('comparison.attributes.contextWindow'), category: 'technical', render: (m) => m.context_window ? `${m.context_window.toLocaleString()} ${t('comparison.tokens')}` : '—', getValue: (m) => m.context_window ?? undefined },
         // Note: Architecture removed - field does not exist on Model type
 
         // Capabilities
-        { label: 'API Available', category: 'capabilities', render: (m) => renderBoolean(m.hosting?.api_available), getValue: (m) => m.hosting?.api_available },
-        { label: 'Open Weights', category: 'capabilities', render: (m) => renderBoolean(m.hosting?.weights_available), getValue: (m) => m.hosting?.weights_available },
+        { label: t('comparison.attributes.apiAvailable'), category: 'capabilities', render: (m) => renderBoolean(m.hosting?.api_available), getValue: (m) => m.hosting?.api_available },
+        { label: t('comparison.attributes.openWeights'), category: 'capabilities', render: (m) => renderBoolean(m.hosting?.weights_available), getValue: (m) => m.hosting?.weights_available },
         // Note: Fine-tunable removed - capabilities field does not exist on Model type
 
         // Licensing
-        { label: 'License', category: 'licensing', render: (m) => m.license?.name || '—', getValue: (m) => m.license?.name },
-        { label: 'Commercial Use', category: 'licensing', render: (m) => renderBoolean(m.license?.commercial_use), getValue: (m) => m.license?.commercial_use },
-        { label: 'Attribution Required', category: 'licensing', render: (m) => renderBoolean(m.license?.attribution_required), getValue: (m) => m.license?.attribution_required },
+        { label: t('comparison.attributes.license'), category: 'licensing', render: (m) => m.license?.name || '—', getValue: (m) => m.license?.name },
+        { label: t('comparison.attributes.commercialUse'), category: 'licensing', render: (m) => renderBoolean(m.license?.commercial_use), getValue: (m) => m.license?.commercial_use },
+        { label: t('comparison.attributes.attributionRequired'), category: 'licensing', render: (m) => renderBoolean(m.license?.attribution_required), getValue: (m) => m.license?.attribution_required },
 
         // Pricing
-        { label: 'Pricing (In/Out per 1M)', category: 'pricing', render: (m) => formatCost(m), getValue: (m) => m.pricing?.[0]?.input ?? m.pricing?.[0]?.flat ?? undefined },
+        { label: t('comparison.attributes.pricing'), category: 'pricing', render: (m) => formatCost(m), getValue: (m) => m.pricing?.[0]?.input ?? m.pricing?.[0]?.flat ?? undefined },
     ];
 
     const categoryLabels: Record<AttributeCategory, string> = {
-        basic: '📋 Basic Information',
-        technical: '⚙️ Technical Specs',
-        capabilities: '🚀 Capabilities',
-        licensing: '📜 Licensing',
-        pricing: '💰 Pricing',
+        basic: `📋 ${t('comparison.basicInfo')}`,
+        technical: `⚙️ ${t('comparison.technicalSpecs')}`,
+        capabilities: `🚀 ${t('comparison.capabilities')}`,
+        licensing: `📜 ${t('comparison.licensing')}`,
+        pricing: `💰 ${t('comparison.pricing')}`,
     };
 
     const categoryOrder: AttributeCategory[] = ['basic', 'technical', 'capabilities', 'licensing', 'pricing'];
@@ -106,7 +108,7 @@ export function ComparisonView({ models, onClose, theme }: ComparisonViewProps) 
     // Find the "best" value for numeric comparisons
     const getBestModelId = (attr: Attribute): string | null => {
         // Only for numeric attributes where higher is better
-        const numericHigherBetter = ['Downloads', 'Context Window'];
+        const numericHigherBetter = [t('comparison.attributes.downloads'), t('comparison.attributes.contextWindow')];
         if (!numericHigherBetter.includes(attr.label)) return null;
 
         let bestId: string | null = null;
@@ -158,9 +160,9 @@ export function ComparisonView({ models, onClose, theme }: ComparisonViewProps) 
                             <ArrowUpDown className="w-5 h-5" style={{ color: 'var(--accent)' }} />
                         </div>
                         <div>
-                            <h2 className="text-xl font-bold">Compare Models</h2>
+                            <h2 className="text-xl font-bold">{t('comparison.title')}</h2>
                             <p className={`text-sm ${textSubtle}`}>
-                                Comparing {models.length} models
+                                {t('comparison.subtitle', { count: models.length })}
                             </p>
                         </div>
                     </div>
@@ -174,7 +176,7 @@ export function ComparisonView({ models, onClose, theme }: ComparisonViewProps) 
                                 }`}
                         >
                             {highlightDifferences ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-                            Highlight Differences
+                            {t('comparison.highlightDifferences')}
                         </button>
                         <button
                             onClick={onClose}
@@ -188,7 +190,7 @@ export function ComparisonView({ models, onClose, theme }: ComparisonViewProps) 
                 {/* Model Headers (Sticky) */}
                 <div className={`flex border-b ${border} ${headerBg}`}>
                     <div className={`w-48 flex-shrink-0 p-4 font-medium ${textSubtle}`}>
-                        Attribute
+                        {t('comparison.attribute')}
                     </div>
                     {models.map((m, idx) => (
                         <div
@@ -203,7 +205,7 @@ export function ComparisonView({ models, onClose, theme }: ComparisonViewProps) 
                                         ? 'text-amber-400'
                                         : textSubtle + ' hover:text-amber-400'
                                         }`}
-                                    title={pinnedModel === m.id ? 'Unpin as reference' : 'Pin as reference'}
+                                    title={pinnedModel === m.id ? t('comparison.unpin') : t('comparison.pin')}
                                 >
                                     <Star className="w-4 h-4" fill={pinnedModel === m.id ? 'currentColor' : 'none'} />
                                 </button>
@@ -265,7 +267,7 @@ export function ComparisonView({ models, onClose, theme }: ComparisonViewProps) 
                                                             {attr.render(m)}
                                                             {isBest && (
                                                                 <span className="ml-1 text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400">
-                                                                    Best
+                                                                    {t('comparison.best')}
                                                                 </span>
                                                             )}
                                                         </div>
@@ -285,11 +287,11 @@ export function ComparisonView({ models, onClose, theme }: ComparisonViewProps) 
                             onClick={() => toggleCategory('basic')}
                             className={`w-full flex items-center justify-between px-6 py-3 ${categoryBg} hover:bg-black/5 dark:hover:bg-white/5 transition-colors`}
                         >
-                            <span className="font-semibold">🏷️ Tags</span>
+                            <span className="font-semibold">🏷️ {t('comparison.tags')}</span>
                         </button>
                         <div className={`flex border-b ${border}`}>
                             <div className={`w-48 flex-shrink-0 p-4 font-medium ${textSubtle}`}>
-                                Tags
+                                {t('comparison.tags')}
                             </div>
                             {models.map(m => (
                                 <div key={m.id} className={`flex-1 min-w-[180px] p-4 border-l ${border}`}>
@@ -309,7 +311,7 @@ export function ComparisonView({ models, onClose, theme }: ComparisonViewProps) 
                                         )}
                                         {m.tags && m.tags.length > 5 && (
                                             <span className={`text-xs ${textSubtle}`}>
-                                                +{m.tags.length - 5} more
+                                                {t('comparison.moreTags', { count: m.tags.length - 5 })}
                                             </span>
                                         )}
                                     </div>
@@ -324,12 +326,12 @@ export function ComparisonView({ models, onClose, theme }: ComparisonViewProps) 
                     <div className={`text-sm ${textSubtle}`}>
                         <span className="inline-flex items-center gap-1">
                             <Sparkles className="w-3 h-3 text-amber-400" />
-                            Highlighted rows show differences
+                            {t('comparison.legendDifferences')}
                         </span>
                         <span className="mx-3">•</span>
                         <span className="inline-flex items-center gap-1">
                             <span className="inline-block w-3 h-3 rounded bg-emerald-500/30"></span>
-                            Best value (where applicable)
+                            {t('comparison.legendBest')}
                         </span>
                     </div>
                     <button
@@ -337,7 +339,7 @@ export function ComparisonView({ models, onClose, theme }: ComparisonViewProps) 
                         className="px-4 py-2 rounded-lg font-medium transition-colors"
                         style={{ backgroundColor: 'var(--accent)', color: 'white' }}
                     >
-                        Done
+                        {t('comparison.done')}
                     </button>
                 </div>
             </div>

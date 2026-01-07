@@ -1,10 +1,12 @@
 import React, { useContext, useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Server, Eye, EyeOff, RefreshCw, CheckCircle, AlertCircle, Check, Download, Plus } from 'lucide-react';
 import ThemeContext from '../../context/ThemeContext';
 import { useSettings } from '../../context/SettingsContext';
 import { ThemedSelect } from '../ThemedSelect';
 
 export function APIConfigSection() {
+  const { t } = useTranslation();
   const { theme } = useContext(ThemeContext);
   const { settings, saveSettings } = useSettings();
 
@@ -132,7 +134,7 @@ export function APIConfigSection() {
     const key = customProviderName.toLowerCase().replace(/\s+/g, '_');
 
     if (settings.apiConfig?.[key]) {
-      alert('Provider already exists!');
+      alert(t('settings.apiConfig.custom.existsError'));
       return;
     }
 
@@ -142,7 +144,7 @@ export function APIConfigSection() {
         parsedHeaders = JSON.parse(customProviderHeaders);
       }
     } catch (e) {
-      alert('Invalid JSON format for Headers. Please check syntax.');
+      alert(t('settings.apiConfig.custom.jsonError'));
       return;
     }
 
@@ -233,7 +235,7 @@ export function APIConfigSection() {
 
     // Check key unless protocol allows none
     if (!apiKeyToUse && config.protocol !== 'ollama' && providerKey !== 'ollama') {
-      setFetchError(prev => ({ ...prev, [providerKey]: 'API Key required' }));
+      setFetchError(prev => ({ ...prev, [providerKey]: t('settings.apiConfig.errors.apiKeyRequired') }));
       return;
     }
 
@@ -263,35 +265,39 @@ export function APIConfigSection() {
         headers['anthropic-version'] = '2023-06-01';
         const params = new URLSearchParams();
         params.append('limit', '100');
+
         const url = `${baseUrl}/models?${params.toString()}`;
         const result = await window.electronAPI?.proxyRequest?.({ url, method: 'GET', headers });
-        if (!result?.success) throw new Error(result?.error || 'Fetch failed');
+        if (!result?.success) throw new Error(result?.error || t('settings.apiConfig.errors.fetchFailed'));
         if (result.data.data) allModels = result.data.data;
 
       } else if (protocol === 'google') {
         const params = new URLSearchParams();
         if (apiKeyToUse) params.append('key', apiKeyToUse);
         params.append('pageSize', '100');
+
         const url = `${baseUrl}/models?${params.toString()}`;
         const googleHeaders = { ...headers }; // Ensure no auth header from other protocols
         const result = await window.electronAPI?.proxyRequest?.({ url, method: 'GET', headers: googleHeaders });
-        if (!result?.success) throw new Error(result?.error || 'Fetch failed');
+        if (!result?.success) throw new Error(result?.error || t('settings.apiConfig.errors.fetchFailed'));
         if (result.data.models) allModels = result.data.models;
+
 
       } else if (protocol === 'ollama') {
         // Ollama native API
         const url = `${baseUrl}/api/tags`; // Standard Ollama endpoint
         const result = await window.electronAPI?.proxyRequest?.({ url, method: 'GET', headers });
-        if (!result?.success) throw new Error(result?.error || 'Fetch failed');
+        if (!result?.success) throw new Error(result?.error || t('settings.apiConfig.errors.fetchFailed'));
         // Response: { models: [ { name: 'llama2', ... } ] }
         if (result.data.models) allModels = result.data.models;
 
       } else {
+
         // OpenAI Compatible (default)
         if (apiKeyToUse) headers['Authorization'] = `Bearer ${apiKeyToUse}`;
         const url = `${baseUrl}/models`;
         const result = await window.electronAPI?.proxyRequest?.({ url, method: 'GET', headers });
-        if (!result?.success) throw new Error(result?.error || 'Fetch failed');
+        if (!result?.success) throw new Error(result?.error || t('settings.apiConfig.errors.fetchFailed'));
 
         if (Array.isArray(result.data)) {
           allModels = result.data;
@@ -346,12 +352,12 @@ export function APIConfigSection() {
 
         console.log(`[API] Successfully fetched and cached ${modelList.length} models for ${providerKey}`);
       } else {
-        throw new Error('No models found in response');
+        throw new Error(t('settings.apiConfig.errors.noModelsFound'));
       }
 
     } catch (err: any) {
       console.error(`Error fetching models for ${providerKey}:`, err);
-      setFetchError(prev => ({ ...prev, [providerKey]: err.message || 'Error fetching models' }));
+      setFetchError(prev => ({ ...prev, [providerKey]: err.message || t('settings.apiConfig.errors.genericFetchError') }));
     } finally {
       setFetchingModels(prev => ({ ...prev, [providerKey]: false }));
       // Clear local key state if successful (it's now in settings) 
@@ -447,11 +453,11 @@ export function APIConfigSection() {
       <div>
         <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
           <Server size={20} className="text-zinc-500" />
-          API Configuration
-          <span className="px-2 py-0.5 text-[10px] font-bold bg-amber-500/20 text-amber-400 rounded-full uppercase">Alpha</span>
+          {t('settings.apiConfig.title')}
+          <span className="px-2 py-0.5 text-[10px] font-bold bg-amber-500/20 text-amber-400 rounded-full uppercase">{t('settings.apiConfig.alpha')}</span>
         </h3>
         <p className="text-sm text-zinc-700 dark:text-zinc-400">
-          Configure LLM API keys for AI-powered validation and enrichment.
+          {t('settings.apiConfig.subtitle')}
         </p>
       </div>
 
@@ -459,9 +465,9 @@ export function APIConfigSection() {
       <div className={`rounded-xl border p-4 ${bgCard}`}>
         <label className="flex items-center justify-between cursor-pointer group">
           <div>
-            <h4 className="font-medium text-base">AI Model Discovery</h4>
+            <h4 className="font-medium text-base">{t('settings.apiConfig.discovery.title')}</h4>
             <p className="text-sm text-zinc-500 mt-1">
-              Use configured LLMs to automatically discover, validate, and classify new models from unstructured sources.
+              {t('settings.apiConfig.discovery.description')}
             </p>
           </div>
           <div className="relative flex items-center justify-center">
@@ -490,9 +496,9 @@ export function APIConfigSection() {
       {availableProviders.length > 1 && (
         <div className={`rounded-xl border p-4 ${bgCard}`}>
           <div className="mb-3">
-            <h4 className="font-medium mb-1">Preferred Model Provider</h4>
+            <h4 className="font-medium mb-1">{t('settings.apiConfig.preferredProvider.title')}</h4>
             <div className="text-xs text-zinc-500 mb-2">
-              Select which provider to use for automated validation.
+              {t('settings.apiConfig.preferredProvider.description')}
             </div>
             <ThemedSelect
               value={settings.preferredModelProvider || availableProviders[0]?.key || ''}
@@ -501,7 +507,7 @@ export function APIConfigSection() {
                 value: p.key,
                 label: p.name
               }))}
-              ariaLabel="Preferred model provider"
+              ariaLabel={t('settings.apiConfig.preferredProvider.title')}
             />
           </div>
         </div>
@@ -541,8 +547,8 @@ export function APIConfigSection() {
                 <div>
                   <h4 className={`font-medium text-lg transition-colors ${isEnabled ? 'text-white' : 'text-zinc-400'}`}>
                     {provider.name}
-                    {isCustom && <span className="ml-2 text-xs bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded">Custom</span>}
-                    {(provider as any).isLocal && <span className="ml-2 text-xs bg-green-900/40 text-green-400 border border-green-800 px-2 py-0.5 rounded font-mono">Run Locally</span>}
+                    {isCustom && <span className="ml-2 text-xs bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded">{t('settings.apiConfig.provider.custom')}</span>}
+                    {(provider as any).isLocal && <span className="ml-2 text-xs bg-green-900/40 text-green-400 border border-green-800 px-2 py-0.5 rounded font-mono">{t('settings.apiConfig.provider.runLocally')}</span>}
                   </h4>
                   {isCustom && <div className="text-xs text-zinc-500 uppercase tracking-wider font-bold mt-0.5">{protocol}</div>}
                 </div>
@@ -552,7 +558,7 @@ export function APIConfigSection() {
                   onClick={() => handleDeleteCustomProvider(provider.key)}
                   className="text-red-500 hover:text-red-400 text-sm px-3 py-1"
                 >
-                  Delete
+                  {t('settings.apiConfig.provider.delete')}
                 </button>
               )}
             </div>
@@ -561,18 +567,19 @@ export function APIConfigSection() {
               <div className="space-y-4">
 
                 {/* Special Hand-Holding for Ollama Setup */}
+                {/* Special Hand-Holding for Ollama Setup */}
                 {(provider as any).isLocal && (
                   <div className="bg-zinc-900/50 rounded-lg p-3 border border-zinc-800">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-zinc-300">Service Status</span>
+                      <span className="text-sm font-medium text-zinc-300">{t('settings.apiConfig.ollama.serviceStatus')}</span>
                       <div className="flex items-center gap-2">
-                        {ollamaStatus === 'checking' && <span className="text-xs text-yellow-500 animate-pulse">Checking...</span>}
-                        {ollamaStatus === 'running' && <span className="flex items-center gap-1 text-xs text-green-400"><CheckCircle size={12} /> Running</span>}
-                        {ollamaStatus === 'down' && <span className="flex items-center gap-1 text-xs text-red-400"><AlertCircle size={12} /> Not Detected</span>}
+                        {ollamaStatus === 'checking' && <span className="text-xs text-yellow-500 animate-pulse">{t('settings.apiConfig.ollama.checking')}</span>}
+                        {ollamaStatus === 'running' && <span className="flex items-center gap-1 text-xs text-green-400"><CheckCircle size={12} /> {t('settings.apiConfig.ollama.running')}</span>}
+                        {ollamaStatus === 'down' && <span className="flex items-center gap-1 text-xs text-red-400"><AlertCircle size={12} /> {t('settings.apiConfig.ollama.down')}</span>}
                         <button
                           onClick={() => checkOllamaStatus(config?.baseUrl || 'http://127.0.0.1:11434')}
                           className="p-1 hover:bg-zinc-700 rounded text-zinc-400"
-                          title="Check again"
+                          title={t('settings.apiConfig.ollama.checkAgain')}
                         >
                           <RefreshCw size={12} className={ollamaStatus === 'checking' ? 'animate-spin' : ''} />
                         </button>
@@ -583,14 +590,14 @@ export function APIConfigSection() {
                             className="text-[10px] px-1.5 py-0.5 bg-zinc-800 text-zinc-500 hover:text-zinc-300 rounded"
                             title="Debug: Simulate 'Not Installed' state"
                           >
-                            Sim Missing
+                            {t('settings.apiConfig.ollama.debug.simMissing')}
                           </button>
                           <button
                             onClick={() => { setOllamaStatus('running'); setOllamaModelCount(0); }}
                             className="text-[10px] px-1.5 py-0.5 bg-zinc-800 text-zinc-500 hover:text-zinc-300 rounded"
                             title="Debug: Simulate 'No Models' state"
                           >
-                            Sim Empty
+                            {t('settings.apiConfig.ollama.debug.simEmpty')}
                           </button>
                         </div>
                       </div>
@@ -598,31 +605,31 @@ export function APIConfigSection() {
 
                     {ollamaStatus === 'down' && (
                       <div className="text-sm text-zinc-400 mb-2 p-2 bg-red-900/10 border border-red-900/30 rounded">
-                        <p className="mb-2">Ollama does not appear to be running.</p>
+                        <p className="mb-2">{t('settings.apiConfig.ollama.notRunning')}</p>
                         <button
                           onClick={() => window.electronAPI?.openExternal('https://ollama.com/download')}
                           className="text-xs bg-red-600 hover:bg-red-500 text-white px-3 py-1.5 rounded transition-colors inline-flex items-center gap-1"
                         >
-                          Download Installer <Download size={12} />
+                          {t('settings.apiConfig.ollama.downloadInstaller')} <Download size={12} />
                         </button>
-                        <p className="mt-2 text-xs opacity-70">Install it, run it, then click refresh above.</p>
+                        <p className="mt-2 text-xs opacity-70">{t('settings.apiConfig.ollama.installHint')}</p>
                       </div>
                     )}
 
                     {ollamaStatus === 'running' && ollamaModelCount === 0 && (
                       <div className="text-sm text-zinc-400 mb-2 p-2 bg-yellow-900/10 border border-yellow-900/30 rounded">
-                        <p className="mb-2 text-yellow-500">Service is running but no models found!</p>
-                        <p className="text-xs mb-2">You need a model for translation/validation.</p>
+                        <p className="mb-2 text-yellow-500">{t('settings.apiConfig.ollama.noModels')}</p>
+                        <p className="text-xs mb-2">{t('settings.apiConfig.ollama.noModelsHint')}</p>
                         <div className="bg-black/50 p-2 rounded border border-zinc-700 font-mono text-xs select-all text-zinc-300 mb-2">
                           ollama pull llama3
                         </div>
-                        <p className="text-xs opacity-70">Copy the command above, run it in your Terminal/Powershell, wait for download, then refresh here.</p>
+                        <p className="text-xs opacity-70">{t('settings.apiConfig.ollama.copyCommandHint')}</p>
                       </div>
                     )}
 
                     {ollamaStatus === 'running' && ollamaModelCount > 0 && (
                       <div className="text-xs text-green-500/80 mb-2">
-                        ✅ Connected to local instance with {ollamaModelCount} available models.
+                        ✅ {t('settings.apiConfig.ollama.connected', { count: ollamaModelCount })}
                       </div>
                     )}
                   </div>
@@ -631,8 +638,8 @@ export function APIConfigSection() {
                 {/* ... API Key input ... */}
                 <div>
                   <label className="block text-sm font-medium mb-2">
-                    API Key
-                    {protocol === 'ollama' && <span className="text-zinc-500 font-normal ml-2">(Optional for Ollama)</span>}
+                    {t('settings.apiConfig.fields.apiKey')}
+                    {protocol === 'ollama' && <span className="text-zinc-500 font-normal ml-2">{t('settings.apiConfig.fields.optionalForOllama')}</span>}
                   </label>
                   <div className="relative">
                     <input
@@ -642,7 +649,7 @@ export function APIConfigSection() {
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') handleSaveApiKey(provider.key);
                       }}
-                      placeholder={`Enter ${provider.name} API key`}
+                      placeholder={t('settings.apiConfig.fields.enterApiKey', { name: provider.name })}
                       className={`w-full rounded-lg border ${bgInput} px-3 py-2 pr-24 text-sm ${localApiKeys[provider.key] !== undefined ? 'border-violet-500 ring-1 ring-violet-500' : ''}`}
                     />
                     <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-1">
@@ -653,7 +660,7 @@ export function APIConfigSection() {
                           disabled={fetchingModels[provider.key]}
                           className="px-2 py-1 text-xs bg-violet-600 hover:bg-violet-700 text-white rounded shadow-sm mr-1 disabled:opacity-50"
                         >
-                          {fetchingModels[provider.key] ? 'Verifying...' : 'Save'}
+                          {fetchingModels[provider.key] ? t('settings.apiConfig.fields.verifying') : t('settings.apiConfig.fields.save')}
                         </button>
                       )}
                       <button
@@ -669,14 +676,14 @@ export function APIConfigSection() {
 
                 {/* ... Model input ... */}
                 <div>
-                  <label className="block text-sm font-medium mb-2">Model</label>
+                  <label className="block text-sm font-medium mb-2">{t('settings.apiConfig.fields.model')}</label>
                   <div className="flex gap-2">
                     <div className="relative flex-1">
                       <ThemedSelect
                         value={config?.model || ''}
                         onChange={(val) => updateApiConfig(provider.key, 'model', val)}
-                        options={modelsList?.length > 0 ? modelsList : [{ value: '', label: 'No models fetched' }]}
-                        placeholder="Select model"
+                        options={modelsList?.length > 0 ? modelsList : [{ value: '', label: t('settings.apiConfig.fields.noModelsFetched') }]}
+                        placeholder={t('settings.apiConfig.fields.selectModel')}
                         ariaLabel="Model selection"
                       />
                     </div>
@@ -697,7 +704,7 @@ export function APIConfigSection() {
                         ? 'bg-zinc-800 text-zinc-500 border-zinc-800'
                         : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border-zinc-700'
                         }`}
-                      title="Fetch available models from API (also validates and saves API Key)"
+                      title={t('settings.apiConfig.fields.fetchModelsTooltip')}
                     >
                       <RefreshCw size={16} className={fetchingModels[provider.key] ? 'animate-spin' : ''} />
                     </button>
@@ -712,7 +719,7 @@ export function APIConfigSection() {
                   {fetchedModels[provider.key] && !fetchError[provider.key] && (
                     <div className="mt-1 flex items-center gap-1 text-green-500 text-xs">
                       <CheckCircle size={12} />
-                      <span>Fetched {fetchedModels[provider.key].length} models</span>
+                      <span>{t('settings.apiConfig.fields.fetchedModels', { count: fetchedModels[provider.key].length })}</span>
                     </div>
                   )}
                 </div>
@@ -720,7 +727,7 @@ export function APIConfigSection() {
                 {/* ... Base URL input ... */}
                 {((provider as any).showBaseUrl || isCustom) && (
                   <div>
-                    <label className="block text-sm font-medium mb-2">Base URL</label>
+                    <label className="block text-sm font-medium mb-2">{t('settings.apiConfig.fields.baseUrl')}</label>
                     <input
                       type="text"
                       value={config?.baseUrl || (provider as any).defaultBaseUrl}
@@ -740,25 +747,25 @@ export function APIConfigSection() {
       <div className={`rounded-xl border p-4 ${bgCard} border-dashed border-zinc-700`}>
         <div className="mb-4">
           <h4 className="font-medium flex items-center gap-2 mb-1">
-            <Plus size={16} /> Add Unlisted or Custom Provider
+            <Plus size={16} /> {t('settings.apiConfig.custom.title')}
           </h4>
           <p className="text-xs text-zinc-500">
-            Don't see your provider listed? Connect to any other compatible API or your own local/private server (e.g. Ollama, LocalAI).
+            {t('settings.apiConfig.custom.description')}
           </p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           <div>
-            <label className="block text-sm font-medium mb-1">Provider Name</label>
+            <label className="block text-sm font-medium mb-1">{t('settings.apiConfig.fields.providerName')}</label>
             <input
               type="text"
               value={customProviderName}
               onChange={(e) => setCustomProviderName(e.target.value)}
-              placeholder="e.g. LocalAI, Ollama"
+              placeholder={t('settings.apiConfig.fields.providerNamePlaceholder')}
               className={`w-full rounded-lg border ${bgInput} px-3 py-2 text-sm`}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Protocol / API Format</label>
+            <label className="block text-sm font-medium mb-1">{t('settings.apiConfig.fields.protocol')}</label>
             <ThemedSelect
               value={customProviderProtocol}
               onChange={(val) => setCustomProviderProtocol(val as any)}
@@ -773,7 +780,7 @@ export function APIConfigSection() {
             />
           </div>
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium mb-1">Base URL</label>
+            <label className="block text-sm font-medium mb-1">{t('settings.apiConfig.fields.baseUrl')}</label>
             <input
               type="text"
               value={customProviderBaseUrl}
@@ -784,12 +791,12 @@ export function APIConfigSection() {
           </div>
           <div className="md:col-span-2">
             <label className="block text-sm font-medium mb-1">
-              Custom Headers <span className="text-zinc-500 font-normal text-xs">(Optional JSON)</span>
+              {t('settings.apiConfig.fields.customHeaders')} <span className="text-zinc-500 font-normal text-xs">{t('settings.apiConfig.fields.optionalJson')}</span>
             </label>
             <textarea
               value={customProviderHeaders}
               onChange={(e) => setCustomProviderHeaders(e.target.value)}
-              placeholder={'{\n  "X-Custom-Auth": "secret",\n  "Organization": "my-org"\n}'}
+              placeholder={t('settings.apiConfig.fields.headersPlaceholder')}
               className={`w-full rounded-lg border ${bgInput} px-3 py-2 text-sm font-mono h-16`}
             />
           </div>
@@ -799,7 +806,7 @@ export function APIConfigSection() {
           disabled={!customProviderName}
           className="w-full py-2 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-50 text-white rounded-lg transition-colors font-medium border border-zinc-700"
         >
-          Add Custom Provider
+          {t('settings.apiConfig.custom.addProvider')}
         </button>
       </div>
 

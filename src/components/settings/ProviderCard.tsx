@@ -1,4 +1,5 @@
 import React, { useContext } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Eye, EyeOff, RefreshCw, CheckCircle, AlertCircle, Check } from 'lucide-react';
 import ThemeContext from '../../context/ThemeContext';
 
@@ -59,6 +60,7 @@ export function ProviderCard({
     onFetchModels,
     onDelete
 }: ProviderCardProps) {
+    const { t } = useTranslation();
     const { theme } = useContext(ThemeContext);
 
     const bgCard = 'border-border bg-card text-text';
@@ -91,7 +93,7 @@ export function ProviderCard({
                         <h4 className={`font-medium text-lg transition-colors ${isEnabled ? 'text-white' : 'text-zinc-400'}`}>
                             {providerName}
                             {isCustom && (
-                                <span className="ml-2 text-xs bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded">Custom</span>
+                                <span className="ml-2 text-xs bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded">{t('settings.apiConfig.provider.custom')}</span>
                             )}
                         </h4>
                         {isCustom && (
@@ -104,7 +106,7 @@ export function ProviderCard({
                         onClick={onDelete}
                         className="text-red-500 hover:text-red-400 text-sm px-3 py-1"
                     >
-                        Delete
+                        {t('settings.apiConfig.provider.delete')}
                     </button>
                 )}
             </div>
@@ -115,9 +117,9 @@ export function ProviderCard({
                     {/* API Key input */}
                     <div>
                         <label className="block text-sm font-medium mb-2">
-                            API Key
+                            {t('settings.apiConfig.fields.apiKey')}
                             {protocol === 'ollama' && (
-                                <span className="text-zinc-500 font-normal ml-2">(Optional for Ollama)</span>
+                                <span className="text-zinc-500 font-normal ml-2">{t('settings.apiConfig.fields.optionalForOllama')}</span>
                             )}
                         </label>
                         <div className="relative">
@@ -128,7 +130,7 @@ export function ProviderCard({
                                 onKeyDown={(e) => {
                                     if (e.key === 'Enter') onSaveApiKey();
                                 }}
-                                placeholder={`Enter ${providerName} API key`}
+                                placeholder={t('settings.apiConfig.fields.enterApiKey', { name: providerName })}
                                 className={`w-full rounded-lg border ${bgInput} px-3 py-2 pr-24 text-sm ${hasLocalKey ? 'border-violet-500 ring-1 ring-violet-500' : ''
                                     }`}
                             />
@@ -140,7 +142,7 @@ export function ProviderCard({
                                         disabled={isFetching}
                                         className="px-2 py-1 text-xs bg-violet-600 hover:bg-violet-700 text-white rounded shadow-sm mr-1 disabled:opacity-50"
                                     >
-                                        {isFetching ? 'Verifying...' : 'Save'}
+                                        {isFetching ? t('settings.apiConfig.fields.verifying') : t('settings.apiConfig.fields.save')}
                                     </button>
                                 )}
                                 <button
@@ -156,7 +158,7 @@ export function ProviderCard({
 
                     {/* Model selector */}
                     <div>
-                        <label className="block text-sm font-medium mb-2">Model</label>
+                        <label className="block text-sm font-medium mb-2">{t('settings.apiConfig.fields.model')}</label>
                         <div className="flex gap-2">
                             <div className="relative flex-1">
                                 <input
@@ -164,7 +166,7 @@ export function ProviderCard({
                                     list={`models-${providerKey}`}
                                     value={model}
                                     onChange={(e) => onModelChange(e.target.value)}
-                                    placeholder="Enter model name"
+                                    placeholder={t('settings.apiConfig.fields.enterModelName')}
                                     className={`w-full rounded-lg border ${bgInput} px-3 py-2 text-sm placeholder:text-zinc-600`}
                                 />
                                 <datalist id={`models-${providerKey}`}>
@@ -177,10 +179,10 @@ export function ProviderCard({
                                 onClick={onFetchModels}
                                 disabled={isFetching || (!apiKey && !localApiKey && protocol !== 'ollama')}
                                 className={`px-3 rounded-lg border flex items-center gap-2 transition-colors ${isFetching
-                                        ? 'bg-zinc-800 text-zinc-500 border-zinc-800'
-                                        : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border-zinc-700'
+                                    ? 'bg-zinc-800 text-zinc-500 border-zinc-800'
+                                    : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border-zinc-700'
                                     }`}
-                                title="Fetch available models from API (also validates and saves API Key)"
+                                title={t('settings.apiConfig.fields.fetchModelsTooltip')}
                             >
                                 <RefreshCw size={16} className={isFetching ? 'animate-spin' : ''} />
                             </button>
@@ -196,7 +198,7 @@ export function ProviderCard({
                         {fetchedModelsCount !== null && !fetchError && (
                             <div className="mt-1 flex items-center gap-1 text-green-500 text-xs">
                                 <CheckCircle size={12} />
-                                <span>Fetched {fetchedModelsCount} models</span>
+                                <span>{t('settings.apiConfig.fields.fetchedModels', { count: fetchedModelsCount })}</span>
                             </div>
                         )}
                     </div>
@@ -204,7 +206,7 @@ export function ProviderCard({
                     {/* Base URL input (if applicable) */}
                     {showBaseUrl && (
                         <div>
-                            <label className="block text-sm font-medium mb-2">Base URL</label>
+                            <label className="block text-sm font-medium mb-2">{t('settings.apiConfig.fields.baseUrl')}</label>
                             <input
                                 type="text"
                                 value={baseUrl || defaultBaseUrl}

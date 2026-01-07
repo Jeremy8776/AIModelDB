@@ -1,4 +1,5 @@
 import React, { useState, useContext } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ValidationSource } from '../services/validation';
 import { Model } from '../types';
 import { ApiDir, ProviderCfg } from '../types';
@@ -25,6 +26,7 @@ export function ValidationModal({
   onValidateDatabase
 }: ValidationModalProps) {
   const { theme } = useContext(ThemeContext);
+  const { t } = useTranslation();
   const [selected, setSelected] = useState<Set<string>>(new Set(selectedModels));
 
   // Lock body scroll when modal is open
@@ -79,10 +81,10 @@ export function ValidationModal({
     if (!onValidateDatabase) {
       window.dispatchEvent(new CustomEvent('show-confirmation', {
         detail: {
-          title: 'Validation Unavailable',
-          message: 'Database validation is not available.',
+          title: t('validationModal.alerts.unavailableTitle'),
+          message: t('validationModal.alerts.unavailableMessage'),
           type: 'alert',
-          confirmText: 'OK',
+          confirmText: t('common.ok'),
           onConfirm: () => { }
         }
       }));
@@ -92,10 +94,10 @@ export function ValidationModal({
     if (!hasEnabledProvider) {
       window.dispatchEvent(new CustomEvent('show-confirmation', {
         detail: {
-          title: 'API Provider Required',
-          message: 'Please configure at least one API provider in the Sync settings before validating.',
+          title: t('validationModal.alerts.providerRequiredTitle'),
+          message: t('validationModal.alerts.providerRequiredMessage'),
           type: 'alert',
-          confirmText: 'OK',
+          confirmText: t('common.ok'),
           onConfirm: () => { }
         }
       }));
@@ -110,20 +112,20 @@ export function ValidationModal({
       if (result.success && result.updatedModels) {
         window.dispatchEvent(new CustomEvent('show-confirmation', {
           detail: {
-            title: 'Validation Complete',
-            message: `Database validation completed successfully! ${result.updatedModels.length} models were validated and updated.`,
+            title: t('validationModal.alerts.completeTitle'),
+            message: t('validationModal.alerts.completeMessage', { count: result.updatedModels.length }),
             type: 'success',
-            confirmText: 'OK',
+            confirmText: t('common.ok'),
             onConfirm: () => onClose()
           }
         }));
       } else {
         window.dispatchEvent(new CustomEvent('show-confirmation', {
           detail: {
-            title: 'Validation Failed',
-            message: `Database validation failed: ${result.error || 'Unknown error'}`,
+            title: t('validationModal.alerts.failedTitle'),
+            message: t('validationModal.alerts.failedMessage', { error: result.error || t('common.unknown') }),
             type: 'error',
-            confirmText: 'OK',
+            confirmText: t('common.ok'),
             onConfirm: () => { }
           }
         }));
@@ -131,10 +133,10 @@ export function ValidationModal({
     } catch (error) {
       window.dispatchEvent(new CustomEvent('show-confirmation', {
         detail: {
-          title: 'Validation Error',
-          message: `Database validation failed: ${error instanceof Error ? error.message : String(error)}`,
+          title: t('validationModal.alerts.errorTitle'),
+          message: t('validationModal.alerts.failedMessage', { error: error instanceof Error ? error.message : String(error) }),
           type: 'error',
-          confirmText: 'OK',
+          confirmText: t('common.ok'),
           onConfirm: () => { }
         }
       }));
@@ -149,10 +151,10 @@ export function ValidationModal({
     if (!hasEnabledProvider) {
       window.dispatchEvent(new CustomEvent('show-confirmation', {
         detail: {
-          title: 'API Provider Required',
-          message: 'Please configure at least one API provider in the Sync settings before validating.',
+          title: t('validationModal.alerts.providerRequiredTitle'),
+          message: t('validationModal.alerts.providerRequiredMessage'),
           type: 'alert',
-          confirmText: 'OK',
+          confirmText: t('common.ok'),
           onConfirm: () => { }
         }
       }));
@@ -162,10 +164,10 @@ export function ValidationModal({
     if (sources.size === 0) {
       window.dispatchEvent(new CustomEvent('show-confirmation', {
         detail: {
-          title: 'Validation Source Required',
-          message: 'Please select at least one validation source.',
+          title: t('validationModal.alerts.sourceRequiredTitle'),
+          message: t('validationModal.alerts.sourceRequiredMessage'),
           type: 'alert',
-          confirmText: 'OK',
+          confirmText: t('common.ok'),
           onConfirm: () => { }
         }
       }));
@@ -175,10 +177,10 @@ export function ValidationModal({
     if (selected.size === 0) {
       window.dispatchEvent(new CustomEvent('show-confirmation', {
         detail: {
-          title: 'Models Required',
-          message: 'Please select at least one model to validate.',
+          title: t('validationModal.alerts.modelsRequiredTitle'),
+          message: t('validationModal.alerts.modelsRequiredMessage'),
           type: 'alert',
-          confirmText: 'OK',
+          confirmText: t('common.ok'),
           onConfirm: () => { }
         }
       }));
@@ -218,7 +220,7 @@ export function ValidationModal({
       <div className="w-full max-w-3xl max-h-[85vh] overflow-y-auto rounded-2xl border p-4 border-border bg-bg">
         <div className="flex flex-col h-full">
           <div className="p-5 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center">
-            <h2 className="text-lg font-semibold text-text">Model Validation</h2>
+            <h2 className="text-lg font-semibold text-text">{t('validationModal.title')}</h2>
             <button
               onClick={onClose}
               className="text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
@@ -233,14 +235,14 @@ export function ValidationModal({
             {!hasEnabledProvider && (
               <div className="mb-5 p-3 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-200 border border-yellow-600 dark:border-yellow-700 rounded-md">
                 <p className="text-sm">
-                  <strong>No API providers configured.</strong> Please configure at least one API provider in the Sync settings before using validation.
+                  <strong>{t('validationModal.noProviders')}</strong> {t('validationModal.configureProviders')}
                 </p>
               </div>
             )}
 
             {/* Validation Mode */}
             <div className="mb-5">
-              <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-100 mb-3">Validation Mode</h3>
+              <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-100 mb-3">{t('validationModal.mode')}</h3>
               <div className="space-y-3">
                 <label className="flex items-start gap-3 cursor-pointer">
                   <input
@@ -252,8 +254,8 @@ export function ValidationModal({
                     className="mt-1 text-violet-500 focus:ring-violet-500"
                   />
                   <div>
-                    <div className="text-sm font-medium text-text">Individual Model Validation</div>
-                    <div className="text-xs text-zinc-600 dark:text-zinc-400">Validate selected models one by one using various sources</div>
+                    <div className="text-sm font-medium text-text">{t('validationModal.individual')}</div>
+                    <div className="text-xs text-zinc-600 dark:text-zinc-400">{t('validationModal.individualDesc')}</div>
                   </div>
                 </label>
                 <label className="flex items-start gap-3 cursor-pointer">
@@ -266,8 +268,8 @@ export function ValidationModal({
                     className="mt-1 text-violet-500 focus:ring-violet-500"
                   />
                   <div>
-                    <div className="text-sm font-medium text-text">Full Database Validation with AI</div>
-                    <div className="text-xs text-zinc-600 dark:text-zinc-400">Upload entire database to GPT for comprehensive fact-checking and data completion</div>
+                    <div className="text-sm font-medium text-text">{t('validationModal.database')}</div>
+                    <div className="text-xs text-zinc-600 dark:text-zinc-400">{t('validationModal.databaseDesc')}</div>
                   </div>
                 </label>
               </div>
@@ -276,7 +278,7 @@ export function ValidationModal({
             {/* Validation Sources */}
             {validationMode === 'individual' && (
               <div className="mb-5">
-                <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-100 mb-3">Select Validation Sources</h3>
+                <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-100 mb-3">{t('validationModal.selectSources')}</h3>
                 <div className="flex flex-wrap gap-4">
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
@@ -294,7 +296,7 @@ export function ValidationModal({
                       onChange={() => handleToggleSource(ValidationSource.WEBSEARCH)}
                       className="rounded border-zinc-300 dark:border-zinc-600 text-violet-500 focus:ring-violet-500"
                     />
-                    <span className="text-sm text-zinc-700 dark:text-zinc-300">Web Search</span>
+                    <span className="text-sm text-zinc-700 dark:text-zinc-300">{t('validationResults.webSearchUsed').replace(' Used', '')}</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
@@ -313,25 +315,25 @@ export function ValidationModal({
             {validationMode === 'individual' && (
               <div className="mb-5">
                 <div className="flex justify-between items-center mb-3">
-                  <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-100">Select Models to Validate</h3>
+                  <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{t('validationModal.selectModels')}</h3>
                   <button
                     onClick={handleSelectAll}
                     className="text-xs text-violet-500 hover:text-violet-600 dark:text-violet-400 dark:hover:text-violet-300"
                   >
-                    {selected.size === models.length ? 'Deselect All' : 'Select All'}
+                    {selected.size === models.length ? t('validationModal.deselectAll') : t('validationModal.selectAll')}
                   </button>
                 </div>
 
                 {incompleteModels.length > 0 && (
                   <div className="mb-3 p-2.5 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-200 rounded-md text-sm border border-yellow-600 dark:border-yellow-800">
                     <p className="font-medium text-yellow-700 dark:text-yellow-200">
-                      {incompleteModels.length} models have incomplete information
+                      {t('validationModal.incompleteWarning', { count: incompleteModels.length })}
                     </p>
                     <button
                       className="text-violet-500 hover:text-violet-600 dark:text-violet-400 dark:hover:text-violet-300 text-xs mt-1"
                       onClick={() => setSelected(new Set(incompleteModels.map(m => m.id)))}
                     >
-                      Select only incomplete models
+                      {t('validationModal.selectIncomplete')}
                     </button>
                   </div>
                 )}
@@ -345,9 +347,9 @@ export function ValidationModal({
                           <th className="py-2 px-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider w-10">
                             <span className="sr-only">Select</span>
                           </th>
-                          <th className="py-2 px-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Name</th>
-                          <th className="py-2 px-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Provider</th>
-                          <th className="py-2 px-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Domain</th>
+                          <th className="py-2 px-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">{t('table.name')}</th>
+                          <th className="py-2 px-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">{t('table.provider')}</th>
+                          <th className="py-2 px-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">{t('table.domain')}</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-zinc-200 dark:divide-zinc-700">
@@ -384,7 +386,7 @@ export function ValidationModal({
                 </div>
 
                 <div className="text-xs text-zinc-500 dark:text-zinc-400 mt-2">
-                  {selected.size} of {models.length} models selected
+                  {t('validationModal.modelsSelected', { count: selected.size, total: models.length })}
                 </div>
               </div>
             )}
@@ -397,7 +399,7 @@ export function ValidationModal({
               onClick={onClose}
               className="px-4 py-2 rounded-lg border transition-colors border-border bg-card text-text hover:bg-accent hover:text-white"
             >
-              Cancel
+              {t('common.cancel')}
             </button>
             <button
               onClick={handleSubmit}
@@ -408,21 +410,21 @@ export function ValidationModal({
               }
               className="px-4 py-2 text-sm rounded-lg bg-accent text-white hover:bg-accent-dark disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
               title={!hasEnabledProvider
-                ? 'Configure API providers in Sync settings'
+                ? t('validationModal.configureProviders')
                 : validationMode === 'individual' && sources.size === 0
-                  ? 'Select at least one validation source'
+                  ? t('validationModal.alerts.sourceRequiredMessage')
                   : validationMode === 'individual' && selected.size === 0
-                    ? 'Select at least one model'
+                    ? t('validationModal.alerts.modelsRequiredMessage')
                     : validationMode === 'database'
-                      ? 'Validate entire database with AI'
-                      : 'Start validation'}
+                      ? t('validationModal.startDatabase')
+                      : t('validationModal.startIndividual')}
             >
               {isValidatingDatabase && (
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
               )}
               {validationMode === 'database'
-                ? (isValidatingDatabase ? 'Validating Database...' : 'Validate Database with AI')
-                : 'Start Individual Validation'
+                ? (isValidatingDatabase ? t('validationModal.validatingDatabase') : t('validationModal.startDatabase'))
+                : t('validationModal.startIndividual')
               }
             </button>
           </div>

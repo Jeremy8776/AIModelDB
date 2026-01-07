@@ -1,4 +1,5 @@
-import React, { useState, useContext, useEffect } from 'react';
+import React, { useState, useContext, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Database, Key, CheckCircle, ArrowRight, ArrowLeft, X, Cpu, RefreshCw, AlertCircle } from 'lucide-react';
 import ThemeContext from '../context/ThemeContext';
 import { useSettings } from '../context/SettingsContext';
@@ -15,6 +16,7 @@ interface OnboardingWizardProps {
 
 export function OnboardingWizard({ isOpen, onClose, onComplete, initialStep = 1 }: OnboardingWizardProps) {
     const { theme } = useContext(ThemeContext);
+    const { t } = useTranslation();
     const { settings, saveSettings } = useSettings();
     const [step, setStep] = useState(initialStep);
 
@@ -94,28 +96,29 @@ export function OnboardingWizard({ isOpen, onClose, onComplete, initialStep = 1 
     // ... (render logic)
 
     // Update Progress Indicator 
-    const steps = [
-        { num: 1, label: 'Sources' },
-        { num: 2, label: 'Local AI' },
-        { num: 3, label: 'API Keys' },
-        { num: 4, label: 'Discovery' },
-        { num: 5, label: 'Done' }
-    ];
+    // Update Progress Indicator 
+    const steps = useMemo(() => [
+        { num: 1, label: t('onboarding.steps.sources') },
+        { num: 2, label: t('onboarding.steps.localAI') },
+        { num: 3, label: t('onboarding.steps.apiKeys') },
+        { num: 4, label: t('onboarding.steps.discovery') },
+        { num: 5, label: t('onboarding.steps.done') }
+    ], [t]);
 
 
     const bgModal = 'border-border bg-bg text-text';
     const bgCard = 'border-border bg-card text-text';
     const bgInput = 'border-border bg-input text-text';
 
-    const dataSources = [
-        { key: 'huggingface', label: 'HuggingFace', description: 'Popular open-source models', requiresKey: false },
-        { key: 'github', label: 'GitHub', description: 'AI repositories and projects', requiresKey: true, keyUrl: 'https://github.com/settings/tokens' },
-        { key: 'artificialanalysis', label: 'Artificial Analysis', description: 'Model benchmarks', requiresKey: true, keyUrl: 'https://artificialanalysis.ai/documentation' },
-        { key: 'civitai', label: 'Civitai', description: 'Community AI models', requiresKey: false },
-        { key: 'openmodeldb', label: 'OpenModelDB', description: 'Open model database', requiresKey: false },
-        { key: 'civitasbay', label: 'CivitasBay', description: 'AI model marketplace', requiresKey: false },
-        { key: 'ollamaLibrary', label: 'Ollama Library', description: 'Top models from Ollama library', requiresKey: false },
-    ];
+    const dataSources = useMemo(() => [
+        { key: 'huggingface', label: 'HuggingFace', description: t('onboarding.sourceDescs.huggingface'), requiresKey: false },
+        { key: 'github', label: 'GitHub', description: t('onboarding.sourceDescs.github'), requiresKey: true, keyUrl: 'https://github.com/settings/tokens' },
+        { key: 'artificialanalysis', label: 'Artificial Analysis', description: t('onboarding.sourceDescs.artificialanalysis'), requiresKey: true, keyUrl: 'https://artificialanalysis.ai/documentation' },
+        { key: 'civitai', label: 'Civitai', description: t('onboarding.sourceDescs.civitai'), requiresKey: false },
+        { key: 'openmodeldb', label: 'OpenModelDB', description: t('onboarding.sourceDescs.openmodeldb'), requiresKey: false },
+        { key: 'civitasbay', label: 'CivitasBay', description: t('onboarding.sourceDescs.civitasbay'), requiresKey: false },
+        { key: 'ollamaLibrary', label: 'Ollama Library', description: t('onboarding.sourceDescs.ollamaLibrary'), requiresKey: false },
+    ], [t]);
 
     const sourcesRequiringKeys = dataSources.filter(s => s.requiresKey && selectedSources[s.key]);
 
@@ -173,8 +176,8 @@ export function OnboardingWizard({ isOpen, onClose, onComplete, initialStep = 1 
                     <div className="flex items-center gap-3">
                         <Database size={24} className="text-accent" />
                         <div>
-                            <h2 className="text-xl font-semibold">Welcome to Model Database</h2>
-                            <p className="text-sm text-zinc-500">Let's set up your data sources</p>
+                            <h2 className="text-xl font-semibold">{t('onboarding.welcome')}</h2>
+                            <p className="text-sm text-zinc-500">{t('onboarding.subtitle')}</p>
                         </div>
                     </div>
                     <button onClick={onClose} className="rounded-lg p-2 hover:bg-zinc-800 transition-colors">
@@ -207,8 +210,8 @@ export function OnboardingWizard({ isOpen, onClose, onComplete, initialStep = 1 
                     {step === 1 && (
                         <div className="space-y-4">
                             <div>
-                                <h3 className="text-lg font-semibold mb-2">Select Data Sources</h3>
-                                <p className="text-sm text-zinc-500 mb-4">Choose which platforms you want to sync models from.</p>
+                                <h3 className="text-lg font-semibold mb-2">{t('onboarding.sourcesTitle')}</h3>
+                                <p className="text-sm text-zinc-500 mb-4">{t('onboarding.sourcesDesc')}</p>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                 {dataSources.map((source) => {
@@ -241,12 +244,11 @@ export function OnboardingWizard({ isOpen, onClose, onComplete, initialStep = 1 
                             <div>
                                 <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
                                     <Cpu size={20} className="text-amber-500" />
-                                    Local AI Validation
+                                    {t('onboarding.localAITitle')}
                                 </h3>
                                 <div className="text-sm text-zinc-500 space-y-2">
                                     <p>
-                                        Run models locally to translate Chinese content and validate metadata without API costs.
-                                        We recommend <span className="font-semibold text-white">Ollama</span> for the best experience.
+                                        {t('onboarding.localAIDesc')}
                                     </p>
                                 </div>
                             </div>
@@ -266,7 +268,7 @@ export function OnboardingWizard({ isOpen, onClose, onComplete, initialStep = 1 
                                             </div>
                                         </div>
                                         <div>
-                                            <h4 className="font-medium text-lg">Enable Ollama Integration</h4>
+                                            <h4 className="font-medium text-lg">{t('onboarding.enableOllama')}</h4>
                                             <p className="text-xs text-zinc-500">Connect to local Ollama instance (127.0.0.1:11434)</p>
                                         </div>
                                     </div>
@@ -275,11 +277,11 @@ export function OnboardingWizard({ isOpen, onClose, onComplete, initialStep = 1 
                                 {enableOllama && (
                                     <div className="bg-zinc-900/50 rounded-lg p-4 border border-zinc-800 ml-9">
                                         <div className="flex items-center justify-between mb-3">
-                                            <span className="text-sm font-medium text-zinc-300">Status Check</span>
+                                            <span className="text-sm font-medium text-zinc-300">{t('onboarding.ollamaStatus')}</span>
                                             <div className="flex items-center gap-2">
-                                                {ollamaStatus === 'checking' && <span className="text-xs text-yellow-500 animate-pulse">Checking...</span>}
-                                                {ollamaStatus === 'running' && <span className="flex items-center gap-1 text-xs text-green-400"><CheckCircle size={12} /> Running</span>}
-                                                {ollamaStatus === 'down' && <span className="flex items-center gap-1 text-xs text-red-400"><AlertCircle size={12} /> Not Detected</span>}
+                                                {ollamaStatus === 'checking' && <span className="text-xs text-yellow-500 animate-pulse">{t('onboarding.ollamaChecking')}</span>}
+                                                {ollamaStatus === 'running' && <span className="flex items-center gap-1 text-xs text-green-400"><CheckCircle size={12} /> {t('onboarding.ollamaRunning')}</span>}
+                                                {ollamaStatus === 'down' && <span className="flex items-center gap-1 text-xs text-red-400"><AlertCircle size={12} /> {t('onboarding.ollamaDown')}</span>}
                                                 <button onClick={checkOllamaStatus} className="p-1 hover:bg-zinc-700 rounded text-zinc-400">
                                                     <RefreshCw size={14} className={ollamaStatus === 'checking' ? 'animate-spin' : ''} />
                                                 </button>
@@ -340,9 +342,9 @@ export function OnboardingWizard({ isOpen, onClose, onComplete, initialStep = 1 
                                             <div className="p-3 bg-green-900/10 border border-green-900/30 rounded">
                                                 <div className="text-sm text-green-400 font-medium flex items-center gap-2">
                                                     <CheckCircle size={16} />
-                                                    Ready to go!
+                                                    {t('onboarding.ollamaReady')}
                                                 </div>
-                                                <p className="text-xs text-green-500/70 mt-1">Found {ollamaModelCount} local models.</p>
+                                                <p className="text-xs text-green-500/70 mt-1">{t('onboarding.ollamaFoundModels', { count: ollamaModelCount })}</p>
                                             </div>
                                         )}
                                     </div>
@@ -355,11 +357,11 @@ export function OnboardingWizard({ isOpen, onClose, onComplete, initialStep = 1 
                     {step === 3 && (
                         <div className="space-y-4">
                             <div>
-                                <h3 className="text-lg font-semibold mb-2">API Keys (Optional)</h3>
+                                <h3 className="text-lg font-semibold mb-2">{t('onboarding.apiKeysTitle')}</h3>
                                 <p className="text-sm text-zinc-500 mb-4">
                                     {sourcesRequiringKeys.length > 0
-                                        ? 'These sources work without keys but API tokens can increase rate limits. You can skip this step.'
-                                        : 'None of your selected sources need API keys. Click Next to continue.'}
+                                        ? t('onboarding.apiKeysDesc')
+                                        : t('onboarding.apiKeys.noneNeeded')}
                                 </p>
                             </div>
 
@@ -387,13 +389,13 @@ export function OnboardingWizard({ isOpen, onClose, onComplete, initialStep = 1 
                                                         className={`w-full rounded-lg border ${bgInput} px-3 py-2 text-sm font-mono mb-2`}
                                                     />
                                                     <p className="text-xs text-zinc-500">
-                                                        Optional - increases rate limit from 60 to 5000 requests/hour.{' '}
+                                                        {t('onboarding.apiKeys.githubHint')}{' '}
                                                         <a
                                                             href={source.keyUrl}
                                                             onClick={(e) => handleExternalLink(e, source.keyUrl!)}
                                                             className="text-accent hover:underline cursor-pointer"
                                                         >
-                                                            Get token
+                                                            {t('onboarding.apiKeys.getToken')}
                                                         </a>
                                                     </p>
                                                 </>
@@ -409,13 +411,13 @@ export function OnboardingWizard({ isOpen, onClose, onComplete, initialStep = 1 
                                                         className={`w-full rounded-lg border ${bgInput} px-3 py-2 text-sm font-mono mb-2`}
                                                     />
                                                     <p className="text-xs text-zinc-500">
-                                                        Optional - enables benchmark data.{' '}
+                                                        {t('onboarding.apiKeys.aaHint')}{' '}
                                                         <a
                                                             href={source.keyUrl}
                                                             onClick={(e) => handleExternalLink(e, source.keyUrl!)}
                                                             className="text-accent hover:underline cursor-pointer"
                                                         >
-                                                            Get free key
+                                                            {t('onboarding.apiKeys.getFreeKey')}
                                                         </a>
                                                     </p>
                                                 </>
@@ -427,7 +429,7 @@ export function OnboardingWizard({ isOpen, onClose, onComplete, initialStep = 1 
                                 <div className={`rounded-xl border p-6 ${bgCard} text-center`}>
                                     <CheckCircle size={48} className="text-green-500 mx-auto mb-3" />
                                     <p className="text-sm text-zinc-500">
-                                        All selected sources are ready to use!
+                                        {t('onboarding.apiKeys.allReady')}
                                     </p>
                                 </div>
                             )}
@@ -439,11 +441,11 @@ export function OnboardingWizard({ isOpen, onClose, onComplete, initialStep = 1 
                         <div className="space-y-4">
                             <div>
                                 <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
-                                    AI Validation
-                                    <span className="px-2 py-0.5 text-[10px] font-bold bg-amber-500/20 text-amber-400 rounded-full uppercase">Alpha</span>
+                                    {t('onboarding.discovery.title')}
+                                    <span className="px-2 py-0.5 text-[10px] font-bold bg-amber-500/20 text-amber-400 rounded-full uppercase">{t('onboarding.discovery.alpha')}</span>
                                 </h3>
                                 <p className="text-sm text-zinc-500 mb-4">
-                                    Add an LLM API key to enable AI-powered validation. This is optional and experimental.
+                                    {t('onboarding.discovery.desc')}
                                 </p>
 
                                 <div className={`p-4 rounded-lg border border-zinc-700 bg-zinc-900/30 mb-4`}>
@@ -464,10 +466,10 @@ export function OnboardingWizard({ isOpen, onClose, onComplete, initialStep = 1 
                                         </div>
                                         <div className="flex-1">
                                             <div className={`text-sm font-medium ${selectedSources.llmDiscovery ? 'text-white' : 'text-zinc-300'}`}>
-                                                Enable LLM-powered Model Discovery
+                                                {t('onboarding.discovery.enableDiscovery')}
                                             </div>
                                             <div className="text-xs text-zinc-500 mt-0.5">
-                                                Use AI to automatically discover and classify models from unstructured sources. Requires an API key below.
+                                                {t('onboarding.discovery.enableDiscoveryDesc')}
                                             </div>
                                         </div>
                                     </label>
@@ -514,7 +516,7 @@ export function OnboardingWizard({ isOpen, onClose, onComplete, initialStep = 1 
                             </div>
 
                             <p className="text-xs text-zinc-600 text-center mt-4">
-                                You can skip this step and add API keys later in Settings.
+                                {t('onboarding.discovery.skip')}
                             </p>
                         </div>
                     )}
@@ -524,13 +526,13 @@ export function OnboardingWizard({ isOpen, onClose, onComplete, initialStep = 1 
                         <div className="space-y-4">
                             <div className="text-center py-8">
                                 <CheckCircle size={64} className="text-green-500 mx-auto mb-4" />
-                                <h3 className="text-xl font-semibold mb-2">You're All Set!</h3>
+                                <h3 className="text-xl font-semibold mb-2">{t('onboarding.completionTitle')}</h3>
                                 <p className="text-sm text-zinc-500 mb-6">
-                                    Your data sources are configured. Click "Start Syncing" to fetch models from your selected sources.
+                                    {t('onboarding.completionDesc')}
                                 </p>
 
                                 <div className={`rounded-xl border p-4 ${bgCard} text-left max-w-md mx-auto`}>
-                                    <h4 className="font-medium mb-2">Selected Sources:</h4>
+                                    <h4 className="font-medium mb-2">{t('onboarding.selectedSources')}</h4>
                                     <ul className="text-sm text-zinc-500 space-y-1">
                                         {Object.entries(selectedSources)
                                             .filter(([key, enabled]) => enabled && key !== 'llmDiscovery') // Exclude LLM toggle from sources list
@@ -540,21 +542,21 @@ export function OnboardingWizard({ isOpen, onClose, onComplete, initialStep = 1 
                                                 return (
                                                     <li key={key} className="flex items-center gap-2">
                                                         <CheckCircle size={14} className="text-green-500" />
-                                                        {source.label} <span className="text-xs opacity-70">(Ready to Sync)</span>
+                                                        {source.label} <span className="text-xs opacity-70">({t('onboarding.status.readyToSync')})</span>
                                                     </li>
                                                 );
                                             })}
                                     </ul>
                                     {enableOllama && (
                                         <>
-                                            <h4 className="font-medium mb-2 mt-4">Local AI Status:</h4>
+                                            <h4 className="font-medium mb-2 mt-4">{t('onboarding.localAIStatus')}</h4>
                                             <div className="text-sm text-zinc-500 flex items-center gap-2">
                                                 {ollamaStatus === 'running' ? (
                                                     <CheckCircle size={14} className="text-green-500" />
                                                 ) : (
                                                     <AlertCircle size={14} className="text-amber-500" />
                                                 )}
-                                                Ollama ({ollamaStatus === 'running' ? 'Connected & Ready' : 'Not Connected'})
+                                                Ollama ({ollamaStatus === 'running' ? t('onboarding.status.connected') : t('onboarding.status.notConnected')})
                                             </div>
                                         </>
                                     )}
@@ -575,7 +577,7 @@ export function OnboardingWizard({ isOpen, onClose, onComplete, initialStep = 1 
                             }`}
                     >
                         <ArrowLeft size={16} />
-                        Back
+                        {t('onboarding.back')}
                     </button>
 
                     <div className="flex gap-2">
@@ -583,7 +585,7 @@ export function OnboardingWizard({ isOpen, onClose, onComplete, initialStep = 1 
                             onClick={onClose}
                             className="px-4 py-2 rounded-lg font-medium hover:bg-zinc-800 transition-colors"
                         >
-                            Skip Setup
+                            {t('onboarding.skip')}
                         </button>
 
                         {step < 5 ? (
@@ -591,7 +593,7 @@ export function OnboardingWizard({ isOpen, onClose, onComplete, initialStep = 1 
                                 onClick={() => setStep(step + 1)}
                                 className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium bg-accent hover:bg-accent-dark text-white transition-colors"
                             >
-                                Next
+                                {t('onboarding.next')}
                                 <ArrowRight size={16} />
                             </button>
                         ) : (
@@ -600,12 +602,12 @@ export function OnboardingWizard({ isOpen, onClose, onComplete, initialStep = 1 
                                 className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium bg-accent hover:bg-accent-dark text-white transition-colors"
                             >
                                 <CheckCircle size={16} />
-                                Start Syncing
+                                {t('onboarding.startSyncing')}
                             </button>
                         )}
                     </div>
                 </div>
             </div>
-        </div>
+        </div >
     );
 }

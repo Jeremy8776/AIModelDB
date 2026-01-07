@@ -1,4 +1,5 @@
 import React, { useContext, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { PlusCircle } from 'lucide-react';
 import ThemeContext from '../context/ThemeContext';
 import { Domain, Hosting, LicenseInfo, Model } from '../types';
@@ -14,6 +15,7 @@ interface AddModelModalProps {
 }
 
 export function AddModelModal({ isOpen, onClose, onAddModel, domains, addConsoleLog }: AddModelModalProps) {
+  const { t } = useTranslation();
   const { theme } = useContext(ThemeContext);
 
   // Lock body scroll when modal is open
@@ -111,53 +113,53 @@ export function AddModelModal({ isOpen, onClose, onAddModel, domains, addConsole
         <div className="mb-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <PlusCircle className="size-5" />
-            <h3 className="text-base font-semibold">Add New Model</h3>
+            <h3 className="text-base font-semibold">{t('addModel.title')}</h3>
           </div>
-          <button onClick={onClose} className={`rounded-xl ${bgInput} px-3 py-1 text-xs`}>Close</button>
+          <button onClick={onClose} className={`rounded-xl ${bgInput} px-3 py-1 text-xs`}>{t('common.close')}</button>
         </div>
 
         <div className="space-y-4">
           {/* Basic Information */}
           <div className="rounded-xl border p-4 border-border bg-card">
-            <h4 className="mb-3 font-medium">Basic Information</h4>
+            <h4 className="mb-3 font-medium">{t('addModel.basicInfo')}</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs mb-1">Model Name <span className="text-rose-500">*</span></label>
+                <label className="block text-xs mb-1">{t('addModel.modelName')} <span className="text-rose-500">*</span></label>
                 <input
                   value={newModel.name || ''}
                   onChange={e => setNewModel({ ...newModel, name: e.target.value })}
-                  placeholder="e.g., Llama 3 70B"
+                  placeholder={t('addModel.modelNamePlaceholder')}
                   className={`w-full rounded-lg ${bgInput} px-2 py-1.5 text-sm`}
                   required
                 />
               </div>
               <div>
-                <label className="block text-xs mb-1">Provider/Developer</label>
+                <label className="block text-xs mb-1">{t('addModel.provider')}</label>
                 <input
                   value={newModel.provider || ''}
                   onChange={e => setNewModel({ ...newModel, provider: e.target.value })}
-                  placeholder="e.g., Meta"
+                  placeholder={t('addModel.providerPlaceholder')}
                   className={`w-full rounded-lg ${bgInput} px-2 py-1.5 text-sm`}
                 />
               </div>
               <div>
-                <label className="block text-xs mb-1">Domain <span className="text-rose-500">*</span></label>
+                <label className="block text-xs mb-1">{t('addModel.domain')} <span className="text-rose-500">*</span></label>
                 <select
                   value={newModel.domain || 'LLM'}
                   onChange={e => setNewModel({ ...newModel, domain: e.target.value as Domain })}
                   className={`w-full rounded-lg ${bgInput} px-2 py-1.5 text-sm`}
                 >
                   {domains.filter(d => d !== 'All').map(domain => (
-                    <option key={domain} value={domain}>{domain}</option>
+                    <option key={domain} value={domain}>{t(`domains.${domain}`, domain)}</option>
                   ))}
                 </select>
               </div>
               <div>
-                <label className="block text-xs mb-1">Parameters</label>
+                <label className="block text-xs mb-1">{t('addModel.parameters')}</label>
                 <input
                   value={newModel.parameters || ''}
                   onChange={e => setNewModel({ ...newModel, parameters: e.target.value })}
-                  placeholder="e.g., 70B"
+                  placeholder={t('addModel.parametersPlaceholder')}
                   className={`w-full rounded-lg ${bgInput} px-2 py-1.5 text-sm`}
                 />
               </div>
@@ -166,23 +168,23 @@ export function AddModelModal({ isOpen, onClose, onAddModel, domains, addConsole
 
           {/* URLs & Resources */}
           <div className="rounded-xl border p-4 border-border bg-card">
-            <h4 className="mb-3 font-medium">URLs & Resources</h4>
+            <h4 className="mb-3 font-medium">{t('addModel.urlsAndResources')}</h4>
             <div className="grid grid-cols-1 gap-4">
               <div>
-                <label className="block text-xs mb-1">Model URL</label>
+                <label className="block text-xs mb-1">{t('addModel.modelUrl')}</label>
                 <input
                   value={newModel.url || ''}
                   onChange={e => setNewModel({ ...newModel, url: e.target.value })}
-                  placeholder="e.g., https://huggingface.co/meta-llama/Llama-3-70b"
+                  placeholder={t('addModel.modelUrlPlaceholder')}
                   className={`w-full rounded-lg ${bgInput} px-2 py-1.5 text-sm`}
                 />
               </div>
               <div>
-                <label className="block text-xs mb-1">Repository URL</label>
+                <label className="block text-xs mb-1">{t('addModel.repoUrl')}</label>
                 <input
                   value={newModel.repo || ''}
                   onChange={e => setNewModel({ ...newModel, repo: e.target.value })}
-                  placeholder="e.g., https://github.com/meta-llama/llama"
+                  placeholder={t('addModel.repoUrlPlaceholder')}
                   className={`w-full rounded-lg ${bgInput} px-2 py-1.5 text-sm`}
                 />
               </div>
@@ -191,10 +193,10 @@ export function AddModelModal({ isOpen, onClose, onAddModel, domains, addConsole
 
           {/* License Information */}
           <div className="rounded-xl border p-4 border-border bg-card">
-            <h4 className="mb-3 font-medium">License Information</h4>
+            <h4 className="mb-3 font-medium">{t('addModel.licenseInfo')}</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs mb-1">License Name <span className="text-rose-500">*</span></label>
+                <label className="block text-xs mb-1">{t('addModel.licenseName')} <span className="text-rose-500">*</span></label>
                 <input
                   value={newModel.license?.name || ''}
                   onChange={e => {
@@ -214,12 +216,12 @@ export function AddModelModal({ isOpen, onClose, onAddModel, domains, addConsole
                       }
                     });
                   }}
-                  placeholder="e.g., Apache-2.0, MIT, Custom"
+                  placeholder={t('addModel.licenseNamePlaceholder')}
                   className={`w-full rounded-lg ${bgInput} px-2 py-1.5 text-sm`}
                 />
               </div>
               <div>
-                <label className="block text-xs mb-1">License Type</label>
+                <label className="block text-xs mb-1">{t('addModel.licenseType')}</label>
                 <select
                   value={newModel.license?.type || 'OSI'}
                   onChange={e => {
@@ -241,11 +243,11 @@ export function AddModelModal({ isOpen, onClose, onAddModel, domains, addConsole
                   }}
                   className={`w-full rounded-lg ${bgInput} px-2 py-1.5 text-sm`}
                 >
-                  <option value="OSI">OSI (Open Source)</option>
-                  <option value="Copyleft">Copyleft</option>
-                  <option value="Non-Commercial">Non-Commercial</option>
-                  <option value="Custom">Custom</option>
-                  <option value="Proprietary">Proprietary</option>
+                  <option value="OSI">{t('addModel.licenseTypeOSI')}</option>
+                  <option value="Copyleft">{t('licenses.Copyleft')}</option>
+                  <option value="Non-Commercial">{t('licenses.Non-Commercial')}</option>
+                  <option value="Custom">{t('licenses.Custom')}</option>
+                  <option value="Proprietary">{t('licenses.Proprietary')}</option>
                 </select>
               </div>
             </div>
@@ -274,7 +276,7 @@ export function AddModelModal({ isOpen, onClose, onAddModel, domains, addConsole
                   }}
                   className="mr-2"
                 />
-                Commercial Use
+                {t('filters.commercialUse')}
               </label>
               <label className="flex items-center text-xs">
                 <input
@@ -297,9 +299,8 @@ export function AddModelModal({ isOpen, onClose, onAddModel, domains, addConsole
                       }
                     });
                   }}
-                  className="mr-2"
                 />
-                Attribution Required
+                {t('comparison.attributes.attributionRequired')}
               </label>
               <label className="flex items-center text-xs">
                 <input
@@ -349,14 +350,14 @@ export function AddModelModal({ isOpen, onClose, onAddModel, domains, addConsole
                   }}
                   className="mr-2"
                 />
-                Copyleft
+                {t('licenses.Copyleft')}
               </label>
             </div>
           </div>
 
           {/* Hosting & Availability */}
           <div className="rounded-xl border p-4 border-border bg-card">
-            <h4 className="mb-3 font-medium">Hosting & Availability</h4>
+            <h4 className="mb-3 font-medium">{t('addModel.additionalInfo')}</h4>
             <div className="grid grid-cols-1 gap-2">
               <label className="flex items-center text-xs">
                 <input
@@ -378,7 +379,7 @@ export function AddModelModal({ isOpen, onClose, onAddModel, domains, addConsole
                   }}
                   className="mr-2"
                 />
-                Weights Available
+                {t('modelDetail.weightsAvailable')}
               </label>
               <label className="flex items-center text-xs">
                 <input
@@ -400,7 +401,7 @@ export function AddModelModal({ isOpen, onClose, onAddModel, domains, addConsole
                   }}
                   className="mr-2"
                 />
-                API Available
+                {t('modelDetail.apiAvailable')}
               </label>
               <label className="flex items-center text-xs">
                 <input
@@ -422,17 +423,17 @@ export function AddModelModal({ isOpen, onClose, onAddModel, domains, addConsole
                   }}
                   className="mr-2"
                 />
-                On-Premise Friendly
+                {t('modelDetail.onPremiseFriendly')}
               </label>
             </div>
           </div>
 
           {/* Dates & Additional Info */}
           <div className="rounded-xl border p-4 border-border bg-card">
-            <h4 className="mb-3 font-medium">Additional Information</h4>
+            <h4 className="mb-3 font-medium">{t('addModel.additionalInfo')}</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs mb-1">Updated Date</label>
+                <label className="block text-xs mb-1">{t('addModel.updatedDate')}</label>
                 <input
                   type="date"
                   value={newModel.updated_at?.split('T')[0] || ''}
@@ -441,7 +442,7 @@ export function AddModelModal({ isOpen, onClose, onAddModel, domains, addConsole
                 />
               </div>
               <div>
-                <label className="block text-xs mb-1">Release Date</label>
+                <label className="block text-xs mb-1">{t('addModel.releaseDate')}</label>
                 <input
                   type="date"
                   value={newModel.release_date?.split('T')[0] || ''}
@@ -450,16 +451,16 @@ export function AddModelModal({ isOpen, onClose, onAddModel, domains, addConsole
                 />
               </div>
               <div>
-                <label className="block text-xs mb-1">Context Window</label>
+                <label className="block text-xs mb-1">{t('addModel.contextWindow')}</label>
                 <input
                   value={newModel.context_window || ''}
                   onChange={e => setNewModel({ ...newModel, context_window: e.target.value })}
-                  placeholder="e.g., 4k, 8k, 32k"
+                  placeholder={t('addModel.contextWindowPlaceholder')}
                   className={`w-full rounded-lg ${bgInput} px-2 py-1.5 text-sm`}
                 />
               </div>
               <div>
-                <label className="block text-xs mb-1">Downloads</label>
+                <label className="block text-xs mb-1">{t('addModel.downloads')}</label>
                 <input
                   type="number"
                   value={newModel.downloads || 0}
@@ -468,14 +469,14 @@ export function AddModelModal({ isOpen, onClose, onAddModel, domains, addConsole
                 />
               </div>
               <div className="md:col-span-2">
-                <label className="block text-xs mb-1">Tags (comma separated)</label>
+                <label className="block text-xs mb-1">{t('addModel.tags')}</label>
                 <input
                   value={(newModel.tags || []).join(', ')}
                   onChange={e => setNewModel({
                     ...newModel,
                     tags: e.target.value.split(',').map(t => t.trim()).filter(Boolean)
                   })}
-                  placeholder="e.g., transformer, optimized, 8-bit"
+                  placeholder={t('addModel.tagsPlaceholder')}
                   className={`w-full rounded-lg ${bgInput} px-2 py-1.5 text-sm`}
                 />
               </div>
@@ -483,13 +484,13 @@ export function AddModelModal({ isOpen, onClose, onAddModel, domains, addConsole
           </div>
 
           <div className="flex justify-end gap-2 pt-2">
-            <button onClick={onClose} className={`rounded-xl ${bgInput} px-4 py-2 text-sm`}>Cancel</button>
+            <button onClick={onClose} className={`rounded-xl ${bgInput} px-4 py-2 text-sm`}>{t('common.cancel')}</button>
             <button
               onClick={handleAddModel}
               disabled={!newModel.name}
               className={`rounded-xl ${bgInput} px-4 py-2 text-sm ${!newModel.name ? 'opacity-50' : 'hover:bg-zinc-800'}`}
             >
-              Add Model
+              {t('addModel.addModelButton')}
             </button>
           </div>
         </div>

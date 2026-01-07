@@ -79,7 +79,8 @@ export async function applyCorporateFilteringAsync(
     }
 
     if (!providerKey || !providerCfg) {
-        // No LLM provider available, return sync result
+        // No LLM provider available - auto-skip LLM check
+        console.log(`[Corporate Filter] Skipping LLM NSFW check - no LLM API configured (Ollama or API key required)`);
         return syncResult;
     }
 

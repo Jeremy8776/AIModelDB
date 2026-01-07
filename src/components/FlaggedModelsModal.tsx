@@ -1,5 +1,6 @@
 
 import React, { useState, useContext } from "react";
+import { useTranslation } from "react-i18next";
 import { CheckCircle, XCircle, Edit3, X, AlertTriangle, Download } from "lucide-react";
 import ThemeContext from "../context/ThemeContext";
 import { Model } from "../types";
@@ -8,11 +9,11 @@ import { kfmt, fmtDate } from "../utils/format";
 import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
 
 // Helper function to display cost information
-const getCostDisplay = (model: Model): string => {
+const getCostDisplay = (model: Model, t: any): string => {
 	const isOpenSource = (model.license?.type === 'OSI' || model.license?.type === 'Copyleft') && model.license?.name && model.license.name !== 'Proprietary';
 	if ((!model.pricing || model.pricing.length === 0) && isOpenSource) {
 		const vramTag = (model.tags || []).find(t => /vram|gb|gpu/i.test(t));
-		return `Free • Local${vramTag ? ` • ${vramTag}` : ''}`;
+		return `${t('comparison.free')} • ${t('common.local')}${vramTag ? ` • ${vramTag}` : ''}`;
 	}
 	if (!model.pricing || model.pricing.length === 0) return '—';
 
@@ -63,7 +64,7 @@ const getCostDisplay = (model: Model): string => {
 		}
 	}
 
-	return displays.length > 0 ? displays.join(' • ') : 'Varies';
+	return displays.length > 0 ? displays.join(' • ') : t('common.varies');
 };
 
 // Check if pricing is subscription-based
@@ -90,6 +91,7 @@ interface FlaggedModelsModalProps {
 
 export const FlaggedModelsModal: React.FC<FlaggedModelsModalProps> = ({ flagged, isOpen, onApprove, onDeny, onEdit, onClose, addConsoleLog }) => {
 	const { theme } = useContext(ThemeContext);
+	const { t } = useTranslation();
 	const [editingModel, setEditingModel] = useState<Model | null>(null);
 
 	// Lock body scroll when modal is open
@@ -127,7 +129,7 @@ export const FlaggedModelsModal: React.FC<FlaggedModelsModalProps> = ({ flagged,
 					<div className="flex items-center gap-3">
 						<AlertTriangle className="size-6 text-violet-500" />
 						<h2 className={`text-xl font-semibold ${textMain}`}>
-							Flagged Models for Approval ({flagged.length})
+							{t('flagged.title')} ({flagged.length})
 						</h2>
 					</div>
 					<div className="flex items-center gap-3">
@@ -139,10 +141,10 @@ export const FlaggedModelsModal: React.FC<FlaggedModelsModalProps> = ({ flagged,
 										flagged.forEach(model => onApprove(model));
 									}}
 									className="flex items-center gap-2 rounded-xl bg-green-600 hover:bg-green-700 text-white px-4 py-2 text-sm font-medium transition-colors"
-									title="Approve all flagged models"
+									title={t('flagged.approveAll')}
 								>
 									<CheckCircle className="size-4" />
-									Approve All
+									{t('flagged.approveAll')}
 								</button>
 								<button
 									onClick={() => {
@@ -150,10 +152,10 @@ export const FlaggedModelsModal: React.FC<FlaggedModelsModalProps> = ({ flagged,
 										flagged.forEach(model => onDeny(model));
 									}}
 									className="flex items-center gap-2 rounded-xl bg-red-600 hover:bg-red-700 text-white px-4 py-2 text-sm font-medium transition-colors"
-									title="Reject all flagged models"
+									title={t('flagged.rejectAll')}
 								>
 									<XCircle className="size-4" />
-									Reject All
+									{t('flagged.rejectAll')}
 								</button>
 							</>
 						)}
@@ -172,8 +174,8 @@ export const FlaggedModelsModal: React.FC<FlaggedModelsModalProps> = ({ flagged,
 					{flagged.length === 0 ? (
 						<div className="flex flex-col items-center justify-center h-full">
 							<CheckCircle className="size-16 text-green-500 mb-4" />
-							<p className={`text-lg ${textSubtle}`}>No flagged models to review</p>
-							<p className={`text-sm ${textSubtle} mt-2`}>All models have been processed successfully</p>
+							<p className={`text-lg ${textSubtle}`}>{t('flagged.noFlagged')}</p>
+							<p className={`text-sm ${textSubtle} mt-2`}>{t('flagged.allProcessed')}</p>
 						</div>
 					) : (
 						<div className="h-full overflow-y-auto">
@@ -186,7 +188,7 @@ export const FlaggedModelsModal: React.FC<FlaggedModelsModalProps> = ({ flagged,
 												<div className="flex items-center gap-3 mb-3">
 													<DomainIcon d={model.domain} className="size-5 flex-shrink-0" />
 													<h3 className={`text-lg font-medium ${textMain} truncate`} title={model.name}>
-														{model.name || "Unnamed Model"}
+														{model.name || t('common.unnamed') + " Model"}
 													</h3>
 													<span className={`px-2 py-1 rounded-full text-xs font-medium text-violet-700 dark:bg-violet-900/30 dark:text-violet-400`}>
 														{model.source}
@@ -196,36 +198,36 @@ export const FlaggedModelsModal: React.FC<FlaggedModelsModalProps> = ({ flagged,
 												{/* Model Details Grid */}
 												<div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
 													<div>
-														<span className={`block ${textSubtle} mb-1`}>Provider</span>
-														<span className={textMain}>{model.provider || "Unknown"}</span>
+														<span className={`block ${textSubtle} mb-1`}>{t('table.provider')}</span>
+														<span className={textMain}>{model.provider || t('common.unknown')}</span>
 													</div>
 													<div>
-														<span className={`block ${textSubtle} mb-1`}>Domain</span>
+														<span className={`block ${textSubtle} mb-1`}>{t('table.domain')}</span>
 														<span className={textMain}>{model.domain}</span>
 													</div>
 													<div>
-														<span className={`block ${textSubtle} mb-1`}>License</span>
-														<span className={textMain}>{model.license?.name || "Unknown"}</span>
+														<span className={`block ${textSubtle} mb-1`}>{t('table.license')}</span>
+														<span className={textMain}>{model.license?.name || t('common.unknown')}</span>
 													</div>
 													<div>
-														<span className={`block ${textSubtle} mb-1`}>Downloads</span>
+														<span className={`block ${textSubtle} mb-1`}>{t('table.downloads')}</span>
 														<span className={textMain}>{kfmt(model.downloads || 0)}</span>
 													</div>
 													<div>
-														<span className={`block ${textSubtle} mb-1`}>Cost</span>
-														<span className={textMain}>{getCostDisplay(model)}</span>
+														<span className={`block ${textSubtle} mb-1`}>{t('modelDetail.pricing')}</span>
+														<span className={textMain}>{getCostDisplay(model, t)}</span>
 													</div>
 													<div>
-														<span className={`block ${textSubtle} mb-1`}>Released</span>
+														<span className={`block ${textSubtle} mb-1`}>{t('modelDetail.releaseDate')}</span>
 														<span className={textMain}>{fmtDate(model.release_date)}</span>
 													</div>
 													<div>
-														<span className={`block ${textSubtle} mb-1`}>Updated</span>
+														<span className={`block ${textSubtle} mb-1`}>{t('modelDetail.lastUpdated')}</span>
 														<span className={textMain}>{fmtDate(model.updated_at)}</span>
 													</div>
 													<div>
-														<span className={`block ${textSubtle} mb-1`}>Context</span>
-														<span className={textMain}>{model.context_window || "Unknown"}</span>
+														<span className={`block ${textSubtle} mb-1`}>{t('modelDetail.contextWindow')}</span>
+														<span className={textMain}>{model.context_window || t('common.unknown')}</span>
 													</div>
 												</div>
 
@@ -253,10 +255,10 @@ export const FlaggedModelsModal: React.FC<FlaggedModelsModalProps> = ({ flagged,
 														onApprove(model);
 													}}
 													className="flex items-center gap-2 rounded-xl bg-green-600 hover:bg-green-700 text-white px-4 py-2 text-sm font-medium transition-colors"
-													title="Approve model"
+													title={t('flagged.approveTooltip')}
 												>
 													<CheckCircle className="size-4" />
-													Approve
+													{t('common.approve')}
 												</button>
 												<button
 													onClick={() => {
@@ -265,10 +267,10 @@ export const FlaggedModelsModal: React.FC<FlaggedModelsModalProps> = ({ flagged,
 														setEditData({});
 													}}
 													className={`flex items-center gap-2 rounded-xl ${bgInput} hover:opacity-80 px-4 py-2 text-sm font-medium transition-opacity`}
-													title="Edit model details"
+													title={t('flagged.editTooltip')}
 												>
 													<Edit3 className="size-4" />
-													Edit
+													{t('common.edit')}
 												</button>
 												<button
 													onClick={() => {
@@ -276,10 +278,10 @@ export const FlaggedModelsModal: React.FC<FlaggedModelsModalProps> = ({ flagged,
 														onDeny(model);
 													}}
 													className="flex items-center gap-2 rounded-xl bg-red-600 hover:bg-red-700 text-white px-4 py-2 text-sm font-medium transition-colors"
-													title="Deny model"
+													title={t('flagged.rejectTooltip')}
 												>
 													<XCircle className="size-4" />
-													Deny
+													{t('common.deny')}
 												</button>
 											</div>
 										</div>
@@ -293,28 +295,28 @@ export const FlaggedModelsModal: React.FC<FlaggedModelsModalProps> = ({ flagged,
 				{/* Edit Panel */}
 				{editingModel && (
 					<div className="flex-shrink-0 border-t p-6 border-border">
-						<h3 className={`text-lg font-semibold ${textMain} mb-4`}>Edit Model Details</h3>
+						<h3 className={`text-lg font-semibold ${textMain} mb-4`}>{t('flagged.editModelDetails')}</h3>
 						<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 							<div>
-								<label className={`block text-sm font-medium ${textSubtle} mb-2`}>Name</label>
+								<label className={`block text-sm font-medium ${textSubtle} mb-2`}>{t('table.name')}</label>
 								<input
 									className={`w-full rounded-xl ${bgInput} px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500`}
-									placeholder="Model name"
+									placeholder={t('addModel.modelNamePlaceholder')}
 									value={editData.name ?? editingModel.name ?? ""}
 									onChange={e => handleEditChange("name", e.target.value)}
 								/>
 							</div>
 							<div>
-								<label className={`block text-sm font-medium ${textSubtle} mb-2`}>Provider</label>
+								<label className={`block text-sm font-medium ${textSubtle} mb-2`}>{t('table.provider')}</label>
 								<input
 									className={`w-full rounded-xl ${bgInput} px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500`}
-									placeholder="Provider/Author"
+									placeholder={t('addModel.providerPlaceholder')}
 									value={editData.provider ?? editingModel.provider ?? ""}
 									onChange={e => handleEditChange("provider", e.target.value)}
 								/>
 							</div>
 							<div>
-								<label className={`block text-sm font-medium ${textSubtle} mb-2`}>Domain</label>
+								<label className={`block text-sm font-medium ${textSubtle} mb-2`}>{t('table.domain')}</label>
 								<input
 									className={`w-full rounded-xl ${bgInput} px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500`}
 									placeholder="Model domain"
@@ -323,34 +325,34 @@ export const FlaggedModelsModal: React.FC<FlaggedModelsModalProps> = ({ flagged,
 								/>
 							</div>
 							<div>
-								<label className={`block text-sm font-medium ${textSubtle} mb-2`}>Parameters</label>
+								<label className={`block text-sm font-medium ${textSubtle} mb-2`}>{t('modelDetail.parameters')}</label>
 								<input
 									className={`w-full rounded-xl ${bgInput} px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500`}
-									placeholder="e.g., 7B, 70B"
+									placeholder={t('addModel.parametersPlaceholder')}
 									value={editData.parameters ?? editingModel.parameters ?? ""}
 									onChange={e => handleEditChange("parameters", e.target.value)}
 								/>
 							</div>
 							<div className="md:col-span-2">
-								<label className={`block text-sm font-medium ${textSubtle} mb-2`}>URL</label>
+								<label className={`block text-sm font-medium ${textSubtle} mb-2`}>{t('addModel.modelUrl')}</label>
 								<input
 									className={`w-full rounded-xl ${bgInput} px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500`}
-									placeholder="Model URL"
+									placeholder={t('addModel.modelUrlPlaceholder')}
 									value={editData.url ?? editingModel.url ?? ""}
 									onChange={e => handleEditChange("url", e.target.value)}
 								/>
 							</div>
 							<div>
-								<label className={`block text-sm font-medium ${textSubtle} mb-2`}>License</label>
+								<label className={`block text-sm font-medium ${textSubtle} mb-2`}>{t('table.license')}</label>
 								<input
 									className={`w-full rounded-xl ${bgInput} px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500`}
-									placeholder="License name"
+									placeholder={t('addModel.licenseNamePlaceholder')}
 									value={editData.license?.name ?? editingModel.license?.name ?? ""}
 									onChange={e => handleEditChange("license", { ...editingModel.license, name: e.target.value })}
 								/>
 							</div>
 							<div>
-								<label className={`block text-sm font-medium ${textSubtle} mb-2`}>Release Date</label>
+								<label className={`block text-sm font-medium ${textSubtle} mb-2`}>{t('modelDetail.releaseDate')}</label>
 								<input
 									type="date"
 									className={`w-full rounded-xl ${bgInput} px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500`}
@@ -365,13 +367,13 @@ export const FlaggedModelsModal: React.FC<FlaggedModelsModalProps> = ({ flagged,
 								className="flex items-center gap-2 rounded-xl bg-green-600 hover:bg-green-700 text-white px-6 py-2 font-medium transition-colors"
 							>
 								<CheckCircle className="size-4" />
-								Save & Approve
+								{t('common.saveAndApprove')}
 							</button>
 							<button
 								onClick={() => { setEditingModel(null); setEditData({}); }}
 								className={`rounded-xl ${bgInput} hover:opacity-80 px-6 py-2 font-medium transition-opacity`}
 							>
-								Cancel
+								{t('common.cancel')}
 							</button>
 						</div>
 					</div>

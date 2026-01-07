@@ -9,6 +9,7 @@
 
 import React from "react";
 import { RefreshCw, ChevronLeft, ChevronRight, Download as DownloadIcon, Trash2, ShieldCheck } from "lucide-react";
+import { useTranslation } from 'react-i18next';
 import { ThemedSelect } from "../ThemedSelect";
 import { Model } from "../../types";
 import { ExportFormat } from "../../services/exportService";
@@ -71,6 +72,7 @@ export function Toolbar({
     onValidateModels,
     theme,
 }: ToolbarProps) {
+    const { t } = useTranslation();
     // Styling based on theme
     const textSubtle = theme === "dark" ? "text-zinc-400" : "text-gray-800";
     const bgInput = theme === "dark"
@@ -98,8 +100,8 @@ export function Toolbar({
                                 )}
                                 {/* Show skip button during long operations */}
                                 {onSkipFilter && syncProgress.statusMessage &&
-                                    (syncProgress.statusMessage.toLowerCase().includes('nsfw') ||
-                                        syncProgress.statusMessage.toLowerCase().includes('filter') ||
+                                    (syncProgress.statusMessage.toLowerCase().includes(t('common.nsfw').toLowerCase()) ||
+                                        syncProgress.statusMessage.toLowerCase().includes(t('common.filter').toLowerCase()) ||
                                         syncProgress.statusMessage.toLowerCase().includes('llm') ||
                                         syncProgress.statusMessage.toLowerCase().includes('translation') ||
                                         syncProgress.statusMessage.toLowerCase().includes('corporate')) && (
@@ -107,28 +109,28 @@ export function Toolbar({
                                             onClick={onSkipFilter}
                                             className="text-xs px-2 py-0.5 rounded bg-zinc-700 hover:bg-zinc-600 text-zinc-300 hover:text-white transition-colors whitespace-nowrap"
                                         >
-                                            Skip
+                                            {t('common.skip')}
                                         </button>
                                     )}
                             </div>
                         ) : (
-                            <span className="text-xs">Syncing…</span>
+                            <span className="text-xs">{t('sync.syncing')}</span>
                         )}
                     </div>
                 ) : (
                     <>
-                        <span className="inline-flex items-center gap-1">Idle</span>
+                        <span className="inline-flex items-center gap-1">{isSyncing ? '' : 'Idle'}</span>
                         {lastSync && (
                             <span>
-                                Updated: {new Date(lastSync).toLocaleDateString()} {new Date(lastSync).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                {t('modelDetail.lastUpdated')}: {new Date(lastSync).toLocaleDateString()} {new Date(lastSync).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </span>
                         )}
-                        <span>Showing {pageItems.length} of {total} (web ≥{minDownloads} <DownloadIcon className="inline h-3 w-3 relative" style={{ top: '-1px' }} />; imports bypass)</span>
+                        <span>{t('toolbar.showing')} {pageItems.length} {t('toolbar.of')} {total} {t('toolbar.models')} (web ≥{minDownloads} <DownloadIcon className="inline h-3 w-3 relative" style={{ top: '-1px' }} />; imports bypass)</span>
                     </>
                 )}
             </div>
             <div className="flex items-center gap-2">
-                <label className="mr-1" style={{ color: 'var(--text)' }}>Per page</label>
+                <label className="mr-1" style={{ color: 'var(--text)' }}>{t('toolbar.pageSize')}</label>
                 <div className="min-w-[120px]">
                     <ThemedSelect
                         value={(pageSize ?? 0).toString()}
@@ -139,8 +141,8 @@ export function Toolbar({
                                 onPageSizeChange(Number(v));
                             }
                         }}
-                        options={[{ value: '50', label: '50' }, { value: '100', label: '100' }, { value: '500', label: '500' }, { value: '0', label: 'All' }]}
-                        ariaLabel="Per page"
+                        options={[{ value: '50', label: '50' }, { value: '100', label: '100' }, { value: '500', label: '500' }, { value: '0', label: t('common.all') }]}
+                        ariaLabel={t('toolbar.pageSize')}
                     />
                 </div>
                 <button
@@ -180,7 +182,7 @@ export function Toolbar({
                     }}
                 >
                     <DownloadIcon className="size-3" />
-                    Export
+                    {t('toolbar.export')}
                 </button>
                 <div className="flex items-center gap-2 ml-2">
                     <button
@@ -191,9 +193,9 @@ export function Toolbar({
                             borderColor: 'var(--border)',
                             color: 'var(--text)'
                         }}
-                        title="Delete DB"
+                        title={t('toolbar.deleteDatabase')}
                     >
-                        <Trash2 className="size-3" />Delete DB
+                        <Trash2 className="size-3" />{t('common.delete')} DB
                     </button>
                 </div>
                 <button
@@ -204,9 +206,9 @@ export function Toolbar({
                         borderColor: 'var(--border)',
                         color: 'var(--text)'
                     }}
-                    title="Validate and enrich model data using LLMs"
+                    title={t('toolbar.validate')}
                 >
-                    <ShieldCheck className="size-3" />Validate Models
+                    <ShieldCheck className="size-3" />{t('toolbar.validate')}
                 </button>
             </div>
         </div>

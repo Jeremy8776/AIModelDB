@@ -1,17 +1,19 @@
 import React, { useContext, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Shield, CheckCircle, Check } from 'lucide-react';
 import ThemeContext from '../../context/ThemeContext';
 import { useSettings } from '../../context/SettingsContext';
 import { ThemedSelect } from '../ThemedSelect';
 
 export function ValidationSection() {
+  const { t } = useTranslation();
   const { theme } = useContext(ThemeContext);
   const { settings, saveSettings } = useSettings();
 
   const bgCard = 'border-border bg-card text-text';
 
   const providerOptions = useMemo(() => {
-    const opts = [{ value: '', label: 'Auto-detect (First Available)' }];
+    const opts = [{ value: '', label: t('settings.validation.autoDetect') }];
     if (settings.apiConfig) {
       Object.entries(settings.apiConfig).forEach(([key, cfg]) => {
         if ((cfg as any).enabled) {
@@ -28,18 +30,18 @@ export function ValidationSection() {
   const validationOptions = [
     {
       key: 'showCostValidation',
-      label: 'Show Cost Validation',
-      description: 'Display cost estimates during validation processes'
+      label: t('settings.validation.options.showCostValidation'),
+      description: t('settings.validation.options.showCostValidationDesc')
     },
     {
       key: 'autoMergeDuplicates',
-      label: 'Auto-merge Duplicates',
-      description: 'Automatically merge duplicate models during import'
+      label: t('settings.validation.options.autoMergeDuplicates'),
+      description: t('settings.validation.options.autoMergeDuplicatesDesc')
     },
     {
       key: 'showImportToast',
-      label: 'Show Import Notifications',
-      description: 'Display toast notifications for import operations'
+      label: t('settings.validation.options.showImportToast'),
+      description: t('settings.validation.options.showImportToastDesc')
     }
   ];
 
@@ -48,18 +50,18 @@ export function ValidationSection() {
       <div>
         <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
           <Shield size={20} className="text-zinc-500" />
-          Validation Settings
-          <span className="px-2 py-0.5 text-[10px] font-bold bg-amber-500/20 text-amber-400 rounded-full uppercase">Alpha</span>
+          {t('settings.validation.title')}
+          <span className="px-2 py-0.5 text-[10px] font-bold bg-amber-500/20 text-amber-400 rounded-full uppercase">{t('settings.apiConfig.alpha')}</span>
         </h3>
         <p className="text-sm text-zinc-700 dark:text-zinc-400">
-          Configure AI-powered model validation and data processing. These features are experimental.
+          {t('settings.validation.description')}
         </p>
       </div>
 
       <div className={`rounded-xl border p-4 ${bgCard}`}>
-        <h4 className="font-medium mb-4">Preferred Validation Provider</h4>
+        <h4 className="font-medium mb-4">{t('settings.validation.preferredProvider')}</h4>
         <p className="text-xs text-zinc-500 mb-3">
-          Select which AI provider should be used for validation and enrichment tasks.
+          {t('settings.validation.preferredProviderDesc')}
         </p>
         <ThemedSelect
           value={settings.preferredModelProvider || ''}
@@ -70,7 +72,7 @@ export function ValidationSection() {
       </div>
 
       <div className={`rounded-xl border p-4 ${bgCard}`}>
-        <h4 className="font-medium mb-4">Validation Options</h4>
+        <h4 className="font-medium mb-4">{t('settings.validation.optionsTitle')}</h4>
         <div className="space-y-4">
           {validationOptions.map((option) => (
             <label key={option.key} htmlFor={option.key} className="flex items-start gap-3 cursor-pointer group select-none">
@@ -103,10 +105,10 @@ export function ValidationSection() {
       </div>
 
       <div className={`rounded-xl border p-4 ${bgCard}`}>
-        <h4 className="font-medium mb-4">Batch Processing</h4>
+        <h4 className="font-medium mb-4">{t('settings.validation.batchProcessing')}</h4>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-2">Validation Batch Size</label>
+            <label className="block text-sm font-medium mb-2">{t('settings.validation.batchSize')}</label>
             <input
               type="number"
               value={settings.validationBatchSize || 50}
@@ -125,11 +127,10 @@ export function ValidationSection() {
       <div className={`rounded-xl border p-4 ${bgCard}`}>
         <div className="flex items-center gap-2 mb-3">
           <CheckCircle size={16} className="text-accent" />
-          <h4 className="font-medium">Validation Status</h4>
+          <h4 className="font-medium">{t('settings.validation.statusTitle')}</h4>
         </div>
         <p className="text-sm text-zinc-700 dark:text-zinc-400">
-          Validation services are configured and ready to use. Models will be automatically
-          validated when imported or when running manual validation processes.
+          {t('settings.validation.statusDesc')}
         </p>
       </div>
     </div>
