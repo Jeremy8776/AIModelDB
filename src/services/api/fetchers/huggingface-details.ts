@@ -51,14 +51,25 @@ export async function fetchHuggingFaceDetails(modelId: string): Promise<ModelGal
         }
         const images: string[] = [];
 
-        // Check siblings for image files
+        // Check siblings for image files (including in subdirectories)
         if (data.siblings && Array.isArray(data.siblings)) {
             data.siblings.forEach((file: any) => {
                 const filename = file.rfilename;
-                if (filename && /\.(png|jpg|jpeg|webp|gif)$/i.test(filename)) {
-                    // Construct raw URL using SHA if available for stability, otherwise fallback to main
-                    const ref = data.sha || 'main';
-                    images.push(`https://huggingface.co/${modelId}/resolve/${ref}/${filename}`);
+                if (filename) {
+                    // Match images anywhere in the path (e.g., assets/image.png, samples/test.jpg)
+                    if (/\.(png|jpg|jpeg|webp|gif)$/i.test(filename)) {
+                        // Skip common non-preview images
+                        const lowerName = filename.toLowerCase();
+                        if (lowerName.includes('thumbnail') ||
+                            lowerName.includes('logo') ||
+                            lowerName.includes('icon') ||
+                            lowerName.includes('badge')) {
+                            return;
+                        }
+                        // Construct raw URL using SHA if available for stability
+                        const ref = data.sha || 'main';
+                        images.push(`https://huggingface.co/${modelId}/resolve/${ref}/${filename}`);
+                    }
                 }
             });
         }

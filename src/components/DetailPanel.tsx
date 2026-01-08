@@ -22,7 +22,8 @@ const GalleryImage = ({ src, alt, onClick }: { src: string, alt: string, onClick
       // If Electron is available and this looks like a CDN image, proxy it
       if (window.electronAPI?.proxyImage && (
         src.includes('imagecache.civitai.com') ||
-        src.includes('image.civitai.com')
+        src.includes('image.civitai.com') ||
+        src.includes('huggingface.co/')
       )) {
         try {
           const result = await window.electronAPI.proxyImage(src);
