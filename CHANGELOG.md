@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.47] - 2026-01-08
+
+### Fixed
+- **Splash Screen Version**: The loading screen now dynamically displays the correct application version.
+
+---
+
 ## [0.3.46] - 2026-01-08
 
 ### Fixed

@@ -39,6 +39,17 @@ function createSplashWindow() {
 
     splashWindow.loadFile(path.join(__dirname, 'splash.html'));
 
+    // Inject version number dynamically
+    splashWindow.webContents.on('did-finish-load', () => {
+        const version = app.getVersion();
+        splashWindow.webContents.executeJavaScript(`
+            const versionEl = document.querySelector('.version');
+            if (versionEl) {
+                versionEl.textContent = 'v${version}';
+            }
+        `);
+    });
+
     splashWindow.on('closed', () => {
         splashWindow = null;
     });
