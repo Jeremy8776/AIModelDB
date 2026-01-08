@@ -107,10 +107,11 @@ export function SystemSection() {
         type: 'error',
         confirmText: t('settings.system.maintenance.deleteDb'),
         onConfirm: () => {
-          // Clear localStorage
-          localStorage.clear();
-          // Reload the page
-          window.location.reload();
+          // Trigger selective hard reset (preserves settings) via global event
+          window.dispatchEvent(new CustomEvent('hard-reset'));
+
+          // Reload page after short delay to allow cleanup
+          setTimeout(() => window.location.reload(), 200);
         }
       }
     }));

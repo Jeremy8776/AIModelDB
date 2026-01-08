@@ -40,10 +40,20 @@ export function OnboardingWizard({ isOpen, onClose, onComplete, initialStep = 1 
 
     // ... (rest of state initialization)
     const [apiKeys, setApiKeys] = useState({
-        artificialAnalysisApiKey: '',
-        gitHubToken: '',
+        artificialAnalysisApiKey: settings?.artificialAnalysisApiKey || '',
+        gitHubToken: settings?.gitHubToken || '',
     });
-    const [llmApiKeys, setLlmApiKeys] = useState<Record<string, string>>({});
+    const [llmApiKeys, setLlmApiKeys] = useState<Record<string, string>>(() => {
+        const initialKeys: Record<string, string> = {};
+        if (settings?.apiConfig) {
+            Object.entries(settings.apiConfig).forEach(([key, cfg]: [string, any]) => {
+                if (cfg && cfg.apiKey) {
+                    initialKeys[key] = cfg.apiKey;
+                }
+            });
+        }
+        return initialKeys;
+    });
     const [availableLLMProviders, setAvailableLLMProviders] = useState<Array<{ key: string; name: string; model: string }>>([]);
     const [selectedLLMProvider, setSelectedLLMProvider] = useState<string>('');
 

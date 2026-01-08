@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.46] - 2026-01-08
+
+### Fixed
+- **Settings Persistence**: "Delete Database" now preserves API Keys and user settings (including NSFW preferences) instead of wiping them.
+- **Wizard Auto-fill**: The setup wizard now intelligently pre-fills stored API keys if they exist.
+- **NSFW Sync**: Fixed issue where NSFW settings were lost during database reset.
+
+---
+
 ## [0.3.45] - 2026-01-08
 
 ### Fixed

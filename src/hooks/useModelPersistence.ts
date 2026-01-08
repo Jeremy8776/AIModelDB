@@ -139,7 +139,10 @@ export function useModelPersistence() {
             const toRemove: string[] = [];
             for (let i = 0; i < localStorage.length; i++) {
                 const k = localStorage.key(i) as string;
-                if (k && k.startsWith('aiModelDBPro_')) toRemove.push(k);
+                // Wipe everything EXCEPT settings (to preserve keys/config)
+                if (k && k.startsWith('aiModelDBPro_') && k !== 'aiModelDBPro_settings') {
+                    toRemove.push(k);
+                }
             }
             toRemove.forEach(k => localStorage.removeItem(k));
         } catch { }
