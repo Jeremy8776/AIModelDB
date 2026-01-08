@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.45] - 2026-01-08
+
+### Fixed
+- **Broken Image Filtering**: Gallery images that fail to load are now automatically hidden from view.
+- **Lightbox Video Support**: Added video playback support to the full-screen lightbox and thumbnails.
+- **HuggingFace Images**: Added fallback to parse `README.md` for images when no image files are present in the repository.
+
+---
+
 ## [0.3.44] - 2026-01-08
 
 ### Added
