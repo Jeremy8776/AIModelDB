@@ -75,13 +75,40 @@ export async function fetchCivitasBayDetails(torrentPageUrl: string): Promise<Ci
         }
 
         // Extract all images (look for model images)
+        // Extract all images with improved selectors for galleries/sliders
         const images: string[] = [];
-        const imageElements = doc.querySelectorAll('img.model-image, img[alt*="model"], .torrent-image img, img[src*="civitai"], img[src*="image"]');
+        // Target specific gallery/slider classes and general images
+        const selectors = [
+            '.splide__slide img',        // Slider images
+            '.gallery-item img',         // Gallery items
+            '.model-gallery img',
+            '.torrent-images img',
+            '.card-img-top',
+            'img[src*="civitai.com/images"]', // CivitAI hosted images
+            'img.img-fluid',
+            '.description img'           // Images in description
+        ];
+
+        const imageElements = doc.querySelectorAll(selectors.join(', '));
 
         imageElements.forEach((img) => {
-            const src = img.getAttribute('src');
-            if (src && !images.includes(src) && !src.includes('logo') && !src.includes('icon') && !src.includes('avatar')) {
-                images.push(src);
+            let src = img.getAttribute('src');
+            // Handle lazy loading attributes if present
+            if (!src && img.hasAttribute('data-src')) src = img.getAttribute('data-src');
+
+            if (src && !images.includes(src)) {
+                // Filter out common UI elements/icons
+                const lowerSrc = src.toLowerCase();
+                const isJunk =
+                    lowerSrc.includes('logo') ||
+                    lowerSrc.includes('icon') ||
+                    lowerSrc.includes('avatar') ||
+                    lowerSrc.includes('user') ||
+                    lowerSrc.includes('placeholder');
+
+                if (!isJunk) {
+                    images.push(src);
+                }
             }
         });
 
