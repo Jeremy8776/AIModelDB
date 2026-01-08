@@ -12,6 +12,40 @@ import { fetchHuggingFaceDetails } from '../services/api/fetchers/huggingface-de
 
 const GalleryImage = ({ src, alt, onClick }: { src: string, alt: string, onClick: () => void }) => {
   const [error, setError] = useState(false);
+  const [imageSrc, setImageSrc] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadImage = async () => {
+      // If Electron is available and this looks like a CDN image, proxy it
+      if (window.electronAPI?.proxyImage && (
+        src.includes('imagecache.civitai.com') ||
+        src.includes('image.civitai.com')
+      )) {
+        try {
+          const result = await window.electronAPI.proxyImage(src);
+          if (!cancelled && result.success && result.dataUrl) {
+            setImageSrc(result.dataUrl);
+            setLoading(false);
+            return;
+          }
+        } catch (e) {
+          console.warn('[GalleryImage] Proxy failed, falling back to direct URL');
+        }
+      }
+
+      // Fallback: use direct URL
+      if (!cancelled) {
+        setImageSrc(src);
+        setLoading(false);
+      }
+    };
+
+    loadImage();
+    return () => { cancelled = true; };
+  }, [src]);
 
   if (error) {
     return (
@@ -25,9 +59,21 @@ const GalleryImage = ({ src, alt, onClick }: { src: string, alt: string, onClick
     );
   }
 
+  if (loading || !imageSrc) {
+    return (
+      <div className="w-full h-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 text-zinc-400 animate-pulse">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="opacity-30">
+          <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+          <circle cx="9" cy="9" r="2" />
+          <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+        </svg>
+      </div>
+    );
+  }
+
   return (
     <img
-      src={src}
+      src={imageSrc}
       alt={alt}
       className="w-full h-full object-cover transition-transform group-hover:scale-105 cursor-pointer"
       loading="lazy"
@@ -215,14 +261,6 @@ export function DetailPanel({ model, onClose, onDelete, triggerElement }: Detail
                     <Loader2 className="size-4 animate-spin" />
                     <span>{t('detailPanel.loadingDetails')}</span>
                   </div>
-                )}
-                {modelDetails?.imageUrl && (
-                  <img
-                    src={modelDetails.imageUrl}
-                    alt={model.name}
-                    className="mt-2 rounded-lg max-w-full h-auto"
-                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                  />
                 )}
                 {modelDetails?.civitaiUrl && (
                   <a

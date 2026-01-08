@@ -31,6 +31,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // Proxy request
     proxyRequest: (options) => ipcRenderer.invoke('proxy-request', options),
 
+    // Proxy image - fetches images via Node.js to bypass CDN restrictions
+    proxyImage: (imageUrl) => ipcRenderer.invoke('proxy-image', imageUrl),
+
     // Translation
     translateText: (text, targetLang) => ipcRenderer.invoke('translate-text', text, targetLang),
 

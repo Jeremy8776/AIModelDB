@@ -325,3 +325,35 @@ ipcMain.handle('proxy-request', async (event, { url, method = 'GET', headers = {
         return { success: false, error: error.message };
     }
 });
+
+// Image Proxy Handler - fetches images and returns as base64 data URL
+// This bypasses CDN restrictions that block browser requests
+ipcMain.handle('proxy-image', async (event, imageUrl) => {
+    try {
+        console.log(`[ImageProxy] Fetching: ${imageUrl}`);
+
+        const response = await fetch(imageUrl, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                'Accept': 'image/webp,image/apng,image/*,*/*;q=0.8',
+                'Referer': 'https://civitasbay.org/'
+            }
+        });
+
+        if (!response.ok) {
+            console.error(`[ImageProxy] Failed: ${response.status}`);
+            return { success: false, error: `HTTP ${response.status}` };
+        }
+
+        const contentType = response.headers.get('content-type') || 'image/jpeg';
+        const buffer = await response.arrayBuffer();
+        const base64 = Buffer.from(buffer).toString('base64');
+        const dataUrl = `data:${contentType};base64,${base64}`;
+
+        console.log(`[ImageProxy] Success, size: ${buffer.byteLength} bytes`);
+        return { success: true, dataUrl };
+    } catch (error) {
+        console.error('[ImageProxy] Error:', error);
+        return { success: false, error: error.message };
+    }
+});
