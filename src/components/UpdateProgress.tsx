@@ -174,6 +174,40 @@ export function UpdateProgress({ show, onDismiss }: UpdateProgressProps) {
                 );
 
             case 'error':
+                // Check for signature errors which require manual update
+                const isSignatureError = error && (
+                    error.includes('signed') ||
+                    error.includes('signature') ||
+                    error.includes('Code signature')
+                );
+
+                if (isSignatureError) {
+                    return (
+                        <div className="flex flex-col gap-3">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 rounded-full bg-amber-500/20">
+                                    <AlertCircle className="w-5 h-5 text-amber-400" />
+                                </div>
+                                <div className="flex-1">
+                                    <p className="font-medium text-sm">Action Required</p>
+                                    <p className="text-xs text-zinc-400">
+                                        Signature change detected. You must update manually this one time.
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => {
+                                    window.electronAPI?.openExternal('https://github.com/Jeremy8776/AIModelDB/releases/latest');
+                                }}
+                                className="w-full px-3 py-2 rounded-lg text-xs font-medium bg-amber-500 hover:bg-amber-600 text-black transition-colors flex items-center justify-center gap-2"
+                            >
+                                <Download className="w-3.5 h-3.5" />
+                                Download Installer Manually
+                            </button>
+                        </div>
+                    );
+                }
+
                 return (
                     <div className="flex items-center gap-3">
                         <div className="p-2 rounded-full bg-red-500/20">

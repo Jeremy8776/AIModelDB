@@ -16,18 +16,39 @@ export interface ModelGalleryDetails {
 export async function fetchHuggingFaceDetails(modelId: string): Promise<ModelGalleryDetails | null> {
     try {
         console.log(`[HuggingFace Details] Fetching: ${modelId}`);
-        const url = proxyUrl(
-            `/huggingface-api/models/${modelId}`,
-            `https://huggingface.co/api/models/${modelId}`
-        );
 
-        const response = await fetchWrapper(url);
-        if (!response.ok) {
-            console.error(`[HuggingFace Details] ERROR: Status ${response.status}`);
-            return null;
+        const prodUrl = `https://huggingface.co/api/models/${modelId}`;
+        let data: any;
+
+        // Use Electron proxy if available to bypass CORS
+        if (window.electronAPI?.proxyRequest) {
+            // Use the Electron proxy for production
+            const result = await window.electronAPI.proxyRequest({
+                url: prodUrl,
+                method: 'GET'
+            });
+
+            if (!result.success) {
+                console.error(`[HuggingFace Details] Proxy error: ${result.error}`);
+                return null;
+            }
+
+            data = typeof result.data === 'string' ? JSON.parse(result.data) : result.data;
+        } else {
+            // Fallback for dev environment or browser
+            const url = proxyUrl(
+                `/huggingface-api/models/${modelId}`,
+                prodUrl
+            );
+
+            const response = await fetchWrapper(url);
+            if (!response.ok) {
+                console.error(`[HuggingFace Details] ERROR: Status ${response.status}`);
+                return null;
+            }
+
+            data = await response.json();
         }
-
-        const data = await response.json();
         const images: string[] = [];
 
         // Check siblings for image files
