@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.48] - 2026-01-08
+
+### Fixed
+- **NSFW Filtering**: Strengthened filtering for CivitasBay and Civitai sources. When simple filtering is enabled, content from these sources is now blocked by default due to high risk, unless explicitly whitelist-matched (e.g. BERT/GPT models). This ensures "open flood gates" when off, but "strict compliance" when on.
+
+---
+
 ## [0.3.47] - 2026-01-08
 
 ### Fixed

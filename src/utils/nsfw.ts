@@ -8,10 +8,10 @@ export interface NSFWCheckResult {
 }
 
 // Minimal explicit terms applied to model names only (per product policy)
-const EXPLICIT_NAME_TERMS = ['porn', 'hentai', 'xxx', 'rule34', 'yiff', 'fetish', 'bdsm', 'kink'];
+const EXPLICIT_NAME_TERMS = ['porn', 'hentai', 'xxx', 'rule34', 'yiff', 'fetish', 'bdsm', 'kink', 'nsfw', '18+'];
 
 // Only treat explicitly sexual tags as NSFW; ignore generic NSFW/suggestive tags
-const EXPLICIT_TAGS = ['porn', 'hentai', 'xxx', 'rule34', 'yiff', 'fetish', 'bdsm', 'kink'];
+const EXPLICIT_TAGS = ['porn', 'hentai', 'xxx', 'rule34', 'yiff', 'fetish', 'bdsm', 'kink', 'nsfw', '18+'];
 
 // Safe model categories that are definitely work-appropriate
 const SAFE_CATEGORIES = [
@@ -95,7 +95,18 @@ function checkTagsForNSFW(tags: string[]): { score: number; flaggedTags: string[
 /**
  * Checks if provider/source is known to host NSFW content
  */
-function checkProviderRisk(provider: string, source: string): number { return 0; }
+function checkProviderRisk(provider: string, source: string): number {
+  const p = (provider || '').toLowerCase();
+  const s = (source || '').toLowerCase();
+
+  if (NSFW_PROVIDERS.some(risk => p.includes(risk) || s.includes(risk))) {
+    // Return high score for known NSFW providers
+    // This effectively blocks Civitai/CivitasBay content when filtering is ON, 
+    // unless the model matches a Known Safe Pattern (bert, gpt, etc) which is checked earlier.
+    return 100;
+  }
+  return 0;
+}
 
 /**
  * Main NSFW detection function
