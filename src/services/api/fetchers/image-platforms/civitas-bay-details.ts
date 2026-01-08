@@ -10,6 +10,7 @@ export interface CivitasBayDetails {
     baseModel?: string;
     fileSize?: string;
     hash?: string;
+    images?: string[];
 }
 
 /**
@@ -53,10 +54,21 @@ export async function fetchCivitasBayDetails(torrentPageUrl: string): Promise<Ci
             details.civitaiUrl = civitaiLink.getAttribute('href') || undefined;
         }
 
-        // Extract image (look for main model image)
-        const mainImage = doc.querySelector('img.model-image, img[alt*="model"], .torrent-image img, img[src*="civitai"]');
-        if (mainImage) {
-            details.imageUrl = mainImage.getAttribute('src') || undefined;
+        // Extract all images (look for model images)
+        const images: string[] = [];
+        const imageElements = doc.querySelectorAll('img.model-image, img[alt*="model"], .torrent-image img, img[src*="civitai"], img[src*="image"]');
+
+        imageElements.forEach((img) => {
+            const src = img.getAttribute('src');
+            if (src && !images.includes(src) && !src.includes('logo') && !src.includes('icon') && !src.includes('avatar')) {
+                images.push(src);
+            }
+        });
+
+        details.images = images;
+        // Use the first image as the main image if not already set
+        if (images.length > 0) {
+            details.imageUrl = images[0];
         }
 
         // Extract creator/author

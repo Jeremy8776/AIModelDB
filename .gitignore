@@ -42,3 +42,5 @@ coverage/
 *.tmp
 *.temp
 tsc-errors.txt
+*.pfx
+scripts/build_signed_release.ps1

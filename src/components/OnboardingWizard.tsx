@@ -88,15 +88,6 @@ export function OnboardingWizard({ isOpen, onClose, onComplete, initialStep = 1 
 
     useBodyScrollLock(isOpen);
 
-    // Don't render if not open
-    if (!isOpen) return null;
-
-    // ... (useEffect for LLM keys)
-
-    // ... (render logic)
-
-    // Update Progress Indicator 
-    // Update Progress Indicator 
     const steps = useMemo(() => [
         { num: 1, label: t('onboarding.steps.sources') },
         { num: 2, label: t('onboarding.steps.localAI') },
@@ -104,7 +95,6 @@ export function OnboardingWizard({ isOpen, onClose, onComplete, initialStep = 1 
         { num: 4, label: t('onboarding.steps.discovery') },
         { num: 5, label: t('onboarding.steps.done') }
     ], [t]);
-
 
     const bgModal = 'border-border bg-bg text-text';
     const bgCard = 'border-border bg-card text-text';
@@ -119,6 +109,9 @@ export function OnboardingWizard({ isOpen, onClose, onComplete, initialStep = 1 
         { key: 'civitasbay', label: 'CivitasBay', description: t('onboarding.sourceDescs.civitasbay'), requiresKey: false },
         { key: 'ollamaLibrary', label: 'Ollama Library', description: t('onboarding.sourceDescs.ollamaLibrary'), requiresKey: false },
     ], [t]);
+
+    // Don't render if not open
+    if (!isOpen) return null;
 
     const sourcesRequiringKeys = dataSources.filter(s => s.requiresKey && selectedSources[s.key]);
 
