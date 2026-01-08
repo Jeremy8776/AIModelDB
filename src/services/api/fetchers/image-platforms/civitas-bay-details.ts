@@ -32,15 +32,35 @@ export async function fetchCivitasBayDetails(torrentPageUrl: string): Promise<Ci
         }
 
         const hash = hashMatch[1];
-        const url = proxyUrl(`/civitasbay-api/torrent/${hash}`, torrentPageUrl);
 
-        const response = await fetchWrapper(url);
-        if (!response.ok) {
-            console.error(`[CivitasBay Details] ERROR: Status ${response.status}`);
-            return null;
+
+        let html: string;
+
+        // Use Electron proxy if available to bypass CORS
+        if (window.electronAPI?.proxyRequest) {
+            // Logic for using proxy in production
+            // We use the original url, not the proxy path
+            const result = await window.electronAPI.proxyRequest({
+                url: torrentPageUrl,
+                method: 'GET'
+            });
+
+            if (!result.success) {
+                console.error(`[CivitasBay Details] Proxy error: ${result.error}`);
+                return null;
+            }
+
+            html = typeof result.data === 'string' ? result.data : JSON.stringify(result.data);
+        } else {
+            // Fallback for dev environment or browser
+            const url = proxyUrl(`/civitasbay-api/torrent/${hash}`, torrentPageUrl);
+            const response = await fetchWrapper(url);
+            if (!response.ok) {
+                console.error(`[CivitasBay Details] ERROR: Status ${response.status}`);
+                return null;
+            }
+            html = await response.text();
         }
-
-        const html = await response.text();
 
         // Parse HTML to extract information
         const parser = new DOMParser();

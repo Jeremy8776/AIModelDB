@@ -46,16 +46,30 @@ export async function fetchCivitasBay(
             for (let i = 0; i < CONCURRENT_BATCH; i++) {
                 pagePromises.push((async (p) => {
                     log(`[CivitasBay] Fetching page ${p}...`);
-                    const url = proxyUrl(
-                        `/civitasbay-api/rss/page${p}`,
-                        `https://civitasbay.org/rss/torrents?sort_by=recent&page=${p}`
-                    );
+                    const prodUrl = `https://civitasbay.org/rss/torrents?sort_by=recent&page=${p}`;
+                    const url = proxyUrl(`/civitasbay-api/rss/page${p}`, prodUrl);
 
                     try {
-                        const response = await fetchWrapper(url);
-                        if (!response.ok) return { page: p, items: [] };
+                        let xmlText: string;
 
-                        const xmlText = await response.text();
+                        // Use Electron proxy if available to bypass CORS
+                        if (window.electronAPI?.proxyRequest) {
+                            const result = await window.electronAPI.proxyRequest({
+                                url: prodUrl,
+                                method: 'GET'
+                            });
+
+                            if (!result.success) {
+                                console.error(`[CivitasBay] Proxy error on page ${p}: ${result.error}`);
+                                return { page: p, items: [] };
+                            }
+                            xmlText = typeof result.data === 'string' ? result.data : JSON.stringify(result.data);
+                        } else {
+                            const response = await fetchWrapper(url);
+                            if (!response.ok) return { page: p, items: [] };
+                            xmlText = await response.text();
+                        }
+
                         const parser = new DOMParser();
                         const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
                         const xmlItems = xmlDoc.querySelectorAll('item');
