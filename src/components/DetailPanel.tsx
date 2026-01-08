@@ -15,10 +15,22 @@ const GalleryImage = ({ src, alt, onClick }: { src: string, alt: string, onClick
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Check if this is a video file
+  const isVideo = src.endsWith('.mp4') || src.endsWith('.webm') || src.endsWith('.mov');
+
   useEffect(() => {
     let cancelled = false;
 
     const loadImage = async () => {
+      // For videos, just use the direct URL (don't proxy)
+      if (isVideo) {
+        if (!cancelled) {
+          setImageSrc(src);
+          setLoading(false);
+        }
+        return;
+      }
+
       // If Electron is available and this looks like a CDN image, proxy it
       if (window.electronAPI?.proxyImage && (
         src.includes('imagecache.civitai.com') ||
@@ -46,7 +58,7 @@ const GalleryImage = ({ src, alt, onClick }: { src: string, alt: string, onClick
 
     loadImage();
     return () => { cancelled = true; };
-  }, [src]);
+  }, [src, isVideo]);
 
   if (error) {
     return (
@@ -69,6 +81,22 @@ const GalleryImage = ({ src, alt, onClick }: { src: string, alt: string, onClick
           <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
         </svg>
       </div>
+    );
+  }
+
+  // Render video or image based on file type
+  if (isVideo) {
+    return (
+      <video
+        src={imageSrc}
+        className="w-full h-full object-cover cursor-pointer"
+        muted
+        loop
+        autoPlay
+        playsInline
+        onClick={onClick}
+        onError={() => setError(true)}
+      />
     );
   }
 

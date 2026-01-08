@@ -93,7 +93,7 @@ export async function fetchCivitasBayDetails(torrentPageUrl: string): Promise<Ci
             baseModel: data.base_model || undefined,
         };
 
-        // Extract images from media array
+        // Extract all media from API (images and videos)
         const images: string[] = [];
         if (data.media && Array.isArray(data.media)) {
             data.media.forEach((item) => {
@@ -103,15 +103,15 @@ export async function fetchCivitasBayDetails(torrentPageUrl: string): Promise<Ci
             });
         }
 
-        // Limit to 10 images to avoid memory issues
+        // Limit to 10 items to avoid memory issues
         details.images = images.slice(0, 10);
 
-        // Use first image as main image
+        // Use first item as main
         if (details.images.length > 0) {
             details.imageUrl = details.images[0];
         }
 
-        console.log(`[CivitasBay Details] Found ${details.images?.length || 0} images from API`);
+        console.log(`[CivitasBay Details] Found ${details.images?.length || 0} media items from API`);
         console.log(`[CivitasBay Details] Extracted:`, details);
         return details;
 
