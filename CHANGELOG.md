@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.44] - 2026-01-08
+
+### Added
+- **Gallery Video Support**: Added full support for video previews (`.mp4`, `.webm`, `.mov`) in the model gallery with autoplay and looping.
+- **HuggingFace Support**: Improved image detection to recursively search subdirectories and identifying images in `assets/` folders.
+
+### Fixed
+- **CivitasBay Images**: Completely rewrote the fetcher to use the internal JSON API, resolving empty image issues caused by client-side rendering.
+- **Image Proxy**: Implemented a dedicated Electron image proxy to bypass CORS and Referer restrictions for `imagecache.civitai.com` and `huggingface.co`.
+- **NSFW Content**: CivitasBay fetcher now correctly identifies and includes all media types (images and videos) regardless of NSFW flags.
+- **Production Fetching**: Fixed CORS issues by routing API requests through Electron main process.
+
+---
+
 ## [0.3.30] - 2026-01-02
 
 ### Changed
