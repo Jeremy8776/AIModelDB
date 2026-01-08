@@ -61,15 +61,7 @@ const GalleryImage = ({ src, alt, onClick }: { src: string, alt: string, onClick
   }, [src, isVideo]);
 
   if (error) {
-    return (
-      <div className="w-full h-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 text-zinc-400">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
-          <circle cx="9" cy="9" r="2" />
-          <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
-        </svg>
-      </div>
-    );
+    return null;
   }
 
   if (loading || !imageSrc) {
@@ -620,7 +612,7 @@ export function DetailPanel({ model, onClose, onDelete, triggerElement }: Detail
             </div>
             <div className="grid grid-cols-2 gap-2">
               {modelDetails.images.map((imgUrl, i) => (
-                <div key={i} className="relative aspect-square overflow-hidden rounded-lg group">
+                <div key={i} className="relative aspect-square overflow-hidden rounded-lg group empty:hidden">
                   <GalleryImage
                     src={imgUrl}
                     alt={`Preview ${i + 1}`}
@@ -662,13 +654,35 @@ export function DetailPanel({ model, onClose, onDelete, triggerElement }: Detail
               </button>
             )}
 
-            <img
-              key={selectedImageIndex} // Key forces re-render for animation reset
-              src={modelDetails.images[selectedImageIndex]}
-              alt={`Full preview ${selectedImageIndex + 1}`}
-              className="max-h-full max-w-full rounded-lg shadow-2xl object-contain animate-in zoom-in-95 duration-200 select-none"
-              onClick={(e) => e.stopPropagation()}
-            />
+            {/* Image/Video View */}
+            {(() => {
+              const currentSrc = modelDetails.images[selectedImageIndex];
+              const isVideo = currentSrc.endsWith('.mp4') || currentSrc.endsWith('.webm') || currentSrc.endsWith('.mov');
+
+              if (isVideo) {
+                return (
+                  <video
+                    key={selectedImageIndex}
+                    src={currentSrc}
+                    className="max-h-full max-w-full rounded-lg shadow-2xl object-contain animate-in zoom-in-95 duration-200 select-none"
+                    onClick={(e) => e.stopPropagation()}
+                    controls
+                    autoPlay
+                    loop
+                  />
+                );
+              }
+
+              return (
+                <img
+                  key={selectedImageIndex} // Key forces re-render for animation reset
+                  src={currentSrc}
+                  alt={`Full preview ${selectedImageIndex + 1}`}
+                  className="max-h-full max-w-full rounded-lg shadow-2xl object-contain animate-in zoom-in-95 duration-200 select-none"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              );
+            })()}
 
             {/* Next Button */}
             {modelDetails.images.length > 1 && (
@@ -691,7 +705,13 @@ export function DetailPanel({ model, onClose, onDelete, triggerElement }: Detail
                 className={`relative h-16 w-16 min-w-[4rem] rounded-md overflow-hidden transition-all duration-200 border-2 ${selectedImageIndex === idx ? 'border-white scale-105 opacity-100 ring-2 ring-white/20' : 'border-transparent opacity-50 hover:opacity-80'
                   }`}
               >
-                <img src={img} alt={`Thumb ${idx}`} className="w-full h-full object-cover" />
+                {(() => {
+                  const isVideo = img.endsWith('.mp4') || img.endsWith('.webm') || img.endsWith('.mov');
+                  if (isVideo) {
+                    return <video src={img} className="w-full h-full object-cover" muted />;
+                  }
+                  return <img src={img} alt={`Thumb ${idx}`} className="w-full h-full object-cover" />;
+                })()}
               </button>
             ))}
           </div>

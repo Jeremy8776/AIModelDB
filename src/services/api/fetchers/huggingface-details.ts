@@ -74,6 +74,62 @@ export async function fetchHuggingFaceDetails(modelId: string): Promise<ModelGal
             });
         }
 
+        // If no images found in file list, try parsing README.md
+        if (images.length === 0) {
+            try {
+                const readmeFile = data.siblings?.find((f: any) => f.rfilename.toLowerCase() === 'readme.md');
+                if (readmeFile) {
+                    console.log('[HuggingFace Details] No images in file list, fetching README...');
+                    const ref = data.sha || 'main';
+                    const readmeUrl = `https://huggingface.co/${modelId}/raw/${ref}/${readmeFile.rfilename}`;
+
+                    let readmeContent = '';
+
+                    if (window.electronAPI?.proxyRequest) {
+                        const result = await window.electronAPI.proxyRequest({ url: readmeUrl, method: 'GET' });
+                        if (result.success && typeof result.data === 'string') {
+                            readmeContent = result.data;
+                        }
+                    } else {
+                        const url = proxyUrl(`/huggingface-readme/${modelId}`, readmeUrl);
+                        const res = await fetchWrapper(url);
+                        if (res.ok) readmeContent = await res.text();
+                    }
+
+                    if (readmeContent) {
+                        // Extract Markdown images: ![alt](url)
+                        const mdRegex = /!\[.*?\]\((.*?)\)/g;
+                        let match;
+                        while ((match = mdRegex.exec(readmeContent)) !== null) {
+                            let imgUrl = match[1];
+                            if (imgUrl && !imgUrl.startsWith('http')) {
+                                // Resolve relative URL
+                                imgUrl = `https://huggingface.co/${modelId}/resolve/${ref}/${imgUrl}`;
+                            }
+                            if (imgUrl && /\.(png|jpg|jpeg|webp|gif)$/i.test(imgUrl)) {
+                                images.push(imgUrl);
+                            }
+                        }
+
+                        // Extract HTML images: <img src="url">
+                        const htmlRegex = /<img[^>]+src=["']([^"']+)["'][^>]*>/g;
+                        while ((match = htmlRegex.exec(readmeContent)) !== null) {
+                            let imgUrl = match[1];
+                            if (imgUrl && !imgUrl.startsWith('http')) {
+                                // Resolve relative URL
+                                imgUrl = `https://huggingface.co/${modelId}/resolve/${ref}/${imgUrl}`;
+                            }
+                            if (imgUrl && /\.(png|jpg|jpeg|webp|gif)$/i.test(imgUrl)) {
+                                images.push(imgUrl);
+                            }
+                        }
+                    }
+                }
+            } catch (e) {
+                console.warn('[HuggingFace Details] Failed to parse README for images:', e);
+            }
+        }
+
         // Limit to reasonable amount
         const limitedImages = images.slice(0, 10);
 
