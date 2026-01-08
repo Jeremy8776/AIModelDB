@@ -16,11 +16,14 @@ export async function fetchArtificialAnalysisIndex(apiKey?: string): Promise<{ c
             return { complete: [], flagged: [] };
         }
 
+        // Clean the key to remove accidental whitespace
+        const cleanKey = apiKey.trim();
+
         console.log('[ArtificialAnalysis] Fetching models from all API endpoints...');
 
         const headers: Record<string, string> = {
             'Content-Type': 'application/json',
-            'x-api-key': apiKey
+            'x-api-key': cleanKey
         };
 
         console.log(`[ArtificialAnalysis] Using API key: Yes`);
