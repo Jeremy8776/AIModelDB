@@ -1,7 +1,7 @@
 import { createPortal } from 'react-dom';
 import React, { useContext, useEffect, useState, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FileText, DollarSign, Info, ExternalLink, Loader2, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { FileText, DollarSign, Info, ExternalLink, Loader2, X, ChevronLeft, ChevronRight, Star, Flag } from 'lucide-react';
 import ThemeContext from '../context/ThemeContext';
 import { Model } from '../types';
 import { Badge, DomainIcon } from './UI';
@@ -122,9 +122,11 @@ interface DetailPanelProps {
   onClose: () => void;
   onDelete: (modelId: string) => void;
   triggerElement?: HTMLElement | null;
+  onToggleFavorite?: (model: Model) => void;
+  onToggleNSFWFlag?: (model: Model) => void;
 }
 
-export function DetailPanel({ model, onClose, onDelete, triggerElement }: DetailPanelProps) {
+export function DetailPanel({ model, onClose, onDelete, triggerElement, onToggleFavorite, onToggleNSFWFlag }: DetailPanelProps) {
   const { theme } = useContext(ThemeContext);
   const { t } = useTranslation();
   const [isAnimating, setIsAnimating] = useState(false);
@@ -296,6 +298,26 @@ export function DetailPanel({ model, onClose, onDelete, triggerElement }: Detail
             )}
           </div>
           <div className="flex gap-2">
+            {onToggleFavorite && (
+              <button
+                onClick={() => onToggleFavorite(model)}
+                className={`flex items-center gap-1 rounded-xl ${bgInput} px-3 py-1 text-xs whitespace-nowrap transition-all duration-150 active:scale-90 ${model.isFavorite ? 'text-amber-500 bg-amber-50 dark:bg-amber-900/30 ring-1 ring-amber-500/30' : 'hover:bg-amber-50 dark:hover:bg-amber-900/20'}`}
+                title={model.isFavorite ? t('common.removeFromFavorites') : t('common.addToFavorites')}
+              >
+                <Star className={`size-3 transition-transform duration-150 ${model.isFavorite ? 'fill-current scale-110' : ''}`} />
+                {model.isFavorite ? t('common.favorited') : t('common.favorite')}
+              </button>
+            )}
+            {onToggleNSFWFlag && (
+              <button
+                onClick={() => onToggleNSFWFlag(model)}
+                className={`flex items-center gap-1 rounded-xl ${bgInput} px-3 py-1 text-xs whitespace-nowrap transition-all duration-150 active:scale-90 ${model.isNSFWFlagged ? 'text-red-500 bg-red-50 dark:bg-red-900/30 ring-1 ring-red-500/30' : 'hover:bg-red-50 dark:hover:bg-red-900/20'}`}
+                title={model.isNSFWFlagged ? t('common.unflag') : t('common.flag')}
+              >
+                <Flag className={`size-3 transition-transform duration-150 ${model.isNSFWFlagged ? 'fill-current scale-110' : ''}`} />
+                {model.isNSFWFlagged ? t('common.flagged') : t('common.flag')}
+              </button>
+            )}
             <button
               onClick={() => window.dispatchEvent(new CustomEvent('edit-model', { detail: model }))}
               className={`rounded-xl ${bgInput} px-3 py-1 text-xs whitespace-nowrap`}

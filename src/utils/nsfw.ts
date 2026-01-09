@@ -7,11 +7,12 @@ export interface NSFWCheckResult {
   flaggedTerms: string[];
 }
 
-// Minimal explicit terms applied to model names only (per product policy)
-const EXPLICIT_NAME_TERMS = ['porn', 'hentai', 'xxx', 'rule34', 'yiff', 'fetish', 'bdsm', 'kink', 'nsfw', '18+'];
+import { EXPLICIT_NAME_TERMS, EXPLICIT_TAGS } from './nsfw-keywords';
 
-// Only treat explicitly sexual tags as NSFW; ignore generic NSFW/suggestive tags
-const EXPLICIT_TAGS = ['porn', 'hentai', 'xxx', 'rule34', 'yiff', 'fetish', 'bdsm', 'kink', 'nsfw', '18+'];
+// Re-export for use in other files if necessary, or just use them here.
+export { EXPLICIT_NAME_TERMS, EXPLICIT_TAGS };
+
+
 
 // Safe model categories that are definitely work-appropriate
 const SAFE_CATEGORIES = [
@@ -52,13 +53,88 @@ const NSFW_PROVIDERS = [
 ];
 
 /**
+ * Normalizes text to catch various formatting patterns:
+ * - CamelCase: "ProneBone" -> "prone bone"
+ * - Dashes/underscores: "prone-bone" or "prone_bone" -> "prone bone"
+ * - Dots: "prone.bone" -> "prone bone"
+ * - Numbers mixed in: "pr0n" stays as is (handled by keyword list)
+ */
+function normalizeText(text: string): string {
+  if (!text) return '';
+
+  let normalized = text
+    // Insert space before uppercase letters (CamelCase -> Camel Case)
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    // Insert space between letter and number transitions
+    .replace(/([a-zA-Z])(\d)/g, '$1 $2')
+    .replace(/(\d)([a-zA-Z])/g, '$1 $2')
+    // Replace dashes, underscores, dots with spaces
+    .replace(/[-_\.]+/g, ' ')
+    // Collapse multiple spaces
+    .replace(/\s+/g, ' ')
+    // Trim and lowercase
+    .trim()
+    .toLowerCase();
+
+  return normalized;
+}
+
+/**
+ * Generates variations of a term for matching (no-space versions)
+ */
+function getTermVariations(term: string): string[] {
+  const variations = [term];
+  // Add no-space version if term has spaces
+  if (term.includes(' ')) {
+    variations.push(term.replace(/\s+/g, ''));
+  }
+  return variations;
+}
+
+/**
  * Analyzes text content for NSFW indicators
  */
 function analyzeTextForExplicitName(text: string): { score: number; flaggedTerms: string[] } {
   if (!text) return { score: 0, flaggedTerms: [] };
-  const t = text.toLowerCase();
-  const hits = EXPLICIT_NAME_TERMS.filter(k => t.includes(k));
-  return { score: hits.length > 0 ? 100 : 0, flaggedTerms: hits };
+
+  // Normalize the input text to catch CamelCase, dashes, underscores, etc.
+  const normalizedText = normalizeText(text);
+  // Also keep original lowercase for direct matches (e.g., "pronebone" without spaces)
+  const originalLower = text.toLowerCase();
+
+  const flaggedTerms: string[] = [];
+  let score = 0;
+
+  for (const term of EXPLICIT_NAME_TERMS) {
+    if (term === '18+') {
+      if (text.includes('18+')) {
+        flaggedTerms.push(term);
+        score = 100;
+      }
+      continue;
+    }
+
+    // Get variations of the term (with and without spaces)
+    const variations = getTermVariations(term);
+
+    for (const variant of variations) {
+      // Escape special regex chars
+      const escaped = variant.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      // Use word boundaries to avoid false positives (e.g., 'sex' in 'essex')
+      const regex = new RegExp(`\\b${escaped}\\b`, 'i');
+
+      // Check both normalized and original text
+      if (regex.test(normalizedText) || regex.test(originalLower)) {
+        if (!flaggedTerms.includes(term)) {
+          flaggedTerms.push(term);
+          score = 100;
+        }
+        break; // Found a match for this term, no need to check other variations
+      }
+    }
+  }
+
+  return { score, flaggedTerms };
 }
 
 /**
@@ -80,8 +156,9 @@ function checkTagsForNSFW(tags: string[]): { score: number; flaggedTags: string[
     }
 
     for (const nsfwTag of EXPLICIT_TAGS) {
+      // Tags are usually precise, so strict matching is fine
       const normalizedNsfwTag = nsfwTag.toLowerCase().replace(/[^a-z0-9]/g, '');
-      if (normalizedTag === normalizedNsfwTag) {
+      if (normalizedTag === normalizedNsfwTag || normalizedTag.includes(normalizedNsfwTag)) {
         flaggedTags.push(tag);
         score += 100;
         break;
@@ -89,23 +166,14 @@ function checkTagsForNSFW(tags: string[]): { score: number; flaggedTags: string[
     }
   }
 
-  return { score: score, flaggedTags };
+  return { score, flaggedTags };
 }
 
 /**
  * Checks if provider/source is known to host NSFW content
  */
 function checkProviderRisk(provider: string, source: string): number {
-  const p = (provider || '').toLowerCase();
-  const s = (source || '').toLowerCase();
-
-  if (NSFW_PROVIDERS.some(risk => p.includes(risk) || s.includes(risk))) {
-    // Return high score for known NSFW providers
-    // This effectively blocks Civitai/CivitasBay content when filtering is ON, 
-    // unless the model matches a Known Safe Pattern (bert, gpt, etc) which is checked earlier.
-    return 100;
-  }
-  return 0;
+  return 0; // Don't auto-flag based on provider alone, let content analysis decide
 }
 
 /**
@@ -119,6 +187,7 @@ export function detectNSFW(model: any): NSFWCheckResult {
   // Early exit for trusted providers and safe model patterns
   const modelName = model.name || '';
   const provider = (model.provider || '').toLowerCase();
+  const source = (model.source || '').toLowerCase();
 
   // Check if provider is trusted
   if (TRUSTED_PROVIDERS.some(trusted => provider.includes(trusted.toLowerCase()))) {
@@ -161,7 +230,18 @@ export function detectNSFW(model: any): NSFWCheckResult {
     reasons.push('Flagged terms in model name');
   }
 
-  // Ignore description to avoid false positives on general-purpose models
+  // Smart Description Check: Only check description for high-risk providers
+  const isHighRiskSource = NSFW_PROVIDERS.some(risk => provider.includes(risk) || source.includes(risk));
+
+  if (isHighRiskSource) {
+    // Use the same regex analysis on description
+    const descCheck = analyzeTextForExplicitName(model.description || '');
+    if (descCheck.score > 0) {
+      totalScore += descCheck.score;
+      flaggedTerms.push(...descCheck.flaggedTerms);
+      reasons.push('Flagged terms in description (High Risk Source)');
+    }
+  }
 
   // Check tags
   const tagsCheck = checkTagsForNSFW(model.tags || []);

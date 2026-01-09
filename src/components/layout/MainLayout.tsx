@@ -219,6 +219,7 @@ export function MainLayout({
                                     onSelectAll={onSelectAll}
                                     onToggleFavorite={onToggleFavorite}
                                     onToggleNSFWFlag={onToggleNSFWFlag}
+                                    activeModelId={openModel?.id}
                                 />
 
                                 {/* Floating Bulk Actions Toolbar */}
@@ -279,6 +280,8 @@ export function MainLayout({
                                 onClose={onCloseDetail}
                                 onDelete={onDeleteModel}
                                 triggerElement={triggerElement}
+                                onToggleFavorite={onToggleFavorite}
+                                onToggleNSFWFlag={onToggleNSFWFlag}
                             />
                         </ErrorBoundary>
                     </div>

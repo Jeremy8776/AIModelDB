@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.49] - 2026-01-08
+
+### Added
+- **NSFW Feedback**: When manually flagging a model as NSFW, a feedback form now appears to report missed keywords, helping to improve the filtering implementation.
+- **Enhanced Filter List**: Significantly expanded the internal NSFW keyword list with specific community-requested terms (including 'prone bone', etc.) via a dedicated dictionary file.
+
+### Fixed
+- **CivitasBay Filtering**: Refined NSFW filtering logic. Instead of blocking all content from CivitasBay when safety mode is on, the system now performs deep content analysis on titles, tags, and descriptions using an expanded set of safety keywords.
+- **Table UI**: Fixed selection column alignment by moving action buttons to floating hover overlay.
+- **UX**: Added row highlighting for the actively selected model when the details panel is open.
+- **Detail Panel**: Moved Favorite and Flag actions to the detail panel header when a model is open, hiding them from the row to prevent clutter.
+
+---
+
 ## [0.3.48] - 2026-01-08
 
 ### Fixed

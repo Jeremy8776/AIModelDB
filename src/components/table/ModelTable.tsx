@@ -36,6 +36,7 @@ export interface ModelTableProps {
     onSelectAll?: (selected: boolean) => void;
     onToggleFavorite?: (model: Model) => void;
     onToggleNSFWFlag?: (model: Model) => void;
+    activeModelId?: string | null;
 }
 
 export function ModelTable({
@@ -53,7 +54,8 @@ export function ModelTable({
     onSelect,
     onSelectAll,
     onToggleFavorite,
-    onToggleNSFWFlag
+    onToggleNSFWFlag,
+    activeModelId
 }: ModelTableProps) {
     // Styling based on theme
     const bgCard = theme === 'dark' ? 'border-zinc-800 bg-black' : 'border-gray-400 bg-white shadow-sm';
@@ -195,6 +197,7 @@ export function ModelTable({
                                         }
                                     }}
                                     isSelected={isSelected}
+                                    isActive={activeModelId === m.id}
                                     onSelect={onSelect}
                                     isFocused={focusedIndex === virtualRow.index}
                                     onToggleFavorite={onToggleFavorite}

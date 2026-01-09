@@ -11,6 +11,7 @@ import { formatCurrency, convertCurrency, detectCurrency, validateModelCost, fac
 interface ModelRowProps {
   m: Model;
   onOpen: (m: Model, element?: HTMLElement) => void;
+  isActive?: boolean;
   isSelected?: boolean;
   onSelect?: (m: Model, selected: boolean) => void;
   isFocused?: boolean;
@@ -18,13 +19,15 @@ interface ModelRowProps {
   onToggleNSFWFlag?: (m: Model) => void;
 }
 
-export const ModelRow = React.memo(function ModelRow({ m, onOpen, isSelected, onSelect, isFocused, onToggleFavorite, onToggleNSFWFlag }: ModelRowProps) {
+export const ModelRow = React.memo(function ModelRow({ m, onOpen, isActive, isSelected, onSelect, isFocused, onToggleFavorite, onToggleNSFWFlag }: ModelRowProps) {
   const { theme } = useContext(ThemeContext);
   const { settings } = useSettings();
 
-  const rowBg = theme === 'dark'
-    ? 'border-zinc-800 bg-zinc-950/40'
-    : 'border-gray-400 bg-white shadow-sm';
+  const rowBg = isActive
+    ? (theme === 'dark' ? 'border-violet-500/50 bg-violet-900/20' : 'border-violet-300 bg-violet-50')
+    : theme === 'dark'
+      ? 'border-zinc-800 bg-zinc-950/40'
+      : 'border-gray-400 bg-white shadow-sm';
 
   const textMain = theme === 'dark'
     ? 'text-zinc-100'
@@ -296,48 +299,16 @@ export const ModelRow = React.memo(function ModelRow({ m, onOpen, isSelected, on
         if (target.closest('button') || target.closest('input') || target.closest('[role="checkbox"]')) return;
         onOpen(m, e.currentTarget);
       }}
-      className={`group/row grid w-full grid-cols-12 items-center gap-3 rounded-xl border ${rowBg} px-3 py-2 text-left transition cursor-pointer ${isFocused ? 'ring-2 ring-violet-500 z-10' : ''}`}
+      className={`group/row relative grid w-full grid-cols-12 items-center gap-3 rounded-xl border ${rowBg} px-3 py-2 text-left transition cursor-pointer ${isFocused ? 'ring-2 ring-violet-500 z-10' : ''}`}
     >
       {/* Checkbox Column */}
-      <div className="col-span-1 flex justify-center items-center gap-2">
+      <div className="col-span-1 flex justify-center items-center h-full">
         <RoundCheckbox
           checked={!!isSelected}
           onChange={(checked) => onSelect && onSelect(m, checked)}
           size="sm"
           ariaLabel={`Select ${m.name}`}
         />
-        {onToggleFavorite && (
-          <button
-            onClick={(e) => { e.stopPropagation(); onToggleFavorite(m); }}
-            className={`group p-1.5 rounded-full transition-all duration-300
-              ${m.isFavorite
-                ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-500 scale-100 opacity-100'
-                : 'text-zinc-300 dark:text-zinc-600 hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 scale-90 hover:scale-100 opacity-0 group-hover/row:opacity-100'
-              }`}
-            title={m.isFavorite ? "Remove from favorites" : "Add to favorites"}
-          >
-            <Star
-              className={`w-3.5 h-3.5 transition-transform duration-300 ${m.isFavorite ? 'fill-current' : 'group-hover:fill-current'}`}
-              strokeWidth={m.isFavorite ? 1.5 : 2}
-            />
-          </button>
-        )}
-        {onToggleNSFWFlag && (
-          <button
-            onClick={(e) => { e.stopPropagation(); onToggleNSFWFlag(m); }}
-            className={`group p-1.5 rounded-full transition-all duration-300
-              ${m.isNSFWFlagged
-                ? 'bg-red-100 dark:bg-red-900/30 text-red-500 scale-100 opacity-100'
-                : 'text-zinc-300 dark:text-zinc-600 hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 scale-90 hover:scale-100 opacity-0 group-hover/row:opacity-100'
-              }`}
-            title={m.isNSFWFlagged ? "Unflag model" : "Flag as inappropriate"}
-          >
-            <Flag
-              className={`w-3.5 h-3.5 transition-transform duration-300 ${m.isNSFWFlagged ? 'fill-current' : 'group-hover:fill-current'}`}
-              strokeWidth={m.isNSFWFlagged ? 1.5 : 2}
-            />
-          </button>
-        )}
       </div>
 
       {/* Name Column */}
@@ -362,6 +333,8 @@ export const ModelRow = React.memo(function ModelRow({ m, onOpen, isSelected, on
         {getCostDisplay(m)}
       </div>
       <div className={`col-span-2 truncate text-sm ${textSecondary}`} title={m.license?.name || 'Unknown'}>{m.license?.name || 'Unknown'}</div>
+
+
     </div>
   );
 });

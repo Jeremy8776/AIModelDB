@@ -18,6 +18,7 @@ import { ValidationProgress } from "./components/ValidationProgress";
 import { ModelEditor } from "./components/ModelEditor";
 import { SimpleValidationModal } from "./components/SimpleValidationModal";
 import { ValidationResultsModal } from "./components/ValidationResultsModal";
+import { FlagReasonModal } from "./components/FlagReasonModal";
 import { ValidationSummary } from "./hooks/useModelValidation";
 import { ExportModal } from "./components/ExportModal";
 import { filterModels } from "./utils/filterLogic";
@@ -89,6 +90,8 @@ function AIModelDBProContent() {
   // Track if API keys are available
   const [hasApiProvider, setHasApiProvider] = useState(false);
   const searchRef = useRef<HTMLInputElement | null>(null);
+  const [flagModalOpen, setFlagModalOpen] = useState(false);
+  const [modelToFlag, setModelToFlag] = useState<Model | null>(null);
   // One-shot ref to prevent config version check from repeatedly triggering onboarding
   const hasTriggeredConfigOnboarding = useRef(false);
 
@@ -677,7 +680,7 @@ function AIModelDBProContent() {
           sentinelRef={sentinelRef}
           displayCount={displayCount}
           totalCount={totalCount}
-          openModel={uiState.open}
+          openModel={uiState.open ? models.find(m => m.id === uiState.open?.id) || uiState.open : null}
           onCloseDetail={() => {
             uiState.setOpen(null);
             uiState.setTriggerElement(null);
@@ -701,8 +704,15 @@ function AIModelDBProContent() {
             setModels(prev => prev.map(m => m.id === model.id ? { ...m, isFavorite: !m.isFavorite } : m));
           }}
           onToggleNSFWFlag={(model) => {
-            setModels(prev => prev.map(m => m.id === model.id ? { ...m, isNSFWFlagged: !m.isNSFWFlagged } : m));
-            consoleLogging.addConsoleLog(`${model.isNSFWFlagged ? 'Unflagged' : 'Flagged'} model: ${model.name}`);
+            if (model.isNSFWFlagged) {
+              // Unflagging - immediate
+              setModels(prev => prev.map(m => m.id === model.id ? { ...m, isNSFWFlagged: false } : m));
+              consoleLogging.addConsoleLog(`Unflagged model: ${model.name}`);
+            } else {
+              // Flagging - ask for reason
+              setModelToFlag(model);
+              setFlagModalOpen(true);
+            }
           }}
         />
 
@@ -869,6 +879,26 @@ function AIModelDBProContent() {
             } else {
               modalState.setConfirmationToast(null);
             }
+          }}
+        />
+
+        <FlagReasonModal
+          isOpen={flagModalOpen}
+          onClose={() => {
+            setFlagModalOpen(false);
+            setModelToFlag(null);
+          }}
+          modelName={modelToFlag?.name || ''}
+          onConfirm={(reason) => {
+            if (modelToFlag) {
+              setModels(prev => prev.map(m => m.id === modelToFlag.id ? { ...m, isNSFWFlagged: true } : m));
+              consoleLogging.addConsoleLog(`Flagged model: ${modelToFlag.name}. Reason: ${reason}`);
+              if (reason.trim()) {
+                console.log(`[User Feedback] NSFW Flag Reason for ${modelToFlag.name}: ${reason}`);
+              }
+            }
+            setFlagModalOpen(false);
+            setModelToFlag(null);
           }}
         />
 

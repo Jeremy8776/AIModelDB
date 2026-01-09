@@ -57,7 +57,14 @@
         "saveAndApprove": "Save & Approve",
         "runCheck": "Run Check",
         "runLlmCheck": "Run LLM NSFW Check?",
-        "runLlmCheckMessage": "Found {{modelCount}} models to scan. This will take approximately {{time}}. Skip for faster sync."
+        "runLlmCheckMessage": "Found {{modelCount}} models to scan. This will take approximately {{time}}. Skip for faster sync.",
+        "favorite": "Favorite",
+        "favorited": "Favorited",
+        "flag": "Flag",
+        "flagged": "Flagged",
+        "unflag": "Unflag",
+        "addToFavorites": "Add to favorites",
+        "removeFromFavorites": "Remove from favorites"
     },
     "header": {
         "searchPlaceholder": "Search models...",

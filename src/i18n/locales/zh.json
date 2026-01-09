@@ -57,7 +57,14 @@
         "saveAndApprove": "保存并批准",
         "runCheck": "运行检查",
         "runLlmCheck": "运行 LLM NSFW 检查？",
-        "runLlmCheckMessage": "发现 {{modelCount}} 个模型需要扫描。大约需要 {{time}}。跳过以加快同步。"
+        "runLlmCheckMessage": "发现 {{modelCount}} 个模型需要扫描。大约需要 {{time}}。跳过以加快同步。",
+        "favorite": "收藏",
+        "favorited": "已收藏",
+        "flag": "标记",
+        "flagged": "已标记",
+        "unflag": "取消标记",
+        "addToFavorites": "添加到收藏",
+        "removeFromFavorites": "从收藏中移除"
     },
     "header": {
         "searchPlaceholder": "搜索模型...",
