@@ -39,6 +39,7 @@ export interface SyncOptions {
     artificialAnalysisApiKey?: string;
     enableNSFWFiltering?: boolean;
     logNSFWAttempts?: boolean;
+    customNSFWKeywords?: string[];
     apiConfig?: ApiDir;
     preferredModelProvider?: string | null;
     systemPrompt?: string;
@@ -257,7 +258,7 @@ export async function syncAllSources(
             if (onLog) onLog(`Safety settings enabled. Running analysis on ${allComplete.length} models...`);
 
             // 1. Mandatory Regex Filter (Runs if setting is ON)
-            const regexFilter = applyCorporateFiltering(allComplete, true, options.logNSFWAttempts);
+            const regexFilter = applyCorporateFiltering(allComplete, true, options.logNSFWAttempts, options.customNSFWKeywords);
             allComplete = regexFilter.complete;
 
             if (onLog) {
@@ -275,7 +276,9 @@ export async function syncAllSources(
                 options.logNSFWAttempts,
                 options.apiConfig, // Pass API config for LLM validation
                 skipSignal,
-                onConfirmLLMCheck
+                onConfirmLLMCheck,
+                undefined, // onProgress
+                options.customNSFWKeywords // customKeywords
             );
 
             allComplete = finalFilter.complete;

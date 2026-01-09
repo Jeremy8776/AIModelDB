@@ -134,7 +134,7 @@ function getTermVariations(term: string): string[] {
 /**
  * Analyzes text content for NSFW indicators
  */
-function analyzeTextForExplicitName(text: string): { score: number; flaggedTerms: string[] } {
+function analyzeTextForExplicitName(text: string, customKeywords: string[] = []): { score: number; flaggedTerms: string[] } {
   if (!text) return { score: 0, flaggedTerms: [] };
 
   // Normalize the input text to catch CamelCase, dashes, underscores, etc.
@@ -180,11 +180,13 @@ function analyzeTextForExplicitName(text: string): { score: number; flaggedTerms
 /**
  * Checks tags array for NSFW content
  */
-function checkTagsForNSFW(tags: string[]): { score: number; flaggedTags: string[] } {
+function checkTagsForNSFW(tags: string[], customKeywords: string[] = []): { score: number; flaggedTags: string[] } {
   if (!tags || !Array.isArray(tags)) return { score: 0, flaggedTags: [] };
 
   const flaggedTags: string[] = [];
   let score = 0;
+
+  const allNsfwTags = [...EXPLICIT_TAGS, ...customKeywords];
 
   for (const tag of tags) {
     const normalizedTag = tag.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -195,7 +197,7 @@ function checkTagsForNSFW(tags: string[]): { score: number; flaggedTags: string[
       continue;
     }
 
-    for (const nsfwTag of EXPLICIT_TAGS) {
+    for (const nsfwTag of allNsfwTags) {
       // Tags are usually precise, so strict matching is fine
       const normalizedNsfwTag = nsfwTag.toLowerCase().replace(/[^a-z0-9]/g, '');
       if (normalizedTag === normalizedNsfwTag || normalizedTag.includes(normalizedNsfwTag)) {
@@ -219,17 +221,28 @@ function checkProviderRisk(provider: string, source: string): number {
 /**
  * Main NSFW detection function
  */
-export function detectNSFW(model: any): NSFWCheckResult {
+export function detectNSFW(model: any, customKeywords: string[] = []): NSFWCheckResult {
   const reasons: string[] = [];
   const flaggedTerms: string[] = [];
   let totalScore = 0;
 
-  // Early exit for trusted providers and safe model patterns
   const modelName = model.name || '';
   const provider = (model.provider || '').toLowerCase();
   const source = (model.source || '').toLowerCase();
 
-  // Check if provider is trusted
+  // FIRST: Check for explicit terms in name - this takes priority over everything
+  const nameCheck = analyzeTextForExplicitName(modelName, customKeywords);
+  if (nameCheck.score > 0) {
+    // Found explicit content - flag immediately, don't apply safe patterns
+    return {
+      isNSFW: true,
+      confidence: 1,
+      reasons: ['Flagged terms in model name'],
+      flaggedTerms: nameCheck.flaggedTerms
+    };
+  }
+
+  // SECOND: Check trusted providers (only if no explicit terms found)
   if (TRUSTED_PROVIDERS.some(trusted => provider.includes(trusted.toLowerCase()))) {
     return {
       isNSFW: false,
@@ -239,7 +252,7 @@ export function detectNSFW(model: any): NSFWCheckResult {
     };
   }
 
-  // Check if model name matches safe patterns
+  // THIRD: Check safe model patterns (only if no explicit terms found)
   if (SAFE_MODEL_PATTERNS.some(pattern => pattern.test(modelName))) {
     return {
       isNSFW: false,
@@ -262,20 +275,13 @@ export function detectNSFW(model: any): NSFWCheckResult {
     };
   }
 
-  // Check name (explicit terms only)
-  const nameCheck = analyzeTextForExplicitName(model.name || '');
-  totalScore += nameCheck.score;
-  flaggedTerms.push(...nameCheck.flaggedTerms);
-  if (nameCheck.score > 0) {
-    reasons.push('Flagged terms in model name');
-  }
-
+  // Continue checking other fields (description, tags) for high-risk sources
   // Smart Description Check: Only check description for high-risk providers
   const isHighRiskSource = NSFW_PROVIDERS.some(risk => provider.includes(risk) || source.includes(risk));
 
   if (isHighRiskSource) {
     // Use the same regex analysis on description
-    const descCheck = analyzeTextForExplicitName(model.description || '');
+    const descCheck = analyzeTextForExplicitName(model.description || '', customKeywords);
     if (descCheck.score > 0) {
       totalScore += descCheck.score;
       flaggedTerms.push(...descCheck.flaggedTerms);
@@ -284,7 +290,7 @@ export function detectNSFW(model: any): NSFWCheckResult {
   }
 
   // Check tags
-  const tagsCheck = checkTagsForNSFW(model.tags || []);
+  const tagsCheck = checkTagsForNSFW(model.tags || [], customKeywords);
   totalScore += tagsCheck.score;
   flaggedTerms.push(...tagsCheck.flaggedTags);
   if (tagsCheck.score > 0) {
@@ -316,7 +322,7 @@ export function detectNSFW(model: any): NSFWCheckResult {
 /**
  * Filters out NSFW models from a list
  */
-export function filterNSFWModels(models: any[], enableFiltering: boolean = true): {
+export function filterNSFWModels(models: any[], enableFiltering: boolean = true, customKeywords: string[] = []): {
   safeModels: any[];
   flaggedModels: any[];
   filteredCount: number;
@@ -333,7 +339,7 @@ export function filterNSFWModels(models: any[], enableFiltering: boolean = true)
   const flaggedModels: any[] = [];
 
   for (const model of models) {
-    const nsfwCheck = detectNSFW(model);
+    const nsfwCheck = detectNSFW(model, customKeywords);
 
     if (nsfwCheck.isNSFW) {
       // Add NSFW metadata for logging/debugging

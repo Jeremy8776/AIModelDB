@@ -14,23 +14,28 @@ import { safeJsonFromText } from "../../../utils/format";
 export function applyCorporateFiltering(
     models: Model[],
     enableNSFWFiltering: boolean = true,
-    logAttempts: boolean = true
+    logAttempts: boolean = true,
+    customKeywords: string[] = []
 ): { complete: Model[], flagged: Model[] } {
     if (!enableNSFWFiltering) {
         // console.log('[Corporate Filter] NSFW filtering disabled');
         return { complete: models, flagged: [] };
     }
 
-    const { safeModels, flaggedModels, filteredCount } = filterNSFWModels(models, enableNSFWFiltering);
+    const { safeModels, flaggedModels, filteredCount } = filterNSFWModels(models, enableNSFWFiltering, customKeywords);
 
     if (filteredCount > 0) {
-        console.warn(`[Corporate Filter] Filtered ${filteredCount} NSFW models from results`);
+        // Compressed summary log instead of logging each model individually
+        console.warn(`[Safety Filter] Blocked ${filteredCount} models by keyword filter`);
 
-        if (logAttempts) {
-            flaggedModels.forEach(model => {
-                const report = getSafetyReport(model);
-                console.warn(`[Corporate Filter] Blocked: ${model.name} - ${report}`);
-            });
+        if (logAttempts && filteredCount <= 10) {
+            // Only show individual models if there are 10 or fewer
+            const names = flaggedModels.map(m => m.name?.substring(0, 40) || 'Unknown').join(', ');
+            console.log(`[Safety Filter] Blocked: ${names}`);
+        } else if (logAttempts) {
+            // For large numbers, show first 5 and count
+            const first5 = flaggedModels.slice(0, 5).map(m => m.name?.substring(0, 30) || 'Unknown').join(', ');
+            console.log(`[Safety Filter] Including: ${first5}... and ${filteredCount - 5} more`);
         }
     }
 
@@ -50,10 +55,11 @@ export async function applyCorporateFilteringAsync(
     apiConfig?: ApiDir,
     skipSignal?: { current: boolean },
     onConfirmLLMCheck?: (modelCount: number, estimatedTimeMs: number) => Promise<boolean>,
-    onProgress?: (current: number, total: number) => void
+    onProgress?: (current: number, total: number) => void,
+    customKeywords: string[] = []
 ): Promise<{ complete: Model[], flagged: Model[] }> {
     // 1. Run standard synchronous/regex filtering first (fast)
-    const syncResult = applyCorporateFiltering(models, enableNSFWFiltering, logAttempts);
+    const syncResult = applyCorporateFiltering(models, enableNSFWFiltering, logAttempts, customKeywords);
 
     // If filtering is disabled or no apiConfig, return sync result
     if (!enableNSFWFiltering || !apiConfig) {

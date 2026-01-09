@@ -52,7 +52,7 @@ import { UpdateProgress } from "./components/UpdateProgress";
 function AIModelDBProContent() {
   const { t } = useTranslation();
   const { theme } = useTheme();
-  const { settings } = useSettings();
+  const { settings, saveSettings } = useSettings();
   const { updateAvailable, updateVersion, checking, downloadProgress, updateDownloaded, error } = useUpdate();
   const [showUpdateProgress, setShowUpdateProgress] = useState(false);
   const [showShortcutsModal, setShowShortcutsModal] = useState(false);
@@ -332,7 +332,8 @@ function AIModelDBProContent() {
           logNSFWAttempts: settings.logNSFWAttempts,
           apiConfig: settings.apiConfig,
           preferredModelProvider: settings.preferredModelProvider,
-          systemPrompt: settings.systemPrompt
+          systemPrompt: settings.systemPrompt,
+          customNSFWKeywords: settings.customNSFWKeywords
         },
         {
           onProgress: updateProgressWithMessage,
@@ -893,8 +894,20 @@ function AIModelDBProContent() {
             if (modelToFlag) {
               setModels(prev => prev.map(m => m.id === modelToFlag.id ? { ...m, isNSFWFlagged: true } : m));
               consoleLogging.addConsoleLog(`Flagged model: ${modelToFlag.name}. Reason: ${reason}`);
+
               if (reason.trim()) {
+                const keyword = reason.trim().toLowerCase();
                 console.log(`[User Feedback] NSFW Flag Reason for ${modelToFlag.name}: ${reason}`);
+
+                // Add to custom blocklist in settings
+                const currentKeywords = settings.customNSFWKeywords || [];
+                if (!currentKeywords.includes(keyword)) {
+                  // Save to settings
+                  saveSettings({
+                    customNSFWKeywords: [...currentKeywords, keyword]
+                  });
+                  consoleLogging.addConsoleLog(`Added "${keyword}" to custom blocklist`);
+                }
               }
             }
             setFlagModalOpen(false);

@@ -129,6 +129,18 @@ export async function fetchArtificialAnalysisIndex(apiKey?: string): Promise<{ c
                         }
                     }
 
+                    // Extract images from API response
+                    const images: string[] = [];
+                    // Try various possible image fields from AA API
+                    if (item.logo) images.push(item.logo);
+                    if (item.image) images.push(item.image);
+                    if (item.thumbnail) images.push(item.thumbnail);
+                    if (item.icon) images.push(item.icon);
+                    if (item.model_creator?.logo) images.push(item.model_creator.logo);
+                    if (item.model_creator?.icon) images.push(item.model_creator.icon);
+                    // Deduplicate
+                    const uniqueImages = [...new Set(images)];
+
                     const model: Model = {
                         id: `aa-${item.id || item.slug}`,
                         name: item.name,
@@ -161,7 +173,8 @@ export async function fetchArtificialAnalysisIndex(apiKey?: string): Promise<{ c
                             on_premise_friendly: false
                         },
                         downloads: undefined,
-                        benchmarks: benchmarks.length > 0 ? benchmarks : undefined
+                        benchmarks: benchmarks.length > 0 ? benchmarks : undefined,
+                        images: uniqueImages.length > 0 ? uniqueImages : undefined
                     };
 
                     allModels.push(model);

@@ -60,6 +60,7 @@ interface Settings {
   enableNSFWFiltering: boolean;
   nsfwFilteringStrict: boolean;
   logNSFWAttempts: boolean; // Log NSFW attempts for compliance
+  customNSFWKeywords: string[]; // User-defined NSFW keywords
   // System state
   configVersion: number;
 }
@@ -130,6 +131,7 @@ const defaultSettings: Settings = {
   enableNSFWFiltering: true, // Enabled by default for corporate use
   nsfwFilteringStrict: true, // Strict filtering for corporate environment
   logNSFWAttempts: true, // Log NSFW attempts for compliance
+  customNSFWKeywords: [], // Default to empty list
   // System state
   configVersion: 1, // Default to 1 (pre-Ollama update)
 };

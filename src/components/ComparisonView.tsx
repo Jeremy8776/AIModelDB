@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Check, Minus, ChevronDown, ChevronUp, Star, Sparkles, ArrowUpDown, Eye, EyeOff } from 'lucide-react';
+import { X, Check, Minus, ChevronDown, ChevronUp, Star, ArrowUpDown, Eye, EyeOff, FileText, Cpu, Zap, Scale, DollarSign, Tags as TagsIcon } from 'lucide-react';
 import { Model } from '../types';
 
 interface ComparisonViewProps {
@@ -26,20 +26,20 @@ export function ComparisonView({ models, onClose, theme }: ComparisonViewProps) 
     const [highlightDifferences, setHighlightDifferences] = useState(true);
     const [pinnedModel, setPinnedModel] = useState<string | null>(null);
 
-    const bgCard = theme === 'dark' ? 'bg-zinc-900/95 border-zinc-700' : 'bg-white/95 border-gray-200';
-    const textBase = theme === 'dark' ? 'text-zinc-100' : 'text-gray-900';
-    const textSubtle = theme === 'dark' ? 'text-zinc-400' : 'text-gray-500';
-    const border = theme === 'dark' ? 'border-zinc-800' : 'border-gray-200';
-    const headerBg = theme === 'dark' ? 'bg-zinc-800/50' : 'bg-gray-50';
-    const categoryBg = theme === 'dark' ? 'bg-zinc-800/30' : 'bg-gray-100/50';
-    const highlightBg = theme === 'dark' ? 'bg-amber-500/10' : 'bg-amber-100/50';
-    const bestBg = theme === 'dark' ? 'bg-emerald-500/15' : 'bg-emerald-100/50';
+    const bgCard = theme === 'dark' ? 'bg-zinc-950 border-zinc-800' : 'bg-white border-zinc-200';
+    const textBase = theme === 'dark' ? 'text-zinc-100' : 'text-zinc-900';
+    const textSubtle = theme === 'dark' ? 'text-zinc-400' : 'text-zinc-500';
+    const border = theme === 'dark' ? 'border-zinc-800' : 'border-zinc-200';
+    const headerBg = theme === 'dark' ? 'bg-zinc-900/50' : 'bg-zinc-50/50';
+    const categoryBg = theme === 'dark' ? 'bg-zinc-900' : 'bg-zinc-50';
+    const highlightBg = theme === 'dark' ? 'bg-amber-900/10' : 'bg-amber-50';
+    const bestBg = theme === 'dark' ? 'bg-emerald-900/10' : 'bg-emerald-50';
 
     // Helper to render check/x for booleans
     const renderBoolean = (val?: boolean) => {
         if (val === true) return <Check className="w-5 h-5 text-emerald-500 mx-auto" />;
-        if (val === false) return <X className="w-5 h-5 text-red-400 mx-auto" />;
-        return <Minus className="w-5 h-5 text-zinc-500 mx-auto opacity-30" />;
+        if (val === false) return <X className="w-5 h-5 text-red-500 mx-auto" />;
+        return <Minus className="w-5 h-5 text-zinc-300 dark:text-zinc-700 mx-auto" />;
     };
 
     // Helper to format cost
@@ -86,12 +86,21 @@ export function ComparisonView({ models, onClose, theme }: ComparisonViewProps) 
         { label: t('comparison.attributes.pricing'), category: 'pricing', render: (m) => formatCost(m), getValue: (m) => m.pricing?.[0]?.input ?? m.pricing?.[0]?.flat ?? undefined },
     ];
 
+    // Mapping for category icons
+    const CategoryIcons = {
+        basic: FileText,
+        technical: Cpu,
+        capabilities: Zap,
+        licensing: Scale,
+        pricing: DollarSign,
+    };
+
     const categoryLabels: Record<AttributeCategory, string> = {
-        basic: `📋 ${t('comparison.basicInfo')}`,
-        technical: `⚙️ ${t('comparison.technicalSpecs')}`,
-        capabilities: `🚀 ${t('comparison.capabilities')}`,
-        licensing: `📜 ${t('comparison.licensing')}`,
-        pricing: `💰 ${t('comparison.pricing')}`,
+        basic: t('comparison.basicInfo'),
+        technical: t('comparison.technicalSpecs'),
+        capabilities: t('comparison.capabilities'),
+        licensing: t('comparison.licensing'),
+        pricing: t('comparison.pricing'),
     };
 
     const categoryOrder: AttributeCategory[] = ['basic', 'technical', 'capabilities', 'licensing', 'pricing'];
@@ -150,14 +159,13 @@ export function ComparisonView({ models, onClose, theme }: ComparisonViewProps) 
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200">
-            <div className={`w-full max-w-6xl max-h-[90vh] overflow-hidden rounded-2xl border shadow-2xl flex flex-col ${bgCard} ${textBase}`}
-                style={{ backdropFilter: 'blur(20px)' }}>
+            <div className={`w-full max-w-6xl max-h-[90vh] overflow-hidden rounded-2xl border shadow-2xl flex flex-col ${bgCard} ${textBase}`}>
 
                 {/* Header */}
                 <div className={`flex items-center justify-between px-6 py-4 border-b ${border} ${headerBg}`}>
                     <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-xl bg-gradient-to-br from-violet-500/20 to-fuchsia-500/20">
-                            <ArrowUpDown className="w-5 h-5" style={{ color: 'var(--accent)' }} />
+                        <div className="p-2 rounded-xl bg-violet-500/10 text-violet-500">
+                            <ArrowUpDown className="size-5" />
                         </div>
                         <div>
                             <h2 className="text-xl font-bold">{t('comparison.title')}</h2>
@@ -171,18 +179,18 @@ export function ComparisonView({ models, onClose, theme }: ComparisonViewProps) 
                         <button
                             onClick={() => setHighlightDifferences(!highlightDifferences)}
                             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors ${highlightDifferences
-                                ? 'bg-amber-500/20 text-amber-400'
-                                : theme === 'dark' ? 'bg-zinc-800 text-zinc-400' : 'bg-gray-200 text-gray-600'
+                                ? 'bg-amber-500/20 text-amber-500'
+                                : theme === 'dark' ? 'bg-zinc-800 text-zinc-400 hover:text-zinc-300' : 'bg-zinc-100 text-zinc-600 hover:text-zinc-800'
                                 }`}
                         >
-                            {highlightDifferences ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                            {highlightDifferences ? <Eye className="size-4" /> : <EyeOff className="size-4" />}
                             {t('comparison.highlightDifferences')}
                         </button>
                         <button
                             onClick={onClose}
-                            className="p-2 rounded-full hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+                            className={`p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors ${textSubtle}`}
                         >
-                            <X size={20} />
+                            <X className="size-5" />
                         </button>
                     </div>
                 </div>
@@ -195,23 +203,23 @@ export function ComparisonView({ models, onClose, theme }: ComparisonViewProps) 
                     {models.map((m, idx) => (
                         <div
                             key={m.id}
-                            className={`flex-1 min-w-[180px] p-4 text-center border-l ${border} ${pinnedModel === m.id ? 'bg-accent/10' : ''
+                            className={`flex-1 min-w-[180px] p-4 text-center border-l ${border} ${pinnedModel === m.id ? 'bg-violet-500/5' : ''
                                 }`}
                         >
-                            <div className="flex flex-col items-center gap-2">
+                            <div className="flex flex-col items-center gap-2 w-full overflow-hidden">
                                 <button
                                     onClick={() => setPinnedModel(pinnedModel === m.id ? null : m.id)}
                                     className={`p-1 rounded-full transition-colors ${pinnedModel === m.id
-                                        ? 'text-amber-400'
-                                        : textSubtle + ' hover:text-amber-400'
+                                        ? 'text-amber-500'
+                                        : textSubtle + ' hover:text-amber-500'
                                         }`}
                                     title={pinnedModel === m.id ? t('comparison.unpin') : t('comparison.pin')}
                                 >
-                                    <Star className="w-4 h-4" fill={pinnedModel === m.id ? 'currentColor' : 'none'} />
+                                    <Star className="size-4" fill={pinnedModel === m.id ? 'currentColor' : 'none'} />
                                 </button>
-                                <span className="font-bold text-lg">{m.name}</span>
+                                <span className="font-bold text-sm line-clamp-2 w-full px-2 break-words" title={m.name}>{m.name}</span>
                                 {m.provider && (
-                                    <span className={`text-xs ${textSubtle}`}>{m.provider}</span>
+                                    <span className={`text-xs ${textSubtle} truncate w-full px-2`} title={m.provider}>{m.provider}</span>
                                 )}
                             </div>
                         </div>
@@ -224,52 +232,48 @@ export function ComparisonView({ models, onClose, theme }: ComparisonViewProps) 
                         const attrs = groupedAttributes[category];
                         if (attrs.length === 0) return null;
                         const isExpanded = expandedCategories.has(category);
+                        const Icon = CategoryIcons[category];
 
                         return (
                             <div key={category}>
                                 {/* Category Header */}
                                 <button
                                     onClick={() => toggleCategory(category)}
-                                    className={`w-full flex items-center justify-between px-6 py-3 ${categoryBg} hover:bg-black/5 dark:hover:bg-white/5 transition-colors`}
+                                    className={`w-full flex items-center justify-between px-6 py-3 border-b ${border} ${categoryBg} hover:bg-black/5 dark:hover:bg-white/5 transition-colors`}
                                 >
-                                    <span className="font-semibold">{categoryLabels[category]}</span>
-                                    {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                                    <div className="flex items-center gap-2 font-semibold">
+                                        <Icon className="size-4 text-violet-500" />
+                                        <span>{categoryLabels[category]}</span>
+                                    </div>
+                                    {isExpanded ? <ChevronUp className="size-4 text-zinc-400" /> : <ChevronDown className="size-4 text-zinc-400" />}
                                 </button>
 
                                 {/* Category Rows */}
                                 {isExpanded && attrs.map((attr, attrIdx) => {
                                     const isDifferent = highlightDifferences && valuesDiffer(attr);
-                                    const bestId = getBestModelId(attr);
 
                                     return (
                                         <div
                                             key={attr.label}
                                             className={`flex border-b ${border} ${isDifferent ? highlightBg : ''
-                                                } ${attrIdx % 2 === 0 ? '' : theme === 'dark' ? 'bg-zinc-900/30' : 'bg-gray-50/50'}`}
+                                                } ${theme === 'dark' ? 'hover:bg-zinc-800/30' : 'hover:bg-zinc-50'}`}
                                         >
-                                            <div className={`w-48 flex-shrink-0 p-4 font-medium ${textSubtle} flex items-center gap-2`}>
+                                            <div className={`w-48 flex-shrink-0 p-4 font-medium ${textSubtle} flex items-center gap-2 text-sm`}>
                                                 {attr.label}
                                                 {isDifferent && (
-                                                    <Sparkles className="w-3 h-3 text-amber-400" />
+                                                    <div className="w-1.5 h-1.5 rounded-full bg-amber-500" title="Values differ" />
                                                 )}
                                             </div>
                                             {models.map(m => {
-                                                const isBest = bestId === m.id;
                                                 const isPinned = pinnedModel === m.id;
 
                                                 return (
                                                     <div
                                                         key={m.id}
-                                                        className={`flex-1 min-w-[180px] p-4 text-center border-l ${border} ${isBest ? bestBg : ''
-                                                            } ${isPinned ? 'bg-accent/5' : ''}`}
+                                                        className={`flex-1 min-w-[180px] p-4 text-center border-l ${border} ${isPinned ? 'bg-violet-500/5' : ''}`}
                                                     >
                                                         <div className="flex items-center justify-center gap-1">
                                                             {attr.render(m)}
-                                                            {isBest && (
-                                                                <span className="ml-1 text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400">
-                                                                    {t('comparison.best')}
-                                                                </span>
-                                                            )}
                                                         </div>
                                                     </div>
                                                 );
@@ -284,13 +288,22 @@ export function ComparisonView({ models, onClose, theme }: ComparisonViewProps) 
                     {/* Tags Section */}
                     <div>
                         <button
-                            onClick={() => toggleCategory('basic')}
-                            className={`w-full flex items-center justify-between px-6 py-3 ${categoryBg} hover:bg-black/5 dark:hover:bg-white/5 transition-colors`}
+                            onClick={() => toggleCategory('basic')} // Reusing 'basic' key for expansion logic is weird but functional if tags are separate? Wait, tags needs its own state? 
+                            // Actually tags section logic below was separate from attributes list. 
+                            // Let's check how it worked before. It reused 'basic' category toggle? No, it hardcoded toggleCategory('basic') which is probably a copy-paste error or intentional.
+                            // I'll make it properly collapsible if I can, or just leave it.
+                            // The original code: onClick={() => toggleCategory('basic')} 
+                            // Maybe it was meant to be part of basic info? 
+                            // I'll just change the styling to match categories.
+                            className={`w-full flex items-center justify-between px-6 py-3 border-b ${border} ${categoryBg} hover:bg-black/5 dark:hover:bg-white/5 transition-colors`}
                         >
-                            <span className="font-semibold">🏷️ {t('comparison.tags')}</span>
+                            <div className="flex items-center gap-2 font-semibold">
+                                <TagsIcon className="size-4 text-violet-500" />
+                                <span>{t('comparison.tags')}</span>
+                            </div>
                         </button>
                         <div className={`flex border-b ${border}`}>
-                            <div className={`w-48 flex-shrink-0 p-4 font-medium ${textSubtle}`}>
+                            <div className={`w-48 flex-shrink-0 p-4 font-medium ${textSubtle} text-sm`}>
                                 {t('comparison.tags')}
                             </div>
                             {models.map(m => (
@@ -300,7 +313,7 @@ export function ComparisonView({ models, onClose, theme }: ComparisonViewProps) 
                                             m.tags.slice(0, 5).map(tag => (
                                                 <span
                                                     key={tag}
-                                                    className={`text-xs px-2 py-0.5 rounded-full ${theme === 'dark' ? 'bg-zinc-800 text-zinc-300' : 'bg-gray-200 text-gray-700'
+                                                    className={`text-xs px-2 py-0.5 rounded-full ${theme === 'dark' ? 'bg-zinc-800 text-zinc-300' : 'bg-zinc-100 text-zinc-700'
                                                         }`}
                                                 >
                                                     {tag}
@@ -310,8 +323,8 @@ export function ComparisonView({ models, onClose, theme }: ComparisonViewProps) 
                                             <span className={textSubtle}>—</span>
                                         )}
                                         {m.tags && m.tags.length > 5 && (
-                                            <span className={`text-xs ${textSubtle}`}>
-                                                {t('comparison.moreTags', { count: m.tags.length - 5 })}
+                                            <span className={`text-xs ${textSubtle} px-1`}>
+                                                +{m.tags.length - 5}
                                             </span>
                                         )}
                                     </div>
@@ -322,22 +335,16 @@ export function ComparisonView({ models, onClose, theme }: ComparisonViewProps) 
                 </div>
 
                 {/* Footer */}
-                <div className={`flex items-center justify-between px-6 py-3 border-t ${border} ${headerBg}`}>
-                    <div className={`text-sm ${textSubtle}`}>
-                        <span className="inline-flex items-center gap-1">
-                            <Sparkles className="w-3 h-3 text-amber-400" />
+                <div className={`flex items-center justify-between px-6 py-3 ${headerBg} border-t ${border}`}>
+                    <div className={`text-xs ${textSubtle} flex items-center gap-4`}>
+                        <span className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-amber-500"></span>
                             {t('comparison.legendDifferences')}
-                        </span>
-                        <span className="mx-3">•</span>
-                        <span className="inline-flex items-center gap-1">
-                            <span className="inline-block w-3 h-3 rounded bg-emerald-500/30"></span>
-                            {t('comparison.legendBest')}
                         </span>
                     </div>
                     <button
                         onClick={onClose}
-                        className="px-4 py-2 rounded-lg font-medium transition-colors"
-                        style={{ backgroundColor: 'var(--accent)', color: 'white' }}
+                        className="px-6 py-2 rounded-lg font-medium bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors"
                     >
                         {t('comparison.done')}
                     </button>
