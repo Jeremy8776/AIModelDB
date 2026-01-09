@@ -32,9 +32,11 @@ const TRUSTED_PROVIDERS = [
 ];
 
 // Known safe model patterns - models matching these patterns are always safe
+// This includes general-purpose models that CAN generate NSFW but aren't inherently NSFW
 const SAFE_MODEL_PATTERNS = [
+  // LLM base models
   /^(bert|distilbert|roberta|albert|electra)-/i,
-  /^(gpt|llama|t5|gemma)-/i,
+  /^(gpt|llama|t5|gemma|mistral|qwen|phi|deepseek)-/i,
   /^sentence-transformers\//i,
   /^google-(bert|t5)\//i,
   /^facebook(ai)?\/(roberta|bart|contriever)/i,
@@ -42,9 +44,47 @@ const SAFE_MODEL_PATTERNS = [
   /\/bert-/i,
   /\/roberta-/i,
   /\/t5-/i,
-  /detection$/i, // NSFW detection models are safe
+
+  // General-purpose image generation models (can do NSFW but not inherently NSFW)
+  /stable[-\s]?diffusion/i,
+  /\bsdxl\b/i,
+  /\bsd[-\s]?(1\.5|2\.0|2\.1|3\.0|3\.5)\b/i,
+  /\bflux\b/i,
+  /\bdalle?\b/i,
+  /\bmidjourney\b/i,
+  /dream[-\s]?diffusion/i,
+  /kandinsky/i,
+  /playground[-\s]?v/i,
+  /pixart/i,
+  /\bwuerstchen\b/i,
+  /\bif[-\s]?model\b/i,
+  /controlnet/i,
+  /ip[-\s]?adapter/i,
+  /lora[-\s]?training/i,  // LoRA training tools, not NSFW content
+
+  // Video generation models
+  /\bsora\b/i,
+  /\bpika\b/i,
+  /\brunway\b/i,
+  /cogvideo/i,
+  /animatediff/i,
+
+  // Audio models
+  /whisper/i,
+  /musicgen/i,
+  /audioldm/i,
+  /bark/i,
+  /tortoise[-\s]?tts/i,
+
+  // Utility/safety models
+  /detection$/i,
+  /classifier$/i,
   /classification$/i,
-  /embedding/i
+  /embedding/i,
+  /encoder/i,
+  /vae/i,
+  /upscaler/i,
+  /super[-\s]?resolution/i
 ];
 
 // Suspicious model names/providers that often host NSFW content

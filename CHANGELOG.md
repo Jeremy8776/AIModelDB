@@ -2,17 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.3.49] - 2026-01-08
+## [0.3.50] - 2026-01-09
 
 ### Added
 - **NSFW Feedback**: When manually flagging a model as NSFW, a feedback form now appears to report missed keywords, helping to improve the filtering implementation.
-- **Enhanced Filter List**: Significantly expanded the internal NSFW keyword list with specific community-requested terms (including 'prone bone', etc.) via a dedicated dictionary file.
+- **Enhanced Filter List**: 400+ explicit keywords organized by category for comprehensive NSFW filtering.
+
+### Changed
+- **NSFW Balance**: Added safe patterns for general-purpose models (Stable Diffusion, FLUX, DALL-E, etc.) that CAN generate NSFW but aren't inherently NSFW. These are whitelisted to prevent false positives while keeping the comprehensive keyword list.
 
 ### Fixed
-- **CivitasBay Filtering**: Refined NSFW filtering logic. Instead of blocking all content from CivitasBay when safety mode is on, the system now performs deep content analysis on titles, tags, and descriptions using an expanded set of safety keywords.
-- **Table UI**: Fixed selection column alignment by moving action buttons to floating hover overlay.
+- **CivitasBay Filtering**: Refined NSFW filtering logic with deep content analysis instead of blanket blocking.
+- **Table UI**: Fixed selection column alignment, removed floating action buttons.
 - **UX**: Added row highlighting for the actively selected model when the details panel is open.
-- **Detail Panel**: Moved Favorite and Flag actions to the detail panel header when a model is open, hiding them from the row to prevent clutter.
+- **Detail Panel**: Moved Favorite and Flag actions to the detail panel header with click feedback animation.
+- **Favorite Button**: Fixed stale model reference causing favorite status not to update.
 
 ---
 

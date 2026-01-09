@@ -137,7 +137,7 @@ export const EXPLICIT_NAME_TERMS = [
     'choking', 'breath play', 'asphyxiation', 'strangling',
     'wax play', 'ice play', 'temperature play', 'sensation play',
     'edging', 'orgasm control', 'orgasm denial', 'ruined orgasm', 'forced orgasm',
-    'teasing', 'tease and denial', 'cbT', 'cock and ball torture', 'ballbusting',
+    'teasing', 'tease and denial', 'cbt', 'cock and ball torture', 'ballbusting',
     'pegging', 'prostate play', 'prostate milking',
 
     // Roleplay / Scenarios
