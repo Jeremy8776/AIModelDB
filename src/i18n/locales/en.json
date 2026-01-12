@@ -94,7 +94,7 @@
         "includeTags": "Include Tags",
         "excludeTags": "Exclude Tags",
         "favoritesOnly": "Favorites Only",
-        "hideFlagged": "Hide Flagged",
+        "hideNSFW": "Hide NSFW",
         "clearFilters": "Clear All Filters"
     },
     "table": {
@@ -770,7 +770,8 @@
             "CC-BY-NC": "Creative Commons Non-Commercial. Commercial use not allowed without permission.",
             "CC0": "Public domain dedication. Free for any use without attribution.",
             "OpenRAIL": "Responsible AI license. Use restrictions may apply; review variant.",
-            "Proprietary": "Vendor-specific license. Review terms for commercial use and redistribution."
+            "Proprietary": "Vendor-specific license. Review terms for commercial use and redistribution.",
+            "Unknown": "License information not available. Review the model page for details."
         }
     },
     "modelEditor": {

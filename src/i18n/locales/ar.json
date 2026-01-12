@@ -76,7 +76,7 @@
         "includeTags": "تضمين العلامات",
         "excludeTags": "استبعاد العلامات",
         "favoritesOnly": "المفضلة فقط",
-        "hideFlagged": "إخفاء المُعلَّم",
+        "hideNSFW": "إخفاء المُعلَّم",
         "clearFilters": "مسح جميع الفلاتر"
     },
     "table": {

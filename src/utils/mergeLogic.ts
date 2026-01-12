@@ -56,45 +56,89 @@ export const mergeRecords = (existing: Model, incoming: Model): Model => {
     };
 
     const merged: Model = { ...existing } as Model;
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // MERGE STRATEGY:
+    // - IDENTITY fields (stable): Prefer existing to avoid overwriting user edits
+    // - DYNAMIC fields (change over time): Prefer INCOMING to get fresh data from sources
+    // - ACCUMULATING fields: Merge both to collect all values
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    // IDENTITY FIELDS - Prefer existing (stable, don't change)
     merged.name = preferIncomingText(existing.name, incoming.name, incoming.tags) || existing.name || incoming.name || '';
     merged.provider = existing.provider || incoming.provider;
     merged.domain = (existing.domain || incoming.domain) as any;
     merged.source = existing.source || incoming.source;
     merged.url = existing.url || incoming.url || null;
     merged.repo = existing.repo || incoming.repo || null;
-    merged.parameters = existing.parameters || incoming.parameters || null;
-    merged.context_window = existing.context_window || incoming.context_window || null;
-    merged.updated_at = existing.updated_at || incoming.updated_at || null;
-    merged.release_date = existing.release_date || incoming.release_date || null;
-    merged.downloads = existing.downloads ?? incoming.downloads ?? null;
-    merged.indemnity = existing.indemnity || incoming.indemnity || 'None';
-    merged.data_provenance = existing.data_provenance || incoming.data_provenance || null;
+
+    // DYNAMIC FIELDS - Prefer INCOMING to get updated data from sources
+    // These fields can change over time and should be updated on re-sync
+    merged.release_date = incoming.release_date || existing.release_date || null;
+    merged.updated_at = incoming.updated_at || existing.updated_at || null;
+    merged.downloads = incoming.downloads ?? existing.downloads ?? null;
+    merged.parameters = incoming.parameters || existing.parameters || null;
+    merged.context_window = incoming.context_window || existing.context_window || null;
+    merged.indemnity = incoming.indemnity || existing.indemnity || 'None';
+    merged.data_provenance = incoming.data_provenance || existing.data_provenance || null;
+
+    // Check if release date is in the future
+    let isFutureRelease = false;
+    if (merged.release_date) {
+        const releaseDate = new Date(merged.release_date);
+        const now = new Date();
+        if (releaseDate > now) {
+            isFutureRelease = true;
+        }
+    }
+
+    // ACCUMULATING FIELDS - Merge both to collect all values
     merged.usage_restrictions = Array.from(new Set([...(existing.usage_restrictions || []), ...(incoming.usage_restrictions || [])]));
-    merged.license = {
-        name: existing.license?.name || incoming.license?.name || 'Unknown',
-        type: existing.license?.type || incoming.license?.type || 'Custom',
-        commercial_use: existing.license?.commercial_use ?? incoming.license?.commercial_use ?? true,
-        attribution_required: existing.license?.attribution_required ?? incoming.license?.attribution_required ?? false,
-        share_alike: existing.license?.share_alike ?? incoming.license?.share_alike ?? false,
-        copyleft: existing.license?.copyleft ?? incoming.license?.copyleft ?? false,
-        url: existing.license?.url || incoming.license?.url || undefined,
-        notes: existing.license?.notes || incoming.license?.notes || undefined
-    } as any;
-    merged.hosting = {
-        weights_available: Boolean(existing.hosting?.weights_available || incoming.hosting?.weights_available),
-        api_available: Boolean(existing.hosting?.api_available || incoming.hosting?.api_available),
-        on_premise_friendly: Boolean(existing.hosting?.on_premise_friendly || incoming.hosting?.on_premise_friendly),
-        providers: Array.from(new Set([...(existing.hosting?.providers || []), ...(incoming.hosting?.providers || [])]))
-    };
     merged.tags = Array.from(new Set([...(existing.tags || []), ...(incoming.tags || [])]));
 
-    // Prefer translated English description if available
+    // License - prefer incoming for dynamic fields, existing for stable ones
+    merged.license = {
+        name: incoming.license?.name || existing.license?.name || 'Unknown',
+        type: incoming.license?.type || existing.license?.type || 'Custom',
+        commercial_use: incoming.license?.commercial_use ?? existing.license?.commercial_use ?? true,
+        attribution_required: incoming.license?.attribution_required ?? existing.license?.attribution_required ?? false,
+        share_alike: incoming.license?.share_alike ?? existing.license?.share_alike ?? false,
+        copyleft: incoming.license?.copyleft ?? existing.license?.copyleft ?? false,
+        url: incoming.license?.url || existing.license?.url || undefined,
+        notes: incoming.license?.notes || existing.license?.notes || undefined
+    } as any;
+
+    // Hosting - accumulate providers, prefer true for boolean flags
+    merged.hosting = {
+        weights_available: Boolean(incoming.hosting?.weights_available || existing.hosting?.weights_available),
+        api_available: Boolean(incoming.hosting?.api_available || existing.hosting?.api_available),
+        on_premise_friendly: Boolean(incoming.hosting?.on_premise_friendly || existing.hosting?.on_premise_friendly),
+        providers: Array.from(new Set([...(existing.hosting?.providers || []), ...(incoming.hosting?.providers || [])]))
+    };
+
+    // Add unreleased/future-release tags if release date is in the future
+    if (isFutureRelease) {
+        if (!merged.tags.includes('unreleased')) {
+            merged.tags.push('unreleased');
+        }
+        if (!merged.tags.includes('future-release')) {
+            merged.tags.push('future-release');
+        }
+    }
+
+    // Remove unreleased tags if release date is now in the past (model was released!)
+    if (!isFutureRelease && merged.release_date) {
+        merged.tags = merged.tags.filter(t => t !== 'unreleased' && t !== 'future-release');
+    }
+
+    // Description - prefer incoming if it has new/translated content
     const preferredDescription = preferIncomingText(existing.description as any, incoming.description as any, incoming.tags);
     if (preferredDescription != null) {
         (merged as any).description = cleanModelDescription(preferredDescription as any);
     }
 
-    // Merge pricing and annotate source (API vs Local/Subscription)
+    // Pricing - prefer incoming pricing, merge unique entries
+    // Put incoming first so it takes precedence for duplicates
     const priceSig = (p: any) => `${(p.model || '').toLowerCase()}|${(p.unit || '').toLowerCase()}|${p.input ?? ''}|${p.output ?? ''}|${p.flat ?? ''}|${(p.currency || '').toUpperCase()}`;
     const normalizePricing = (p: any): any => ({
         ...p,
@@ -102,15 +146,36 @@ export const mergeRecords = (existing: Model, incoming: Model): Model => {
         unit: p.unit || (p.flat != null ? 'month' : 'token'),
         currency: p.currency || 'USD'
     });
-    const existingPricing = (existing.pricing || []).map(normalizePricing);
     const incomingPricing = (incoming.pricing || []).map(normalizePricing);
+    const existingPricing = (existing.pricing || []).map(normalizePricing);
     const mergedPricing: any[] = [];
     const seen = new Set<string>();
-    [...existingPricing, ...incomingPricing].forEach(p => {
+    // Process incoming first so it takes precedence
+    [...incomingPricing, ...existingPricing].forEach(p => {
         const sig = priceSig(p);
         if (!seen.has(sig)) { seen.add(sig); mergedPricing.push(p); }
     });
     if (mergedPricing.length > 0) merged.pricing = mergedPricing as any;
+
+    // Benchmarks - prefer incoming (fresher data from sources)
+    if (incoming.benchmarks && incoming.benchmarks.length > 0) {
+        merged.benchmarks = incoming.benchmarks;
+    } else if (existing.benchmarks) {
+        merged.benchmarks = existing.benchmarks;
+    }
+
+    // Images - merge unique images, incoming first
+    const allImages = [...(incoming.images || []), ...(existing.images || [])];
+    if (allImages.length > 0) {
+        merged.images = [...new Set(allImages)];
+    }
+
+    // Analytics - prefer incoming (fresher data)
+    if (incoming.analytics) {
+        merged.analytics = incoming.analytics;
+    } else if (existing.analytics) {
+        merged.analytics = existing.analytics;
+    }
 
     return merged;
 };
@@ -121,10 +186,30 @@ export const performMergeBatch = (currentModels: Model[], newModels: Model[], au
     let added = 0;
     let updated = 0;
 
+    // Helper to apply future date tags to a model
+    const applyFutureDateTags = (model: Model): Model => {
+        if (model.release_date) {
+            const releaseDate = new Date(model.release_date);
+            const now = new Date();
+            if (releaseDate > now) {
+                const tags = [...(model.tags || [])];
+                if (!tags.includes('unreleased')) {
+                    tags.push('unreleased');
+                }
+                if (!tags.includes('future-release')) {
+                    tags.push('future-release');
+                }
+                return { ...model, tags };
+            }
+        }
+        return model;
+    };
+
     newModels.forEach(inc => {
         const idx = matchExistingIndex(base, inc, autoMergeDuplicates);
         if (idx === -1) {
-            base.push(inc);
+            // Apply future date tags to new models before adding
+            base.push(applyFutureDateTags(inc));
             added++;
         } else {
             base[idx] = mergeRecords(base[idx], inc);

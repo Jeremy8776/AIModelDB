@@ -26,9 +26,12 @@ const SAFE_CATEGORIES = [
 
 // Trusted providers - models from these sources are always considered safe
 const TRUSTED_PROVIDERS = [
-  'google', 'google-bert', 'google-t5', 'facebook', 'facebookai', 'meta-llama',
+  'google', 'google-bert', 'google-t5', 'facebook', 'facebookai', 'meta-llama', 'meta',
   'microsoft', 'openai', 'anthropic', 'huggingface', 'sentence-transformers',
-  'distilbert', 'bert-base', 'transformers', 'pytorch', 'tensorflow'
+  'distilbert', 'bert-base', 'transformers', 'pytorch', 'tensorflow',
+  'nvidia', 'amd', 'intel', 'ibm', 'amazon', 'aws', 'apple', 'alibaba', 'baidu', 'tencent',
+  'deepmind', 'stability', 'stabilityai', 'mistral', 'mistralai', 'cohere', 'ai21',
+  'lmstudio', 'lmstudio-community', 'thebloke', 'unsloth', 'teknium', 'nous', 'nousresearch'
 ];
 
 // Known safe model patterns - models matching these patterns are always safe
@@ -188,19 +191,33 @@ function checkTagsForNSFW(tags: string[], customKeywords: string[] = []): { scor
 
   const allNsfwTags = [...EXPLICIT_TAGS, ...customKeywords];
 
+  // Common safe tags that should never be flagged
+  const safeTags = [
+    'text2text', 'textgeneration', 'textclassification', 'language', 'multilingual', 'code',
+    'diffusers', 'transformers', 'safetensors', 'lora', 'controlnet', 'comfyui', 'stable-diffusion',
+    'text-to-image', 'image-to-image', 'image-generation', 'text-generation', 'text2image',
+    'base-model', 'checkpoint', 'finetune', 'fine-tune', 'distillation', 'quantized', 'gguf',
+    'community-archive', 'model', 'weights', 'pretrained', 'experimental', 'research'
+  ];
+
   for (const tag of tags) {
     const normalizedTag = tag.toLowerCase().replace(/[^a-z0-9]/g, '');
 
-    // Skip common safe tags that might be misinterpreted
-    const safeTags = ['text2text', 'textgeneration', 'textclassification', 'language', 'multilingual', 'code'];
-    if (safeTags.some(safe => normalizedTag.includes(safe))) {
+    // Skip known safe tags
+    if (safeTags.some(safe => normalizedTag === safe.replace(/[^a-z0-9]/g, '') ||
+      normalizedTag.includes(safe.replace(/[^a-z0-9]/g, '')))) {
       continue;
     }
 
     for (const nsfwTag of allNsfwTags) {
-      // Tags are usually precise, so strict matching is fine
       const normalizedNsfwTag = nsfwTag.toLowerCase().replace(/[^a-z0-9]/g, '');
-      if (normalizedTag === normalizedNsfwTag || normalizedTag.includes(normalizedNsfwTag)) {
+
+      // Skip very short NSFW terms to avoid false positives (e.g., 'dp', 'bj' matching random tags)
+      if (normalizedNsfwTag.length < 4) continue;
+
+      // Require EXACT match for tags - no substring matching
+      // Tags are short and specific, so partial matching causes too many false positives
+      if (normalizedTag === normalizedNsfwTag) {
         flaggedTags.push(tag);
         score += 100;
         break;

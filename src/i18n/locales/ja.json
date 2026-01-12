@@ -76,7 +76,7 @@
         "includeTags": "タグを含む",
         "excludeTags": "タグを除外",
         "favoritesOnly": "お気に入りのみ",
-        "hideFlagged": "フラグ付きを非表示",
+        "hideNSFW": "フラグ付きを非表示",
         "clearFilters": "すべてのフィルターをクリア"
     },
     "table": {

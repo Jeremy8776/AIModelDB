@@ -44,6 +44,7 @@ import { ConsoleButton } from "./components/console/ConsoleButton";
 import { KeyboardShortcutsModal } from "./components/KeyboardShortcutsModal";
 import { TitleBar } from "./components/TitleBar";
 import { UpdateProgress } from "./components/UpdateProgress";
+import { detectNSFW } from "./utils/nsfw";
 
 /**
  * Main content component for the AI Model Database Pro application.
@@ -65,7 +66,7 @@ function AIModelDBProContent() {
   }, [updateAvailable, checking, downloadProgress, updateDownloaded, error]);
 
   // Custom hooks for state management
-  const uiState = useUIState({ initialHideFlagged: settings.enableNSFWFiltering ?? true });
+  const uiState = useUIState(); // hideNSFW defaults to false (show all)
   const syncState = useSyncState();
   const validationState = useValidationState();
   const {
@@ -145,7 +146,7 @@ function AIModelDBProContent() {
     includeTags: uiState.includeTags,
     excludeTags: uiState.excludeTags,
     favoritesOnly: uiState.favoritesOnly,
-    hideFlagged: uiState.hideFlagged
+    hideNSFW: uiState.hideNSFW
   });
 
   // Lazy loading for "All" mode
@@ -234,10 +235,66 @@ function AIModelDBProContent() {
     }
   }, [settings.configVersion, models.length]);
 
-  // Sync hideFlagged filter with enableNSFWFiltering setting
+  // Note: hideNSFW is now a UI-only toggle independent of enableNSFWFiltering setting
+  // enableNSFWFiltering controls whether NSFW models are blocked during sync
+  // hideNSFW controls whether they are hidden in the UI (but still in DB)
+
+  // Retroactively tag existing models that should be flagged as NSFW
+  // This runs once when models are loaded to ensure old models get tagged
+  // Also fixes false positives by re-evaluating all models
+  const hasRunNSFWScan = useRef(false);
   useEffect(() => {
-    uiState.setHideFlagged(settings.enableNSFWFiltering ?? true);
-  }, [settings.enableNSFWFiltering]);
+    if (hasRunNSFWScan.current || models.length === 0 || isLoading) return;
+    hasRunNSFWScan.current = true;
+
+    // Re-evaluate ALL models to catch new ones and fix false positives
+    let modelsToFlag: Model[] = [];
+    let modelsToUnflag: Model[] = [];
+
+    for (const model of models) {
+      // Run NSFW detection
+      const nsfwCheck = detectNSFW(model, settings.customNSFWKeywords || []);
+
+      if (nsfwCheck.isNSFW) {
+        // Should be flagged - check if it already is
+        if (!model.isNSFWFlagged && !model.tags?.includes('nsfw')) {
+          modelsToFlag.push({
+            ...model,
+            isNSFWFlagged: true,
+            tags: [...new Set([...(model.tags || []), 'nsfw'])]
+          });
+        }
+      } else {
+        // Should NOT be flagged - unflag if it was a false positive
+        if (model.isNSFWFlagged || model.tags?.includes('nsfw')) {
+          modelsToUnflag.push({
+            ...model,
+            isNSFWFlagged: false,
+            tags: (model.tags || []).filter(t => t !== 'nsfw')
+          });
+        }
+      }
+    }
+
+    if (modelsToFlag.length > 0 || modelsToUnflag.length > 0) {
+      if (modelsToFlag.length > 0) {
+        consoleLogging.addConsoleLog(`[NSFW Scan] Tagged ${modelsToFlag.length} models as NSFW`);
+      }
+      if (modelsToUnflag.length > 0) {
+        consoleLogging.addConsoleLog(`[NSFW Scan] Untagged ${modelsToUnflag.length} false positives`);
+      }
+
+      setModels(prev => {
+        const flaggedIds = new Set(modelsToFlag.map(m => m.id));
+        const unflaggedIds = new Set(modelsToUnflag.map(m => m.id));
+        return prev.map(m => {
+          if (flaggedIds.has(m.id)) return modelsToFlag.find(u => u.id === m.id)!;
+          if (unflaggedIds.has(m.id)) return modelsToUnflag.find(u => u.id === m.id)!;
+          return m;
+        });
+      });
+    }
+  }, [models.length, isLoading]);
 
   // Show import toast after sync
   useEffect(() => {
@@ -649,8 +706,8 @@ function AIModelDBProContent() {
           onExcludeTagsChange={uiState.setExcludeTags}
           favoritesOnly={uiState.favoritesOnly}
           onFavoritesOnlyChange={uiState.setFavoritesOnly}
-          hideFlagged={uiState.hideFlagged}
-          onHideFlaggedChange={uiState.setHideFlagged}
+          hideNSFW={uiState.hideNSFW}
+          onHideNSFWChange={uiState.setHideNSFW}
           onClearFilters={() => {
             uiState.setLicenseTypes([]);
             uiState.setCommercialAllowed(null);
@@ -659,7 +716,7 @@ function AIModelDBProContent() {
             uiState.setMinDownloads(0);
             uiState.setDomainPick('All');
             uiState.setFavoritesOnly(false);
-            uiState.setHideFlagged(true);
+            uiState.setHideNSFW(false);
           }}
           models={visibleItems}
           sortKey={uiState.sortKey}

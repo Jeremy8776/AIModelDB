@@ -52,8 +52,8 @@ export interface UIState {
     setExcludeTags: (tags: string[]) => void;
     favoritesOnly: boolean;
     setFavoritesOnly: (enabled: boolean) => void;
-    hideFlagged: boolean;
-    setHideFlagged: (enabled: boolean) => void;
+    hideNSFW: boolean;
+    setHideNSFW: (enabled: boolean) => void;
 
     // Detail panel
     open: Model | null;
@@ -86,7 +86,7 @@ export interface UIState {
  * uiState.setSortDirection('desc');
  * ```
  */
-export function useUIState(options?: { initialHideFlagged?: boolean }): UIState {
+export function useUIState(options?: { initialHideNSFW?: boolean }): UIState {
     // Search and domain state
     const [query, setQuery] = useState("");
     const [domainPick, setDomainPick] = useState<Domain | "All">("All");
@@ -105,7 +105,7 @@ export function useUIState(options?: { initialHideFlagged?: boolean }): UIState 
     const [includeTags, setIncludeTags] = useState<string[]>([]);
     const [excludeTags, setExcludeTags] = useState<string[]>([]);
     const [favoritesOnly, setFavoritesOnly] = useState<boolean>(false);
-    const [hideFlagged, setHideFlagged] = useState<boolean>(options?.initialHideFlagged ?? true); // Sync with settings
+    const [hideNSFW, setHideNSFW] = useState<boolean>(options?.initialHideNSFW ?? false); // Default to showing all, toggle to hide
 
     // Detail panel state
     const [open, setOpen] = useState<Model | null>(null);
@@ -134,8 +134,8 @@ export function useUIState(options?: { initialHideFlagged?: boolean }): UIState 
         setExcludeTags,
         favoritesOnly,
         setFavoritesOnly,
-        hideFlagged,
-        setHideFlagged,
+        hideNSFW,
+        setHideNSFW,
         open,
         setOpen,
         triggerElement,

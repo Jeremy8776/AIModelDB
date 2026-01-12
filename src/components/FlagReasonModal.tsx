@@ -39,17 +39,16 @@ export function FlagReasonModal({ isOpen, onClose, onConfirm, modelName }: FlagR
                 <p className={`mb-4 text-sm ${textSub}`}>
                     You are manually flagging <span className={`font-medium ${textMain}`}>"{modelName}"</span> as inappropriate.
                 </p>
-                <p className={`mb-2 text-sm ${textMain}`}>
-                    Help us improve the filter. What keywords caused you to flag this?
+                <p className={`mb-2 text-sm ${textSub}`}>
+                    Optional: Enter a keyword to add to the NSFW filter
                 </p>
 
                 <input
                     type="text"
                     value={reason}
                     onChange={(e) => setReason(e.target.value)}
-                    placeholder="e.g. prone bone, excessive gore..."
+                    placeholder="Leave empty if no text identifier..."
                     className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 mb-6 ${bgInput} ${textMain}`}
-                    autoFocus
                 />
 
                 <div className="flex justify-end gap-2">
@@ -61,10 +60,10 @@ export function FlagReasonModal({ isOpen, onClose, onConfirm, modelName }: FlagR
                     </button>
                     <button
                         onClick={() => {
-                            onConfirm(reason);
+                            onConfirm(reason.trim() || '[visual-content]');
                             setReason('');
                         }}
-                        className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 transition-colors"
+                        className="rounded-lg bg-red-600 hover:bg-red-700 px-4 py-2 text-sm font-medium text-white transition-colors"
                     >
                         Flag Model
                     </button>

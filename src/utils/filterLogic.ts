@@ -12,7 +12,7 @@ export interface FilterOptions {
     includeTags?: string[];
     excludeTags?: string[];
     favoritesOnly?: boolean;
-    hideFlagged?: boolean;
+    hideNSFW?: boolean;
 }
 
 /**
@@ -109,7 +109,7 @@ function parseAdvancedQuery(query: string): ParsedQuery {
 }
 
 export const filterModels = (models: Model[], options: FilterOptions): Model[] => {
-    const { query, domainPick, sortKey, sortDirection = 'asc', minDownloads, licenseTypes = [], commercialAllowed = null, includeTags = [], excludeTags = [], favoritesOnly = false, hideFlagged = true } = options;
+    const { query, domainPick, sortKey, sortDirection = 'asc', minDownloads, licenseTypes = [], commercialAllowed = null, includeTags = [], excludeTags = [], favoritesOnly = false, hideNSFW = false } = options;
 
     // Early return if no models
     if (!models || models.length === 0) return [];
@@ -206,8 +206,17 @@ export const filterModels = (models: Model[], options: FilterOptions): Model[] =
         list = list.filter(m => m.isFavorite);
     }
 
-    if (hideFlagged) {
-        list = list.filter(m => !m.isNSFWFlagged);
+    // Hide NSFW content - checks both the flag and common NSFW tags
+    if (hideNSFW) {
+        list = list.filter(m => {
+            // Check the explicit NSFW flag
+            if (m.isNSFWFlagged) return false;
+            // Also check for NSFW-related tags
+            const tags = (m.tags || []).map(t => String(t).toLowerCase());
+            const nsfwTags = ['nsfw', 'adult', 'explicit', 'mature', 'xxx', 'porn', 'hentai', 'nude', 'nudity', 'erotic'];
+            if (nsfwTags.some(nsfwTag => tags.includes(nsfwTag))) return false;
+            return true;
+        });
     }
 
     if (includeTags.length) {

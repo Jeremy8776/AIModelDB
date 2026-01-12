@@ -6,10 +6,15 @@ import { safeJsonFromText } from "../../../utils/format";
 /**
  * Apply NSFW filtering to model results for corporate safety
  * 
+ * Two modes:
+ * - enableNSFWFiltering = true: Block NSFW models (return in flagged array)
+ * - enableNSFWFiltering = false: Tag NSFW models with 'nsfw' tag and isNSFWFlagged=true
+ *   but still include them in complete array (for later UI hiding)
+ * 
  * @param models - Array of models to filter
- * @param enableNSFWFiltering - Whether to enable NSFW filtering (default: true)
+ * @param enableNSFWFiltering - Whether to BLOCK NSFW models or just TAG them
  * @param logAttempts - Whether to log filtered models (default: true)
- * @returns Object containing complete (safe) and flagged (NSFW) models
+ * @returns Object containing complete (safe/tagged) and flagged (blocked) models
  */
 export function applyCorporateFiltering(
     models: Model[],
@@ -17,32 +22,46 @@ export function applyCorporateFiltering(
     logAttempts: boolean = true,
     customKeywords: string[] = []
 ): { complete: Model[], flagged: Model[] } {
-    if (!enableNSFWFiltering) {
-        // console.log('[Corporate Filter] NSFW filtering disabled');
-        return { complete: models, flagged: [] };
-    }
+    // Always run the NSFW detection to identify NSFW models
+    const { safeModels, flaggedModels, filteredCount } = filterNSFWModels(models, true, customKeywords); // Always detect
 
-    const { safeModels, flaggedModels, filteredCount } = filterNSFWModels(models, enableNSFWFiltering, customKeywords);
-
-    if (filteredCount > 0) {
-        // Compressed summary log instead of logging each model individually
-        console.warn(`[Safety Filter] Blocked ${filteredCount} models by keyword filter`);
-
-        if (logAttempts && filteredCount <= 10) {
-            // Only show individual models if there are 10 or fewer
+    if (filteredCount > 0 && logAttempts) {
+        // Compressed summary log
+        console.warn(`[Safety Filter] Detected ${filteredCount} NSFW models`);
+        if (filteredCount <= 10) {
             const names = flaggedModels.map(m => m.name?.substring(0, 40) || 'Unknown').join(', ');
-            console.log(`[Safety Filter] Blocked: ${names}`);
-        } else if (logAttempts) {
-            // For large numbers, show first 5 and count
+            console.log(`[Safety Filter] NSFW: ${names}`);
+        } else {
             const first5 = flaggedModels.slice(0, 5).map(m => m.name?.substring(0, 30) || 'Unknown').join(', ');
-            console.log(`[Safety Filter] Including: ${first5}... and ${filteredCount - 5} more`);
+            console.log(`[Safety Filter] NSFW: ${first5}... and ${filteredCount - 5} more`);
         }
     }
 
-    return {
-        complete: safeModels,
-        flagged: flaggedModels
-    };
+    if (enableNSFWFiltering) {
+        // BLOCKING MODE: Return NSFW models in flagged array (they won't be imported)
+        console.log(`[Safety Filter] Blocking ${filteredCount} NSFW models`);
+        return {
+            complete: safeModels,
+            flagged: flaggedModels
+        };
+    } else {
+        // TAGGING MODE: Tag NSFW models and include them in complete array
+        // They can be hidden later in the UI using the "Hide NSFW" toggle
+        const taggedNSFWModels = flaggedModels.map(m => ({
+            ...m,
+            isNSFWFlagged: true,
+            tags: [...new Set([...(m.tags || []), 'nsfw'])]
+        }));
+
+        if (filteredCount > 0) {
+            console.log(`[Safety Filter] Tagged ${filteredCount} models as NSFW (not blocking)`);
+        }
+
+        return {
+            complete: [...safeModels, ...taggedNSFWModels],
+            flagged: [] // Nothing blocked, just tagged
+        };
+    }
 }
 
 /**

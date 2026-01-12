@@ -254,44 +254,60 @@ export async function syncAllSources(
             onLog(`Collected ${allComplete.length} models from all sources`);
         }
 
+        // NSFW Detection and Filtering
+        // This ALWAYS runs to tag NSFW models
+        // - When enableNSFWFiltering is ON: NSFW models are BLOCKED (excluded from complete)
+        // - When enableNSFWFiltering is OFF: NSFW models are TAGGED but still included
+        if (onLog) {
+            const mode = options.enableNSFWFiltering ? 'blocking' : 'tagging';
+            onLog(`Safety filter: Running in ${mode} mode on ${allComplete.length} models...`);
+        }
+
+        // 1. Run the corporate filtering (this handles both modes)
+        const regexFilter = applyCorporateFiltering(
+            allComplete,
+            options.enableNSFWFiltering ?? false,  // Pass the setting - handles blocking vs tagging
+            options.logNSFWAttempts,
+            options.customNSFWKeywords
+        );
+        allComplete = regexFilter.complete;
+
         if (options.enableNSFWFiltering) {
-            if (onLog) onLog(`Safety settings enabled. Running analysis on ${allComplete.length} models...`);
-
-            // 1. Mandatory Regex Filter (Runs if setting is ON)
-            const regexFilter = applyCorporateFiltering(allComplete, true, options.logNSFWAttempts, options.customNSFWKeywords);
-            allComplete = regexFilter.complete;
-
-            if (onLog) {
-                if (regexFilter.flagged.length > 0) {
-                    onLog(`Basic Safety Filter: Blocked ${regexFilter.flagged.length} models by keyword.`);
-                }
+            // Blocking mode - report blocked models
+            if (regexFilter.flagged.length > 0 && onLog) {
+                onLog(`Safety Filter: Blocked ${regexFilter.flagged.length} NSFW models`);
             }
 
-            // 2. Optional LLM Filter (Runs if LLM API is configured)
-            if (onLog) onLog(`Checking LLM safety inspection availability...`);
+            // 2. Optional LLM Filter (only when blocking mode is ON)
+            if (options.apiConfig) {
+                if (onLog) onLog(`Checking LLM safety inspection availability...`);
 
-            const finalFilter = await applyCorporateFilteringAsync(
-                allComplete,
-                true, // Force enable since we are inside the 'if enabled' block
-                options.logNSFWAttempts,
-                options.apiConfig, // Pass API config for LLM validation
-                skipSignal,
-                onConfirmLLMCheck,
-                undefined, // onProgress
-                options.customNSFWKeywords // customKeywords
-            );
+                const finalFilter = await applyCorporateFilteringAsync(
+                    allComplete,
+                    true, // Force enable since we are in blocking mode
+                    options.logNSFWAttempts,
+                    options.apiConfig,
+                    skipSignal,
+                    onConfirmLLMCheck,
+                    undefined,
+                    options.customNSFWKeywords
+                );
 
-            allComplete = finalFilter.complete;
+                allComplete = finalFilter.complete;
 
-            // Log final filtering results
-            if (onLog) {
-                if (finalFilter.flagged.length > 0) {
-                    onLog(`Safety Analysis: ${finalFilter.flagged.length} models flagged.`);
-                } else {
-                    onLog(`Safety Analysis complete.`);
+                if (finalFilter.flagged.length > 0 && onLog) {
+                    onLog(`LLM Safety: Flagged ${finalFilter.flagged.length} additional models`);
                 }
+            }
+        } else {
+            // Tagging mode - count how many were tagged
+            const taggedCount = allComplete.filter(m => m.isNSFWFlagged || m.tags?.includes('nsfw')).length;
+            if (taggedCount > 0 && onLog) {
+                onLog(`Safety Filter: Tagged ${taggedCount} NSFW models (not blocking)`);
             }
         }
+
+        if (onLog) onLog(`Safety analysis complete.`);
 
         // LLM discovery: allow the LLM to surface missing/new models and fill gaps
         try {

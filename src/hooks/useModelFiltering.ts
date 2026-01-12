@@ -5,13 +5,13 @@ import { filterModels, FilterOptions } from '../utils/filterLogic';
 export type { FilterOptions };
 
 export function useModelFiltering(models: Model[], options: FilterOptions) {
-  const { query, domainPick, sortKey, sortDirection = 'asc', minDownloads, pageSize, licenseTypes = [], commercialAllowed = null, includeTags = [], excludeTags = [], favoritesOnly = false, hideFlagged = true } = options;
+  const { query, domainPick, sortKey, sortDirection = 'asc', minDownloads, pageSize, licenseTypes = [], commercialAllowed = null, includeTags = [], excludeTags = [], favoritesOnly = false, hideNSFW = false } = options;
   const [page, setPage] = useState(1);
 
   // Reset page when filters change
   useEffect(() => {
     setPage(1);
-  }, [query, domainPick, sortKey, sortDirection, minDownloads, licenseTypes.join(','), commercialAllowed, includeTags.join(','), excludeTags.join(','), favoritesOnly, hideFlagged]);
+  }, [query, domainPick, sortKey, sortDirection, minDownloads, licenseTypes.join(','), commercialAllowed, includeTags.join(','), excludeTags.join(','), favoritesOnly, hideNSFW]);
 
   const filtered = useMemo(() => {
     return filterModels(models, options);

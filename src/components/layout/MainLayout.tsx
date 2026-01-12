@@ -39,8 +39,8 @@ export interface MainLayoutProps {
     onExcludeTagsChange: (tags: string[]) => void;
     favoritesOnly: boolean;
     onFavoritesOnlyChange: (enabled: boolean) => void;
-    hideFlagged: boolean;
-    onHideFlaggedChange: (enabled: boolean) => void;
+    hideNSFW: boolean;
+    onHideNSFWChange: (enabled: boolean) => void;
     onClearFilters: () => void;
 
     // Table state
@@ -111,8 +111,8 @@ export function MainLayout({
     onExcludeTagsChange,
     favoritesOnly,
     onFavoritesOnlyChange,
-    hideFlagged,
-    onHideFlaggedChange,
+    hideNSFW,
+    onHideNSFWChange,
     onClearFilters,
     models,
     sortKey,
@@ -181,8 +181,8 @@ export function MainLayout({
                         onExcludeTagsChange={onExcludeTagsChange}
                         favoritesOnly={favoritesOnly}
                         onFavoritesOnlyChange={onFavoritesOnlyChange}
-                        hideFlagged={hideFlagged}
-                        onHideFlaggedChange={onHideFlaggedChange}
+                        hideNSFW={hideNSFW}
+                        onHideNSFWChange={onHideNSFWChange}
                         onClearFilters={onClearFilters}
                         theme={theme}
                     />

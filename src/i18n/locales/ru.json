@@ -76,7 +76,7 @@
         "includeTags": "Включить теги",
         "excludeTags": "Исключить теги",
         "favoritesOnly": "Только избранное",
-        "hideFlagged": "Скрыть помеченные",
+        "hideNSFW": "Скрыть помеченные",
         "clearFilters": "Очистить все фильтры"
     },
     "table": {

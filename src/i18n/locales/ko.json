@@ -76,7 +76,7 @@
         "includeTags": "태그 포함",
         "excludeTags": "태그 제외",
         "favoritesOnly": "즐겨찾기만",
-        "hideFlagged": "플래그 숨기기",
+        "hideNSFW": "플래그 숨기기",
         "clearFilters": "모든 필터 지우기"
     },
     "table": {

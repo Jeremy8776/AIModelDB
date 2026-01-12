@@ -35,8 +35,8 @@ export interface FiltersSidebarProps {
     onExcludeTagsChange: (tags: string[]) => void;
     favoritesOnly: boolean;
     onFavoritesOnlyChange: (enabled: boolean) => void;
-    hideFlagged: boolean;
-    onHideFlaggedChange: (enabled: boolean) => void;
+    hideNSFW: boolean;
+    onHideNSFWChange: (enabled: boolean) => void;
     onClearFilters: () => void;
     theme: "light" | "dark";
 }
@@ -57,8 +57,8 @@ export function FiltersSidebar({
     onClearFilters,
     favoritesOnly,
     onFavoritesOnlyChange,
-    hideFlagged,
-    onHideFlaggedChange,
+    hideNSFW,
+    onHideNSFWChange,
     theme
 }: FiltersSidebarProps) {
     const { t } = useTranslation();
@@ -81,28 +81,34 @@ export function FiltersSidebar({
 
                 {/* Favorites Filter */}
                 <div className="mb-4">
-                    <label className="flex items-center gap-3 cursor-pointer select-none group">
+                    <div
+                        onClick={() => onFavoritesOnlyChange(!favoritesOnly)}
+                        className="flex items-center gap-3 cursor-pointer select-none group"
+                    >
                         <RoundCheckbox
                             checked={favoritesOnly}
-                            onChange={(checked) => onFavoritesOnlyChange(checked)}
+                            onChange={onFavoritesOnlyChange}
                         />
                         <span className={`text-sm font-medium ${theme === 'dark' ? 'text-zinc-200 group-hover:text-white' : 'text-gray-700 group-hover:text-black'} transition-colors`}>
                             {t('filters.favoritesOnly')}
                         </span>
-                    </label>
+                    </div>
                 </div>
 
-                {/* Hide Flagged Filter */}
+                {/* Hide NSFW Filter */}
                 <div className="mb-4">
-                    <label className="flex items-center gap-3 cursor-pointer select-none group">
+                    <div
+                        onClick={() => onHideNSFWChange(!hideNSFW)}
+                        className="flex items-center gap-3 cursor-pointer select-none group"
+                    >
                         <RoundCheckbox
-                            checked={hideFlagged}
-                            onChange={(checked) => onHideFlaggedChange(checked)}
+                            checked={hideNSFW}
+                            onChange={onHideNSFWChange}
                         />
                         <span className={`text-sm font-medium ${theme === 'dark' ? 'text-zinc-200 group-hover:text-white' : 'text-gray-700 group-hover:text-black'} transition-colors`}>
-                            {t('filters.hideFlagged')}
+                            {t('filters.hideNSFW')}
                         </span>
-                    </label>
+                    </div>
                 </div>
 
                 {/* Domain Filter */}

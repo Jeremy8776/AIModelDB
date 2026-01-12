@@ -94,7 +94,7 @@
         "includeTags": "包含标签",
         "excludeTags": "排除标签",
         "favoritesOnly": "仅收藏",
-        "hideFlagged": "隐藏标记",
+        "hideNSFW": "隐藏NSFW",
         "clearFilters": "清除所有筛选"
     },
     "table": {

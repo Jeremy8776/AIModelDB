@@ -76,7 +76,7 @@
         "includeTags": "Incluir Tags",
         "excludeTags": "Excluir Tags",
         "favoritesOnly": "Apenas Favoritos",
-        "hideFlagged": "Ocultar Sinalizados",
+        "hideNSFW": "Ocultar Sinalizados",
         "clearFilters": "Limpar Todos os Filtros"
     },
     "table": {
