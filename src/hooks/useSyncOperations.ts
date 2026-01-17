@@ -1,17 +1,8 @@
-import { useCallback } from 'react';
+import React, { useCallback } from 'react';
 import { Model, ApiDir } from '../types';
 import { syncAllSources, syncWithLiveOptions } from '../services/syncService';
 import { dedupe } from '../utils/format';
-
-interface SyncSettings {
-    dataSources?: Record<string, boolean>;
-    artificialAnalysisApiKey?: string;
-    enableNSFWFiltering?: boolean;
-    logNSFWAttempts?: boolean;
-    apiConfig?: ApiDir;
-    preferredModelProvider?: string;
-    systemPrompt?: string;
-}
+import { Settings } from '../context/SettingsContext';
 
 interface SyncCallbacks {
     setIsSyncing: (syncing: boolean) => void;
@@ -31,13 +22,13 @@ interface SyncCallbacks {
 
 interface UseSyncOperationsOptions {
     models: Model[];
-    settings: SyncSettings;
+    settings: Settings;
     callbacks: SyncCallbacks;
 }
 
 /**
  * Hook for handling all sync-related operations
- * Extracts sync logic from AIModelDBPro for better modularity
+ * Extracts sync logic from AIModelDB for better modularity
  */
 export function useSyncOperations({ models, settings, callbacks }: UseSyncOperationsOptions) {
     const {
@@ -172,12 +163,11 @@ export function useSyncOperations({ models, settings, callbacks }: UseSyncOperat
                     setIsSyncing(false);
                     setShowSync?.(false);
                 }, 1500);
-                return;
             }
         } else {
             await syncAll(true);
+            setShowSync?.(false);
         }
-        setShowSync?.(false);
     }, [
         settings, setIsSyncing, setLastMergeStats, setSyncProgress, addConsoleLog,
         mergeInModels, setSyncSummary, setLastSync, setPage, setFlaggedModels,

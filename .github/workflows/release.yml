@@ -76,7 +76,7 @@ jobs:
         with:
           generate_release_notes: true
           body: |
-            ## AI Model DB Pro ${{ github.ref_name }}
+            ## AI Model DB ${{ github.ref_name }}
             
             See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for detailed changes.
             

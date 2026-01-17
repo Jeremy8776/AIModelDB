@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('AI Model DB Pro - Core Flows', () => {
+test.describe('AI Model DB - Core Flows', () => {
 
     test.beforeEach(async ({ page }) => {
         // Clear localStorage before each test for clean state
@@ -81,7 +81,7 @@ test.describe('AI Model DB Pro - Core Flows', () => {
 
         // Set something in localStorage directly to simulate settings
         await page.evaluate(() => {
-            localStorage.setItem('aiModelDBPro_test', 'persisted');
+            localStorage.setItem('aiModelDB_test', 'persisted');
         });
 
         // Reload page
@@ -89,7 +89,7 @@ test.describe('AI Model DB Pro - Core Flows', () => {
 
         // Check if persisted
         const value = await page.evaluate(() => {
-            return localStorage.getItem('aiModelDBPro_test');
+            return localStorage.getItem('aiModelDB_test');
         });
 
         expect(value).toBe('persisted');
@@ -122,7 +122,7 @@ test.describe('Model Table Interactions', () => {
                 { id: '1', name: 'Test Model A', provider: 'Provider A', domain: 'LLM', source: 'test', license: { name: 'MIT', type: 'OSI', commercial_use: true, attribution_required: false, share_alike: false, copyleft: false }, hosting: { weights_available: true, api_available: true, on_premise_friendly: true } },
                 { id: '2', name: 'Test Model B', provider: 'Provider B', domain: 'LLM', source: 'test', license: { name: 'MIT', type: 'OSI', commercial_use: true, attribution_required: false, share_alike: false, copyleft: false }, hosting: { weights_available: true, api_available: true, on_premise_friendly: true } },
             ];
-            localStorage.setItem('aiModelDBPro_models', JSON.stringify(testModels));
+            localStorage.setItem('aiModelDB_models', JSON.stringify(testModels));
         });
 
         await page.reload();
@@ -148,7 +148,7 @@ test.describe('Model Table Interactions', () => {
                 { id: '2', name: 'Claude 3', provider: 'Anthropic', domain: 'LLM', source: 'test', license: { name: 'Proprietary', type: 'Proprietary', commercial_use: true, attribution_required: false, share_alike: false, copyleft: false }, hosting: { weights_available: false, api_available: true, on_premise_friendly: false } },
                 { id: '3', name: 'Llama 3', provider: 'Meta', domain: 'LLM', source: 'test', license: { name: 'Llama', type: 'Custom', commercial_use: true, attribution_required: true, share_alike: false, copyleft: false }, hosting: { weights_available: true, api_available: true, on_premise_friendly: true } },
             ];
-            localStorage.setItem('aiModelDBPro_models', JSON.stringify(testModels));
+            localStorage.setItem('aiModelDB_models', JSON.stringify(testModels));
         });
 
         await page.reload();
@@ -181,7 +181,7 @@ test.describe('Export Functionality', () => {
             const testModels = [
                 { id: '1', name: 'Export Test Model', provider: 'Test', domain: 'LLM', source: 'test', license: { name: 'MIT', type: 'OSI', commercial_use: true, attribution_required: false, share_alike: false, copyleft: false }, hosting: { weights_available: true, api_available: true, on_premise_friendly: true } },
             ];
-            localStorage.setItem('aiModelDBPro_models', JSON.stringify(testModels));
+            localStorage.setItem('aiModelDB_models', JSON.stringify(testModels));
         });
 
         await page.reload();
@@ -210,7 +210,7 @@ test.describe('Bulk Actions', () => {
                 { id: '1', name: 'Bulk Test A', provider: 'Test', domain: 'LLM', source: 'test', license: { name: 'MIT', type: 'OSI', commercial_use: true, attribution_required: false, share_alike: false, copyleft: false }, hosting: { weights_available: true, api_available: true, on_premise_friendly: true } },
                 { id: '2', name: 'Bulk Test B', provider: 'Test', domain: 'LLM', source: 'test', license: { name: 'MIT', type: 'OSI', commercial_use: true, attribution_required: false, share_alike: false, copyleft: false }, hosting: { weights_available: true, api_available: true, on_premise_friendly: true } },
             ];
-            localStorage.setItem('aiModelDBPro_models', JSON.stringify(testModels));
+            localStorage.setItem('aiModelDB_models', JSON.stringify(testModels));
         });
 
         await page.reload();

@@ -95,25 +95,8 @@ function trackFieldUpdates(original: Model, updated: Model, summary: ValidationS
 }
 
 // Helper to create a generic validation/enrichment prompt with web search instructions
-function createEnrichmentPrompt(model: Model): string {
-    return `
-I have an AI model with incomplete metadata. USE WEB SEARCH to find accurate, up-to-date information for this model:
-${JSON.stringify(model, null, 2)}
-
-IMPORTANT: Search the web for current information about this model. Do NOT rely on training data alone.
-Search official sources: GitHub, Hugging Face, company blogs, research papers, model cards.
-
-Return ONLY the updated model JSON with all fields filled. Don't include any explanation.
-Focus especially on these fields if they're missing:
-- parameters (size of the model, e.g. "7B" or "1.5B")
-- context_window (for LLMs, e.g. "8K" or "32K")
-- license details (search for the actual license)
-- release_date (in ISO format - search for official release date)
-- pricing (input/output per million tokens in USD)
-- tags
-- hosting information
-`;
-}
+// Replaced by centralized prompt helper
+import { createEnrichmentPrompt, SYSTEM_PROMPT_ENRICHMENT, SYSTEM_PROMPT_VALIDATION, SYSTEM_PROMPT_VALIDATION_SHORT } from '../constants/prompts';
 
 export function useModelValidation(
     models: Model[],
@@ -126,6 +109,13 @@ export function useModelValidation(
     const [validationJobs, setValidationJobs] = useState<ValidationJob[]>([]);
     const [validationProgress, setValidationProgress] = useState<{ current: number, total: number } | null>(null);
     const [showValidationModal, setShowValidationModal] = useState(false);
+
+    // Use a ref to access the latest apiConfig inside the validation callback without recreating the queue
+    const apiConfigRef = useRef(apiConfig);
+
+    useEffect(() => {
+        apiConfigRef.current = apiConfig;
+    }, [apiConfig]);
 
     // Validation queue ref to persist between renders
     const validationQueueRef = useRef<ValidationQueue | null>(null);
@@ -143,7 +133,8 @@ export function useModelValidation(
                     console.log(`Validating model: ${model.name || model.id} with sources: ${sources.join(', ')}`);
 
                     // Find an enabled LLM provider
-                    const enabledProviders = Object.entries(apiConfig)
+                    const currentConfig = apiConfigRef.current;
+                    const enabledProviders = Object.entries(currentConfig)
                         .filter(([key, cfg]) => (cfg as ProviderCfg).enabled && ((cfg as ProviderCfg).apiKey || (cfg as ProviderCfg).protocol === 'ollama' || key === 'ollama'))
                         .map(([key]) => key as ProviderKey);
 
@@ -153,7 +144,7 @@ export function useModelValidation(
 
                     // Use the first available provider
                     let providerKey = enabledProviders[0];
-                    let providerConfig = apiConfig[providerKey] as ProviderCfg;
+                    let providerConfig = currentConfig[providerKey] as ProviderCfg;
 
                     // Try each provider until we find one that works
                     let enrichedModelsResult = null;
@@ -161,10 +152,10 @@ export function useModelValidation(
 
                     for (const key of enabledProviders) {
                         providerKey = key;
-                        providerConfig = apiConfig[providerKey] as ProviderCfg;
+                        providerConfig = currentConfig[providerKey] as ProviderCfg;
 
                         try {
-                            const systemPrompt = "You are an AI expert that provides accurate metadata about AI models.";
+                            const systemPrompt = SYSTEM_PROMPT_ENRICHMENT;
                             const userPrompt = createEnrichmentPrompt(model);
 
                             enrichedModelsResult = await callProviderLLM(
@@ -203,7 +194,11 @@ export function useModelValidation(
                         tags: Array.from(new Set([
                             ...(model.tags || []),
                             ...(enrichedModel.tags || [])
-                        ]))
+                        ])),
+                        // PRESERVE user flags - these should NEVER be overwritten by enrichment
+                        isFavorite: model.isFavorite,
+                        isNSFWFlagged: model.isNSFWFlagged,
+                        flaggedImageUrls: model.flaggedImageUrls
                     };
                 },
                 {
@@ -227,7 +222,7 @@ export function useModelValidation(
                             // Update last sync time
                             const syncTime = new Date().toISOString();
                             setLastSync(syncTime);
-                            localStorage.setItem('aiModelDBPro_lastSync', syncTime);
+                            localStorage.setItem('aiModelDB_lastSync', syncTime);
                         }
                     },
                     onError: (job) => {
@@ -440,18 +435,7 @@ export function useModelValidation(
 
                     try {
                         const validationPrompt = createDatabaseValidationPrompt(batch);
-                        const systemPrompt = `You are an expert AI model database curator and fact-checker with access to web search.
-
-CRITICAL INSTRUCTIONS:
-- Use web search to find accurate, verifiable information for missing fields
-- Search official sources: company blogs, research papers, GitHub repos, model cards
-- Cross-reference multiple sources before adding data
-- For release dates, search: "[model name] release date", "[model name] announcement"
-- For parameters, search: "[model name] parameters", "[model name] size"
-- For licenses, search: "[model name] license", check official documentation
-- NEVER remove or drop models from the database
-- ONLY fill in empty fields, preserve existing data
-- Return ALL models in the CSV output`;
+                        const systemPrompt = SYSTEM_PROMPT_VALIDATION;
 
                         let csvData = await callProviderText(
                             providerKey as any,
@@ -507,6 +491,10 @@ CRITICAL INSTRUCTIONS:
                                         release_date: validated.release_date || original.release_date,
                                         updated_at: validated.updated_at || original.updated_at,
                                         tags: (validated.tags && validated.tags.length > 0) ? validated.tags : original.tags,
+                                        // PRESERVE user flags - these should NEVER be overwritten by validation
+                                        isFavorite: original.isFavorite,
+                                        isNSFWFlagged: original.isNSFWFlagged,
+                                        flaggedImageUrls: original.flaggedImageUrls,
                                     };
                                 }
                                 return original;
@@ -576,7 +564,7 @@ CRITICAL INSTRUCTIONS:
                 let csvData = await callProviderText(
                     providerKey as any,
                     providerConfig,
-                    'You are an expert AI model database curator and fact-checker.',
+                    SYSTEM_PROMPT_VALIDATION_SHORT,
                     validationPrompt,
                     { signal: validationAbortRef.current?.signal }
                 );

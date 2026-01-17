@@ -91,11 +91,11 @@ const ThemeContext = createContext<ThemeContextType>({
   applyPreset: () => { }
 });
 
-const THEME_STORAGE_KEY = 'aiModelDBPro_theme';
-const CSS_STORAGE_KEY = 'aiModelDBPro_customCss';
-const COLORS_STORAGE_KEY = 'aiModelDBPro_customColors';
-const PRESETS_STORAGE_KEY = 'aiModelDBPro_savedPresets';
-const ACTIVE_PRESET_KEY = 'aiModelDBPro_activePresetId';
+const THEME_STORAGE_KEY = 'aiModelDB_theme';
+const CSS_STORAGE_KEY = 'aiModelDB_customCss';
+const COLORS_STORAGE_KEY = 'aiModelDB_customColors';
+const PRESETS_STORAGE_KEY = 'aiModelDB_savedPresets';
+const ACTIVE_PRESET_KEY = 'aiModelDB_activePresetId';
 
 export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   // Theme State

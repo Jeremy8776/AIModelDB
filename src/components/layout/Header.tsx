@@ -61,21 +61,21 @@ export function Header({
 
     return (
         <header className={`app-header relative z-10 ${bgHeader} border-b`}>
-            <div className="flex w-full items-center justify-between gap-3 px-4 py-3">
-                <div className={`flex w-full max-w-xl items-center gap-2 rounded-2xl px-3 py-2 border transition-all ${theme === 'dark'
+            <div className="flex w-full items-center justify-between gap-3 px-4 py-2">
+                <div className={`flex w-full max-w-md items-center gap-2 rounded-xl px-3 py-2 border transition-all ${theme === 'dark'
                     ? 'bg-zinc-900/70 border-zinc-700 text-zinc-100 focus-within:border-accent focus-within:ring-1 focus-within:ring-accent'
                     : 'bg-white border-gray-500 text-black focus-within:border-accent focus-within:ring-1 focus-within:ring-accent'
                     }`}>
-                    <Search className="size-4 opacity-50" />
+                    <Search className="size-4 opacity-50 flex-shrink-0" />
                     <input
                         ref={searchRef}
                         value={query}
                         onChange={e => onQueryChange(e.target.value)}
                         placeholder={t('header.searchPlaceholder')}
-                        className="w-full h-full bg-transparent text-sm search-input-reset shadow-none appearance-none placeholder:opacity-70"
+                        className="w-full h-full !bg-transparent text-sm search-input-reset shadow-none appearance-none placeholder:opacity-70"
                     />
                 </div>
-                <div className="flex items-center gap-1 ml-auto">
+                <div className="flex items-center gap-1 flex-shrink-0">
                     <button
                         id="header-update-db-btn"
                         onClick={onSync}

@@ -106,7 +106,8 @@ describe('matchExistingIndex', () => {
 });
 
 describe('mergeRecords', () => {
-    it('should prefer existing values over incoming', () => {
+    it('should prefer incoming values for dynamic fields like parameters', () => {
+        // Dynamic fields (parameters, downloads, etc.) prefer incoming to get fresh data from sources
         const existing = createModel({
             name: 'Existing Name',
             provider: 'Existing Provider',
@@ -120,9 +121,11 @@ describe('mergeRecords', () => {
 
         const result = mergeRecords(existing, incoming);
 
+        // Identity fields (name, provider) prefer existing
         expect(result.name).toBe('Existing Name');
         expect(result.provider).toBe('Existing Provider');
-        expect(result.parameters).toBe('7B');
+        // Dynamic fields (parameters) prefer incoming for fresh data
+        expect(result.parameters).toBe('13B');
     });
 
     it('should fill in missing values from incoming', () => {

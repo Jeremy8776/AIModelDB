@@ -1,10 +1,10 @@
 {
-  "name": "ai-model-db-pro",
-  "productName": "AI Model DB Pro",
+  "name": "ai-model-db",
+  "productName": "AI Model DB",
   "private": true,
-  "version": "0.3.52",
+  "version": "0.4.3",
   "description": "A comprehensive database for tracking and managing AI models across multiple providers",
-  "author": "AI Model DB Pro",
+  "author": "AI Model DB",
   "license": "MIT",
   "main": "electron/main.js",
   "repository": {
@@ -32,7 +32,9 @@
     "electron:build:mac": "npm run build && electron-builder --mac",
     "electron:build:linux": "npm run build && electron-builder --linux",
     "electron:start": "cross-env NODE_ENV=production electron .",
-    "electron:publish": "npm run build && electron-builder --publish always"
+    "electron:publish": "npm run build && electron-builder --publish always",
+    "lint": "eslint src --ext .ts,.tsx --max-warnings 50",
+    "lint:fix": "eslint src --ext .ts,.tsx --fix"
   },
   "dependencies": {
     "@tanstack/react-virtual": "^3.13.13",
@@ -48,7 +50,8 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-i18next": "^16.5.1",
-    "xlsx": "^0.18.5"
+    "xlsx": "^0.18.5",
+    "zod": "^4.3.5"
   },
   "devDependencies": {
     "@playwright/test": "^1.57.0",
@@ -56,12 +59,15 @@
     "@testing-library/react": "^16.3.1",
     "@types/react": "^18.2.55",
     "@types/react-dom": "^18.2.19",
+    "@typescript-eslint/parser": "^8.53.0",
     "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.4.17",
     "concurrently": "^8.2.2",
     "cross-env": "^7.0.3",
     "electron": "^28.1.0",
     "electron-builder": "^24.9.1",
+    "eslint": "^9.39.2",
+    "eslint-plugin-react-hooks": "^7.0.1",
     "jsdom": "^27.3.0",
     "postcss": "^8.4.35",
     "puppeteer": "^24.16.1",
@@ -72,8 +78,8 @@
     "wait-on": "^7.2.0"
   },
   "build": {
-    "appId": "com.aimodeldb.pro",
-    "productName": "AI Model DB Pro",
+    "appId": "com.aimodeldb",
+    "productName": "AI Model DB",
     "directories": {
       "output": "release"
     },
@@ -97,7 +103,7 @@
         }
       ],
       "icon": "public/icons/win/icon.ico",
-      "artifactName": "AI-Model-DB-Pro-Setup.exe",
+      "artifactName": "AI-Model-DB-Setup.exe",
       "asarUnpack": [
         "**/node_modules/@vitalets/google-translate-api"
       ],
@@ -115,7 +121,7 @@
       "entitlements": "electron/entitlements.mac.plist",
       "entitlementsInherit": "electron/entitlements.mac.plist",
       "notarize": false,
-      "artifactName": "AI-Model-DB-Pro.dmg"
+      "artifactName": "AI-Model-DB.dmg"
     },
     "dmg": {
       "background": "resources/dmg_background.png",
@@ -142,7 +148,7 @@
       "target": "AppImage",
       "icon": "public/icons/png",
       "category": "Development",
-      "artifactName": "AI-Model-DB-Pro.AppImage"
+      "artifactName": "AI-Model-DB.AppImage"
     },
     "nsis": {
       "oneClick": false,
@@ -155,7 +161,7 @@
       "installerSidebar": "build/installerSidebar.bmp",
       "license": "build/license.txt",
       "include": "build/installer.nsh",
-      "artifactName": "AI-Model-DB-Pro-Setup.exe"
+      "artifactName": "AI-Model-DB-Setup.exe"
     }
   }
 }

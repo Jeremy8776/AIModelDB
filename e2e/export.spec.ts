@@ -13,7 +13,7 @@ test.describe('Export Modal Wizard', () => {
                 { id: '3', name: 'Image Model 1', provider: 'Stability', domain: 'ImageGen', source: 'test', license: { name: 'Apache-2.0', type: 'OSI', commercial_use: true, attribution_required: true, share_alike: false, copyleft: false }, hosting: { weights_available: true, api_available: true, on_premise_friendly: true }, tags: ['image', 'diffusion'] },
                 { id: '4', name: 'Audio Model 1', provider: 'OpenAI', domain: 'TTS', source: 'test', license: { name: 'Proprietary', type: 'Proprietary', commercial_use: true, attribution_required: false, share_alike: false, copyleft: false }, hosting: { weights_available: false, api_available: true, on_premise_friendly: false }, tags: ['audio', 'tts'] },
             ];
-            localStorage.setItem('aiModelDBPro_models', JSON.stringify(testModels));
+            localStorage.setItem('aiModelDB_models', JSON.stringify(testModels));
         });
         await page.reload();
         await page.waitForTimeout(1000);

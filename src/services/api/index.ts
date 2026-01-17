@@ -37,9 +37,11 @@ export {
 // Core platform fetchers
 export {
     fetchHuggingFaceRecent,
+    huggingFaceFetcher, // Export the new fetcher object
     fetchPopularGenerativeRepos,
     fetchArtificialAnalysisIndex
 } from './fetchers';
+
 
 // Image generation platform fetchers
 export {
@@ -51,7 +53,9 @@ export {
 export {
     fetchModelScopeRecent,
     fetchOpenModelDB,
-    fetchOllamaLibrary
+    openModelDBFetcher, // Export wrapper
+    fetchOllamaLibrary,
+    ollamaLibraryFetcher // Export wrapper
 } from './fetchers';
 
 // ============================================================================
@@ -98,3 +102,25 @@ export {
     mapSpdxToType,
     safeFetch
 } from './utils';
+
+// ============================================================================
+// Validation Schemas (Zod)
+// ============================================================================
+export {
+    ModelSchema,
+    LicenseSchema,
+    HostingSchema,
+    PricingSchema,
+    DomainSchema,
+    HuggingFaceModelSchema,
+    HuggingFaceResponseSchema,
+    OllamaModelSchema,
+    OllamaResponseSchema,
+    OpenAIModelSchema,
+    OpenAIModelsResponseSchema,
+    safeParse,
+    parseOrThrow,
+    validateModels,
+    coerceToModel,
+    type ValidatedModel
+} from './schemas';

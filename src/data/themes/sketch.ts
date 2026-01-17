@@ -282,9 +282,9 @@ svg:not(.no-sketch) {
 
 /* ELIMINATE PURE WHITE - Force all white backgrounds to match Cream Paper */
 .bg-white,
-.bg-white\/95,
-.bg-white\/90,
-.bg-white\/80,
+.bg-white/95,
+.bg-white/90,
+.bg-white/80,
 .bg-slate-50,
 .bg-gray-50,
 .bg-gray-100,
@@ -350,8 +350,8 @@ nav button:hover {
 
 /* Custom Scrollbars */
 ::-webkit-scrollbar {
-  width: 14px !important;
-  height: 14px !important;
+  width: 10px !important;
+  height: 10px !important;
   background: transparent !important;
 }
 ::-webkit-scrollbar-track {
@@ -362,9 +362,10 @@ nav button:hover {
   border: 2px solid var(--border) !important;
   border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px !important;
   box-shadow: 1px 1px 0px var(--border) !important;
+  background-clip: content-box !important;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--accent) !important;
+  background-color: var(--accent) !important;
   transform: rotate(-1deg) !important;
 }
 `,

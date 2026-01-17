@@ -7,7 +7,7 @@
  */
 
 // Core platform fetchers
-export { fetchHuggingFaceRecent } from './huggingface';
+export * from './huggingface';
 export { fetchPopularGenerativeRepos } from './github';
 export { fetchArtificialAnalysisIndex } from './artificial-analysis';
 
@@ -15,4 +15,6 @@ export { fetchArtificialAnalysisIndex } from './artificial-analysis';
 export { fetchCivitai, fetchCivitasBay } from './image-platforms';
 
 // Registry fetchers
-export { fetchModelScopeRecent, fetchOpenModelDB, fetchOllamaLibrary } from './registries';
+export * from './registries/openmodeldb';
+export { fetchOllamaLibrary, ollamaLibraryFetcher } from './registries/ollama-library';
+export { fetchModelScopeRecent } from './registries/modelscope';

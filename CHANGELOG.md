@@ -2,6 +2,52 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.3] - 2026-01-17
+
+### Changed
+- **Build Cleanup**: Updated gitignore to exclude additional build artifacts.
+- **Documentation**: Fixed inconsistent product naming in README.
+
+### Fixed
+- **i18n Warnings**: Fixed repeated "missing translation key" console warnings for license tooltips.
+
+---
+
+## [0.4.2] - 2026-01-17
+
+### Changed
+- **ESLint Migration**: Migrated from deprecated `.eslintrc.json` to ESLint v9 flat config format (`eslint.config.js`).
+- **Release Workflow**: Fixed branding in GitHub release notes (removed stale "Pro" suffix).
+
+### Fixed
+- **React Hooks Violation**: Fixed `useMemo` being called after early return in `ValidationResultsModal`, violating React hooks rules.
+- **Unsafe Finally**: Removed `return` statement from `finally` block in `useSyncOperations` which could override exception handling.
+- **Regex Escapes**: Removed unnecessary escape characters in regex patterns (`nsfw.ts`, `sketch.ts`).
+
+---
+
+## [0.4.1] - 2026-01-16
+
+### Changed
+- **Architecture Refactor**: Extracted all business logic from `AIModelDB.tsx` into a new `useDashboardController` hook, reducing the main component from 620+ lines to ~320 lines of pure UI code.
+- **Type Safety**: Replaced local `SyncSettings` interface in `useSyncOperations` with the canonical `Settings` type from `SettingsContext`, eliminating `as any` casts.
+- **Types Formatting**: Reformatted `src/types/index.ts` with multi-line definitions and JSDoc comments for better readability and maintainability.
+- **Code Organization**: Removed stale `useModelMergeStaged` export from hooks index that referenced a non-existent file.
+
+---
+
+## [0.4.0] - 2026-01-13
+
+### Changed
+- **Rebranding**: Renamed "AI Model DB Pro" to "AI Model DB" throughout the application.
+  - Updated product name, window title, splash screen, and all metadata.
+  - Renamed localStorage keys from `aiModelDBPro_*` to `aiModelDB_*` with automatic data migration.
+  - Updated all installer/artifact names (Windows, macOS, Linux).
+  - Cleaned up README download links and documentation.
+- **Migration Utility**: Added one-time migration to preserve existing user data during the rebranding.
+
+---
+
 ## [0.3.50] - 2026-01-09
 
 ### Added
@@ -349,9 +395,8 @@ All notable changes to this project will be documented in this file.
 - **UI Consistency**: Standardized focus rings and standardized "Delete DB" language across the app.
 - **Type Safety**: Replaced many `any` types with proper TypeScript interfaces in utility functions (`currency.ts`, `format.ts`).
 - **Removed**: Deprecated "Glass" and "Cyberpunk" themes in favor of the new customizable engine.
-- **Removed**: "Optikka" branding replaced with "AI Model DB Pro".
+- **Removed**: "Optikka" branding replaced with "AI Model DB".
 
 ### Fixed
 - **Color Persistence**: Fixed issues where custom color selections would not persist after reload.
 - **Focus Rings**: Resolved "double focus ring" visual glitches on input fields.
-

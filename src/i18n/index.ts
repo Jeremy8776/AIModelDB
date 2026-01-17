@@ -63,7 +63,7 @@ i18n
 
         detection: {
             order: ['localStorage', 'navigator'],
-            lookupLocalStorage: 'aiModelDBPro_language',
+            lookupLocalStorage: 'aiModelDB_language',
             caches: ['localStorage'],
         }
     });

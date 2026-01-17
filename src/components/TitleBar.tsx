@@ -5,7 +5,7 @@ interface TitleBarProps {
     title?: string;
 }
 
-export function TitleBar({ title = 'AI Model DB Pro' }: TitleBarProps) {
+export function TitleBar({ title = 'AI Model DB' }: TitleBarProps) {
     // Only show custom title bar in Electron
     if (!isElectron()) {
         return null;
@@ -13,7 +13,7 @@ export function TitleBar({ title = 'AI Model DB Pro' }: TitleBarProps) {
 
     return (
         <div
-            className="app-titlebar h-8 flex items-center px-4 select-none"
+            className="app-titlebar h-8 flex items-center px-4 select-none sticky top-0 z-50 bg-black"
             style={{
                 WebkitAppRegion: 'drag',
             } as React.CSSProperties}

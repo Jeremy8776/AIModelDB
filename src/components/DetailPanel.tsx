@@ -1,7 +1,7 @@
 import { createPortal } from 'react-dom';
 import React, { useContext, useEffect, useState, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FileText, DollarSign, Info, ExternalLink, Loader2, X, ChevronLeft, ChevronRight, Star, Flag } from 'lucide-react';
+import { FileText, DollarSign, Info, ExternalLink, Loader2, X, ChevronLeft, ChevronRight, Star, Flag, EyeOff, Download, Copy } from 'lucide-react';
 import ThemeContext from '../context/ThemeContext';
 import { Model } from '../types';
 import { Badge, DomainIcon } from './UI';
@@ -9,100 +9,10 @@ import { fmtDate, kfmt } from '../utils/format';
 import { handleExternalLink } from '../utils/external-links';
 import { fetchCivitasBayDetails, CivitasBayDetails } from '../services/api/fetchers/image-platforms/civitas-bay-details';
 import { fetchHuggingFaceDetails } from '../services/api/fetchers/huggingface-details';
+import { GalleryImage } from './detail/GalleryImage';
+import { LicenseHover } from './detail/LicenseHover';
+import { useImageContextMenu } from '../hooks/useImageContextMenu';
 
-const GalleryImage = ({ src, alt, onClick }: { src: string, alt: string, onClick: () => void }) => {
-  const [error, setError] = useState(false);
-  const [imageSrc, setImageSrc] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  // Check if this is a video file
-  const isVideo = src.endsWith('.mp4') || src.endsWith('.webm') || src.endsWith('.mov');
-
-  useEffect(() => {
-    let cancelled = false;
-
-    const loadImage = async () => {
-      // For videos, just use the direct URL (don't proxy)
-      if (isVideo) {
-        if (!cancelled) {
-          setImageSrc(src);
-          setLoading(false);
-        }
-        return;
-      }
-
-      // If Electron is available and this looks like a CDN image, proxy it
-      if (window.electronAPI?.proxyImage && (
-        src.includes('imagecache.civitai.com') ||
-        src.includes('image.civitai.com') ||
-        src.includes('huggingface.co/')
-      )) {
-        try {
-          const result = await window.electronAPI.proxyImage(src);
-          if (!cancelled && result.success && result.dataUrl) {
-            setImageSrc(result.dataUrl);
-            setLoading(false);
-            return;
-          }
-        } catch (e) {
-          console.warn('[GalleryImage] Proxy failed, falling back to direct URL');
-        }
-      }
-
-      // Fallback: use direct URL
-      if (!cancelled) {
-        setImageSrc(src);
-        setLoading(false);
-      }
-    };
-
-    loadImage();
-    return () => { cancelled = true; };
-  }, [src, isVideo]);
-
-  if (error) {
-    return null;
-  }
-
-  if (loading || !imageSrc) {
-    return (
-      <div className="w-full h-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 text-zinc-400 animate-pulse">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="opacity-30">
-          <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
-          <circle cx="9" cy="9" r="2" />
-          <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
-        </svg>
-      </div>
-    );
-  }
-
-  // Render video or image based on file type
-  if (isVideo) {
-    return (
-      <video
-        src={imageSrc}
-        className="w-full h-full object-cover cursor-pointer"
-        muted
-        loop
-        autoPlay
-        playsInline
-        onClick={onClick}
-        onError={() => setError(true)}
-      />
-    );
-  }
-
-  return (
-    <img
-      src={imageSrc}
-      alt={alt}
-      className="w-full h-full object-cover transition-transform group-hover:scale-105 cursor-pointer"
-      loading="lazy"
-      onError={() => setError(true)}
-      onClick={onClick}
-    />
-  );
-};
 
 const getPricingType = (pricing: any): string => {
   if (pricing.input != null || pricing.output != null) {
@@ -124,15 +34,21 @@ interface DetailPanelProps {
   triggerElement?: HTMLElement | null;
   onToggleFavorite?: (model: Model) => void;
   onToggleNSFWFlag?: (model: Model) => void;
+  onToggleImageNSFW?: (model: Model, imageUrl: string) => void;
+  hideNSFW?: boolean;
+  className?: string; // Add optional className prop
 }
 
-export function DetailPanel({ model, onClose, onDelete, triggerElement, onToggleFavorite, onToggleNSFWFlag }: DetailPanelProps) {
+
+
+export function DetailPanel({ model, onClose, onDelete, triggerElement, onToggleFavorite, onToggleNSFWFlag, onToggleImageNSFW, hideNSFW = true, className = "" }: DetailPanelProps) {
   const { theme } = useContext(ThemeContext);
   const { t } = useTranslation();
   const [isAnimating, setIsAnimating] = useState(false);
   const [modelDetails, setModelDetails] = useState<CivitasBayDetails | null>(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
+  const { contextMenu, handleImageContextMenu, handleCopyImage, handleSaveImage, closeContextMenu } = useImageContextMenu();
 
   // Debounce positioning calculations to prevent jankiness
   const [debouncedTriggerElement, setDebouncedTriggerElement] = useState(triggerElement);
@@ -253,15 +169,15 @@ export function DetailPanel({ model, onClose, onDelete, triggerElement, onToggle
     <div
       id="model-detail-panel"
       className={`
-        overflow-auto rounded-2xl border backdrop-blur-sm scrollbar-thin
+        h-full flex flex-col rounded-2xl border backdrop-blur-sm
         ${theme === 'dark' ? 'border-zinc-800 bg-zinc-950/95' : 'border-zinc-200 bg-white/95'} 
-        ${!debouncedTriggerElement ? 'h-full' : 'shadow-2xl'} 
+        ${!debouncedTriggerElement ? '' : 'shadow-2xl'} 
         ${debouncedTriggerElement && !isAnimating ? 'shadow-2xl' : ''}
         ${isAnimating ? 'shadow-xl' : ''}
+        ${className}
       `}
-      style={stickyStyle}
     >
-      <div className="flex flex-col p-5">
+      <div className="flex-1 overflow-y-auto p-5">
         <div className="flex items-start justify-between">
           <div className="max-w-[85%] min-w-0">
             <div className="flex items-center gap-2">
@@ -639,6 +555,9 @@ export function DetailPanel({ model, onClose, onDelete, triggerElement, onToggle
                     src={imgUrl}
                     alt={`Preview ${i + 1}`}
                     onClick={() => setSelectedImageIndex(i)}
+                    onContextMenu={(e) => handleImageContextMenu(e, imgUrl)}
+                    isFlagged={model.flaggedImageUrls?.includes(imgUrl)}
+                    hideNSFW={hideNSFW}
                   />
                 </div>
               ))}
@@ -682,28 +601,58 @@ export function DetailPanel({ model, onClose, onDelete, triggerElement, onToggle
               const isVideo = currentSrc.endsWith('.mp4') || currentSrc.endsWith('.webm') || currentSrc.endsWith('.mov');
 
               if (isVideo) {
+                const videoIsFlagged = model.flaggedImageUrls?.includes(currentSrc);
                 return (
-                  <video
-                    key={selectedImageIndex}
-                    src={currentSrc}
-                    className="max-h-full max-w-full rounded-lg shadow-2xl object-contain animate-in zoom-in-95 duration-200 select-none"
-                    onClick={(e) => e.stopPropagation()}
-                    controls
-                    autoPlay
-                    loop
-                  />
+                  <div className="relative">
+                    <video
+                      key={selectedImageIndex}
+                      src={currentSrc}
+                      className="max-h-full max-w-full rounded-lg shadow-2xl object-contain animate-in zoom-in-95 duration-200 select-none"
+                      onClick={(e) => e.stopPropagation()}
+                      onContextMenu={(e) => handleImageContextMenu(e, currentSrc)}
+                      controls
+                      autoPlay
+                      loop
+                    />
+                    {videoIsFlagged && hideNSFW && (
+                      <div className="absolute inset-0 z-10 flex items-center justify-center bg-zinc-900/95 rounded-lg">
+                        <EyeOff className="size-24 text-zinc-500" />
+                      </div>
+                    )}
+                  </div>
                 );
               }
 
+              const imgIsFlagged = model.flaggedImageUrls?.includes(currentSrc);
               return (
-                <img
-                  key={selectedImageIndex} // Key forces re-render for animation reset
-                  src={currentSrc}
-                  alt={`Full preview ${selectedImageIndex + 1}`}
-                  className="max-h-full max-w-full rounded-lg shadow-2xl object-contain animate-in zoom-in-95 duration-200 select-none"
-                  onClick={(e) => e.stopPropagation()}
-                />
+                <div className="relative" onClick={(e) => e.stopPropagation()}>
+                  <img
+                    key={selectedImageIndex}
+                    src={currentSrc}
+                    alt={`Full preview ${selectedImageIndex + 1}`}
+                    className="max-h-full max-w-full rounded-lg shadow-2xl object-contain animate-in zoom-in-95 duration-200 select-none"
+                    onContextMenu={(e) => handleImageContextMenu(e, currentSrc)}
+                  />
+                  {imgIsFlagged && hideNSFW && (
+                    <div className="absolute inset-0 flex items-center justify-center z-20 bg-zinc-900/95 rounded-lg">
+                      <EyeOff className="size-24 text-zinc-500" />
+                    </div>
+                  )}
+                </div>
               );
+            })()}
+
+            {/* Flagged Overlay for Lightbox */}
+            {(() => {
+              const currentSrc = modelDetails.images[selectedImageIndex];
+              if (hideNSFW && model.flaggedImageUrls?.includes(currentSrc)) {
+                return (
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+                    <EyeOff className="size-32 text-white/80 drop-shadow-2xl" />
+                  </div>
+                );
+              }
+              return null;
             })()}
 
             {/* Next Button */}
@@ -740,36 +689,55 @@ export function DetailPanel({ model, onClose, onDelete, triggerElement, onToggle
         </div>,
         document.body
       )}
+
+      {/* Context Menu */}
+      {contextMenu && createPortal(
+        <div
+          className="fixed z-[9999] min-w-[160px] overflow-hidden rounded-lg border bg-white p-1 text-sm shadow-xl dark:border-zinc-800 dark:bg-zinc-900"
+          style={{ top: contextMenu.y, left: contextMenu.x }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            onClick={() => handleCopyImage(contextMenu.imageUrl)}
+            className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left hover:bg-zinc-100 dark:hover:bg-zinc-800"
+          >
+            <Copy className="size-4 opacity-70" />
+            <span>
+              {(contextMenu.imageUrl.endsWith('.mp4') || contextMenu.imageUrl.endsWith('.webm'))
+                ? 'Copy Video URL'
+                : 'Copy Image'}
+            </span>
+          </button>
+          <button
+            onClick={() => handleSaveImage(contextMenu.imageUrl)}
+            className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left hover:bg-zinc-100 dark:hover:bg-zinc-800"
+          >
+            <Download className="size-4 opacity-70" />
+            <span>
+              {(contextMenu.imageUrl.endsWith('.mp4') || contextMenu.imageUrl.endsWith('.webm'))
+                ? 'Save Video'
+                : 'Save Image'}
+            </span>
+          </button>
+          {onToggleImageNSFW && (
+            <>
+              <div className="my-1 h-px bg-zinc-200 dark:bg-zinc-800" />
+              <button
+                onClick={() => {
+                  if (model) onToggleImageNSFW(model, contextMenu.imageUrl);
+                  closeContextMenu();
+                }}
+                className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left hover:bg-zinc-100 dark:hover:bg-zinc-800 ${model.flaggedImageUrls?.includes(contextMenu.imageUrl) ? 'text-red-500' : ''
+                  }`}
+              >
+                <EyeOff className="size-4 opacity-70" />
+                <span>{model.flaggedImageUrls?.includes(contextMenu.imageUrl) ? 'Unflag NSFW' : 'Flag as NSFW'}</span>
+              </button>
+            </>
+          )}
+        </div>,
+        document.body
+      )}
     </div>
-  );
-}
-
-// Lightweight license explainer map
-const LICENSE_TIPS: Record<string, string> = {
-  'MIT': 'OSI-approved permissive license. Commercial use allowed, attribution required.',
-  'Apache-2.0': 'OSI-approved permissive license. Patent grant included. Commercial use allowed.',
-  'BSD': 'OSI-approved permissive family; details vary. Commercial use allowed.',
-  'GPL': 'Copyleft license. Derivatives must be licensed under GPL; commercial allowed with conditions.',
-  'AGPL': 'Strong copyleft for network services. Derivatives must be AGPL.',
-  'LGPL': 'Weak copyleft. Linking allowed under certain conditions.',
-  'CC-BY-NC': 'Creative Commons Non-Commercial. Commercial use not allowed without permission.',
-  'CC0': 'Public domain dedication. Free for any use without attribution.',
-  'OpenRAIL': 'Responsible AI license. Use restrictions may apply; review variant.',
-  'Proprietary': 'Vendor-specific license. Review terms for commercial use and redistribution.',
-};
-
-function LicenseHover({ name }: { name?: string | null }) {
-  const { t } = useTranslation();
-  const label = name || t('common.unknown');
-  const tip = (name && t(`detailPanel.licenseTips.${name}`, { defaultValue: t('detailPanel.licenseTipDefault') })) || t('detailPanel.licenseTipDefault');
-  return (
-    <span className="inline-flex items-center gap-1" title={tip}>
-      {label}
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" className="opacity-70">
-        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.5" fill="none" />
-        <line x1="12" y1="10" x2="12" y2="16" stroke="currentColor" strokeWidth="1.5" />
-        <circle cx="12" cy="7" r="1" fill="currentColor" />
-      </svg>
-    </span>
   );
 }

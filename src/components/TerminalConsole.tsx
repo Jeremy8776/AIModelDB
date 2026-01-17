@@ -146,7 +146,7 @@ export const TerminalConsole: React.FC<TerminalConsoleProps> = ({ logs, onClose,
   };
 
   return (
-    <div className="fixed bottom-4 right-4 z-40 w-[720px] max-h-[75vh] bg-black text-zinc-100 border border-zinc-800 rounded-xl shadow-2xl flex flex-col">
+    <div className="fixed bottom-4 left-4 z-40 w-[720px] max-h-[75vh] bg-black text-zinc-100 border border-zinc-800 rounded-xl shadow-2xl flex flex-col">
       <div className="flex items-center justify-between px-4 py-2 border-b border-zinc-800 bg-black rounded-t-xl">
         <span className="font-bold text-accent flex items-center gap-2">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><text x="3" y="17" fontSize="16" fontFamily="monospace" fill="currentColor">&gt;_</text></svg>

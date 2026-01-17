@@ -8,7 +8,7 @@ interface KeyboardShortcutsOptions {
 }
 
 /**
- * Hook for managing keyboard shortcuts in the AIModelDBPro component.
+ * Hook for managing keyboard shortcuts in the AIModelDB component.
  * 
  * Supported shortcuts:
  * - "/" or Ctrl+F - Focus the search input

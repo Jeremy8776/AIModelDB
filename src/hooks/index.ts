@@ -1,5 +1,5 @@
 /**
- * @fileoverview Custom React hooks for the AI Model DB Pro application.
+ * @fileoverview Custom React hooks for the AI Model DB application.
  * These hooks encapsulate reusable stateful logic and side effects.
  */
 
@@ -15,7 +15,6 @@ export { useModelFiltering } from './useModelFiltering';
 export { useModelCRUD } from './useModelCRUD';
 export { useModelPersistence } from './useModelPersistence';
 export { useModelMerge } from './useModelMerge';
-export { useModelMerge as useModelMergeStaged } from './useModelMergeStaged';
 export { useModelValidation } from './useModelValidation';
 export { useModelSelection } from './useModelSelection';
 
@@ -30,3 +29,7 @@ export { useKeyboardShortcuts } from './useKeyboardShortcuts';
 export { useWindowEvents } from './useWindowEvents';
 export { useConsoleLogging, type ConsoleLogging } from './useConsoleLogging';
 export { useOnlineStatus } from './useOnlineStatus';
+
+// Dashboard Controller
+export { useDashboardController, type DashboardController } from './useDashboardController';
+

@@ -11,8 +11,8 @@ export interface HistoryItem {
     sizeBytes: number;
 }
 
-const HISTORY_KEY_PREFIX = 'aiModelDBPro_history_';
-const INDEX_KEY = 'aiModelDBPro_history_index';
+const HISTORY_KEY_PREFIX = 'aiModelDB_history_';
+const INDEX_KEY = 'aiModelDB_history_index';
 const MAX_SNAPSHOTS = 5;
 
 export function useSyncHistory() {

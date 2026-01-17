@@ -177,6 +177,30 @@ export const mergeRecords = (existing: Model, incoming: Model): Model => {
         merged.analytics = existing.analytics;
     }
 
+    // ═══════════════════════════════════════════════════════════════════════════
+    // USER-SET FIELDS - ALWAYS preserve existing (these are manual user actions)
+    // These should NEVER be overwritten by incoming sync data
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    // Favorite status - preserve user's manual favorite setting
+    if (existing.isFavorite !== undefined) {
+        merged.isFavorite = existing.isFavorite;
+    }
+
+    // NSFW flag on entire model - preserve user's manual NSFW flag
+    if (existing.isNSFWFlagged !== undefined) {
+        merged.isNSFWFlagged = existing.isNSFWFlagged;
+    }
+
+    // Flagged image URLs - preserve user's manual per-image NSFW flags
+    // Merge existing flags with any new flags, but never remove existing ones
+    if (existing.flaggedImageUrls && existing.flaggedImageUrls.length > 0) {
+        const incomingFlags = incoming.flaggedImageUrls || [];
+        merged.flaggedImageUrls = [...new Set([...existing.flaggedImageUrls, ...incomingFlags])];
+    } else if (incoming.flaggedImageUrls) {
+        merged.flaggedImageUrls = incoming.flaggedImageUrls;
+    }
+
     return merged;
 };
 

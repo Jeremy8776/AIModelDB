@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, shell, dialog, safeStorage } = require('electron');
+const { app, BrowserWindow, ipcMain, shell, dialog, safeStorage, Menu, MenuItem } = require('electron');
 const path = require('path');
 const { autoUpdater } = require('electron-updater');
 
@@ -62,7 +62,7 @@ function createWindow() {
         height: 1070,
         minWidth: 1000,
         minHeight: 700,
-        title: 'AI Model DB Pro',
+        title: 'AI Model DB',
         icon: path.join(__dirname, '../public/favicon.svg'),
         backgroundColor: '#0a0a0b',
         show: false, // Don't show until ready
@@ -82,6 +82,51 @@ function createWindow() {
     if (process.platform === 'darwin') {
         mainWindow.setWindowButtonVisibility(false);
     }
+
+    // Context Menu Handler
+    mainWindow.webContents.on('context-menu', (event, params) => {
+        const menu = new Menu();
+
+        // Add Save Image option if right-clicked on an image
+        if (params.mediaType === 'image') {
+            menu.append(new MenuItem({
+                label: 'Save Image As...',
+                click: () => {
+                    mainWindow.webContents.downloadURL(params.srcURL);
+                }
+            }));
+            menu.append(new MenuItem({ type: 'separator' }));
+        }
+
+        // Standard Text Editing Actions
+        if (params.isEditable) {
+            menu.append(new MenuItem({ role: 'undo' }));
+            menu.append(new MenuItem({ role: 'redo' }));
+            menu.append(new MenuItem({ type: 'separator' }));
+            menu.append(new MenuItem({ role: 'cut' }));
+            menu.append(new MenuItem({ role: 'copy' }));
+            menu.append(new MenuItem({ role: 'paste' }));
+            menu.append(new MenuItem({ role: 'selectAll' }));
+        } else {
+            // Allow copy if text is selected
+            if (params.selectionText) {
+                menu.append(new MenuItem({ role: 'copy' }));
+            }
+        }
+
+        // DevTools (only in dev or if explicitly requested)
+        if (isDev) {
+            menu.append(new MenuItem({ type: 'separator' }));
+            menu.append(new MenuItem({
+                label: 'Inspect Element',
+                click: () => mainWindow.webContents.inspectElement(params.x, params.y)
+            }));
+        }
+
+        if (menu.items.length > 0) {
+            menu.popup(mainWindow, params.x, params.y);
+        }
+    });
 
     // Load the app
     if (isDev) {
@@ -305,15 +350,14 @@ ipcMain.handle('proxy-request', async (event, { url, method = 'GET', headers = {
             body: body ? JSON.stringify(body) : undefined
         };
 
-        console.log(`[Proxy] ${method} ${url}`);
-        console.log(`[Proxy] Headers:`, JSON.stringify(headers, null, 2));
+        if (isDev) {
+            console.log(`[Proxy] ${method} ${url}`);
+        }
         const response = await fetch(url, fetchOptions);
-
-        console.log(`[Proxy] Response status: ${response.status}`);
 
         if (!response.ok) {
             const text = await response.text();
-            console.error(`[Proxy] Error response body: ${text}`);
+            console.error(`[Proxy] Error ${response.status}: ${text.substring(0, 200)}`);
             throw new Error(`Request failed: ${response.status}`);
         }
 
@@ -323,16 +367,14 @@ ipcMain.handle('proxy-request', async (event, { url, method = 'GET', headers = {
 
         if (contentType.includes('application/json')) {
             data = await response.json();
-            console.log(`[Proxy] Success, data keys:`, Object.keys(data));
         } else {
             // Return as text for HTML and other content types
             data = await response.text();
-            console.log(`[Proxy] Success, text length:`, data.length);
         }
 
         return { success: true, data };
     } catch (error) {
-        console.error('[Proxy] Request error:', error);
+        console.error('[Proxy] Request error:', error.message);
         return { success: false, error: error.message };
     }
 });
@@ -341,8 +383,6 @@ ipcMain.handle('proxy-request', async (event, { url, method = 'GET', headers = {
 // This bypasses CDN restrictions that block browser requests
 ipcMain.handle('proxy-image', async (event, imageUrl) => {
     try {
-        console.log(`[ImageProxy] Fetching: ${imageUrl}`);
-
         const response = await fetch(imageUrl, {
             headers: {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
@@ -352,7 +392,8 @@ ipcMain.handle('proxy-image', async (event, imageUrl) => {
         });
 
         if (!response.ok) {
-            console.error(`[ImageProxy] Failed: ${response.status}`);
+            // Only log errors, not every request
+            if (isDev) console.error(`[ImageProxy] Failed: ${response.status}`);
             return { success: false, error: `HTTP ${response.status}` };
         }
 
@@ -361,10 +402,9 @@ ipcMain.handle('proxy-image', async (event, imageUrl) => {
         const base64 = Buffer.from(buffer).toString('base64');
         const dataUrl = `data:${contentType};base64,${base64}`;
 
-        console.log(`[ImageProxy] Success, size: ${buffer.byteLength} bytes`);
         return { success: true, dataUrl };
     } catch (error) {
-        console.error('[ImageProxy] Error:', error);
+        console.error('[ImageProxy] Error:', error.message);
         return { success: false, error: error.message };
     }
 });

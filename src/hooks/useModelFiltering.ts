@@ -15,7 +15,21 @@ export function useModelFiltering(models: Model[], options: FilterOptions) {
 
   const filtered = useMemo(() => {
     return filterModels(models, options);
-  }, [models, options]);
+  }, [
+    models,
+    query,
+    domainPick,
+    sortKey,
+    sortDirection,
+    minDownloads,
+    pageSize,
+    licenseTypes.join(','),
+    commercialAllowed,
+    includeTags.join(','),
+    excludeTags.join(','),
+    favoritesOnly,
+    hideNSFW
+  ]);
 
   const total = filtered.length;
   const perPage = pageSize ?? total;

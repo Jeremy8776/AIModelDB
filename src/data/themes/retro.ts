@@ -305,10 +305,14 @@ tr.bg-zinc-800, tr[class*='bg-zinc-8'],
 /* Scrollbar */
 ::-webkit-scrollbar {
   width: 8px !important;
-  background: var(--bg) !important;
+  background: transparent !important;
+}
+::-webkit-scrollbar-track {
+  background: transparent !important;
 }
 ::-webkit-scrollbar-thumb {
   background: var(--accent) !important;
+  border-radius: 0 !important;
 }
 `,
   colors: {

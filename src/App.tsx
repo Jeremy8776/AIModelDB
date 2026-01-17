@@ -1,11 +1,11 @@
 import React from 'react'
-import AIModelDBPro from './AIModelDBPro'
+import AIModelDB from './AIModelDB'
 import { GlobalErrorBoundary } from './components/GlobalErrorBoundary';
 
 export default function App() {
 	return (
 		<GlobalErrorBoundary>
-			<AIModelDBPro />
+			<AIModelDB />
 		</GlobalErrorBoundary>
 	);
 }

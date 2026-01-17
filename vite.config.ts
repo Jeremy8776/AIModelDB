@@ -8,7 +8,8 @@ export default defineConfig({
     logOverride: { 'this-is-undefined-in-esm': 'silent' }
   },
   server: {
-    host: '0.0.0.0',
+    // Use localhost by default for security. Set VITE_HOST=0.0.0.0 to expose to network.
+    host: process.env.VITE_HOST || 'localhost',
     port: 5173,
     proxy: {
       '/aa-api': {

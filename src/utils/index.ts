@@ -1,5 +1,5 @@
 /**
- * @fileoverview Utility functions for the AI Model DB Pro application.
+ * @fileoverview Utility functions for the AI Model DB application.
  * Pure functions for data transformation, formatting, and validation.
  */
 
@@ -33,3 +33,6 @@ export {
 
 // External links
 export { handleExternalLink } from './external-links';
+
+// Logging utilities
+export { logger, loggers, createLogger, configureLogging, resetLoggedOnce } from './logger';

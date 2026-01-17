@@ -64,7 +64,7 @@ function section(name) {
 }
 
 // Start verification
-log('\n🔍 AIModelDBPro Integration Verification\n', 'blue');
+log('\n🔍 AIModelDB Integration Verification\n', 'blue');
 
 // 1. Window API Integrations
 section('1. Window API Integrations');
@@ -154,8 +154,8 @@ test(
 section('3. localStorage Persistence');
 
 const modelsLoad = checkMultipleStrings(useModelsPath, [
-    "localStorage.getItem('aiModelDBPro_models')",
-    "localStorage.setItem('aiModelDBPro_models'",
+    "localStorage.getItem('aiModelDB_models')",
+    "localStorage.setItem('aiModelDB_models'",
     'JSON.parse(savedModels)',
     'JSON.stringify(models)'
 ]);
@@ -179,8 +179,8 @@ test(
 
 const settingsContextPath = 'src/renderer/tools/model-db/src/context/SettingsContext.tsx';
 const settingsPersistence = checkMultipleStrings(settingsContextPath, [
-    "localStorage.getItem('aiModelDBPro_settings')",
-    "localStorage.setItem('aiModelDBPro_settings'",
+    "localStorage.getItem('aiModelDB_settings')",
+    "localStorage.setItem('aiModelDB_settings'",
     'btoa(value.apiKey)',
     'atob(config.apiKey)'
 ]);
@@ -192,12 +192,12 @@ test(
 
 test(
     'Last sync timestamp persistence',
-    checkFileContains(useModelsPath, "localStorage.getItem('aiModelDBPro_lastSync')"),
+    checkFileContains(useModelsPath, "localStorage.getItem('aiModelDB_lastSync')"),
     'Check useModels.ts for lastSync persistence'
 );
 
 const hardReset = checkMultipleStrings(useModelsPath, [
-    "k.startsWith('aiModelDBPro_')",
+    "k.startsWith('aiModelDB_')",
     "localStorage.removeItem(k)",
     "if ('caches' in window)",
     "await caches.keys()",

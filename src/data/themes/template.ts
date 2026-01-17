@@ -1,5 +1,5 @@
 export const TEMPLATE_CSS = `/* ============================================
- * CUSTOM THEME TEMPLATE - AI Model DB Pro
+ * CUSTOM THEME TEMPLATE - AI Model DB
  * ============================================
  * 
  * HOW TO USE:
@@ -141,21 +141,25 @@ input::placeholder {
  * 8. SCROLLBARS
  * ============================================ */
 ::-webkit-scrollbar {
-  width: 8px !important;
-  height: 8px !important;
+  width: 6px !important;
+  height: 6px !important;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--bg) !important;
+  background: transparent !important;
+  margin: 4px !important;
 }
 
 ::-webkit-scrollbar-thumb {
   background: var(--border) !important;
-  border-radius: 4px !important;
+  border-radius: 20px !important;
+  border: 2px solid transparent !important;
+  background-clip: content-box !important;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--accent) !important;
+  background-color: var(--accent) !important;
+  border: 0px solid transparent !important;
 }
 
 /* ============================================

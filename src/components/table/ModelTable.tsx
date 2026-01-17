@@ -14,6 +14,7 @@ import { SortKey } from '../../hooks/useUIState';
 import { ModelRow } from '../ModelRow';
 import { TableHeader } from './TableHeader';
 import { LazyLoadSentinel } from './LazyLoadSentinel';
+import { ArrowUp } from 'lucide-react';
 
 /**
  * Props for the ModelTable component
@@ -148,22 +149,57 @@ export function ModelTable({
     // Check if all visible models are selected
     const isAllSelected = models.length > 0 && selectedIds && models.every(m => selectedIds.has(m.id));
 
+    // Extract border color for split styling
+    const borderColor = theme === 'dark' ? 'border-zinc-800' : 'border-gray-400';
+    const bgColor = theme === 'dark' ? 'bg-black' : 'bg-white';
+
+    // Scroll to top visibility
+    const [showBackToTop, setShowBackToTop] = React.useState(false);
+
+    React.useEffect(() => {
+        const handleScroll = () => {
+            const root = document.getElementById('root');
+            if (root) {
+                setShowBackToTop(root.scrollTop > 500);
+            }
+        };
+
+        const root = document.getElementById('root');
+        if (root) {
+            root.addEventListener('scroll', handleScroll);
+            // Initial check
+            handleScroll();
+        }
+
+        return () => {
+            const root = document.getElementById('root');
+            if (root) {
+                root.removeEventListener('scroll', handleScroll);
+            }
+        };
+    }, []);
+
     return (
-        <div className={`rounded-2xl border ${bgCard}`}>
-            {/* Table Header */}
-            <TableHeader
-                sortKey={sortKey}
-                sortDirection={sortDirection}
-                onSortChange={onSortChange}
-                theme={theme}
-                isAllSelected={!!isAllSelected}
-                onSelectAll={onSelectAll}
-            />
+        <div className="w-full">
+            {/* Table Header - Sticky */}
+            <div className={`sticky top-[6.2rem] z-20 ${bgColor} ${borderColor} border-t border-x rounded-t-2xl`}>
+                <TableHeader
+                    sortKey={sortKey}
+                    sortDirection={sortDirection}
+                    onSortChange={onSortChange}
+                    theme={theme}
+                    isAllSelected={!!isAllSelected}
+                    onSelectAll={onSelectAll}
+                />
+            </div>
+
+            {/* Spacer for proper visual separation between header and first row */}
+            <div className={`h-4 ${borderColor} border-x ${bgColor}`}></div>
 
             {/* Table Body - Virtualized */}
             <div
                 ref={parentRef}
-                className="p-2 relative mt-4"
+                className={`p-2 relative ${borderColor} border-x ${bgColor}`}
                 style={{
                     height: `${totalSize}px`,
                     minHeight: '200px',
@@ -210,16 +246,32 @@ export function ModelTable({
             </div>
 
             {/* Lazy load sentinel - placed after the virtual list */}
-            {hasMore && (
-                <div className="p-2 border-t border-transparent">
-                    <LazyLoadSentinel
-                        sentinelRef={sentinelRef}
-                        displayCount={displayCount}
-                        totalCount={totalCount}
-                        theme={theme}
-                    />
-                </div>
-            )}
+            <div className={`${borderColor} border-x border-b rounded-b-2xl ${bgColor}`}>
+                {hasMore && (
+                    <div className="p-2 border-t border-transparent">
+                        <LazyLoadSentinel
+                            sentinelRef={sentinelRef}
+                            displayCount={displayCount}
+                            totalCount={totalCount}
+                            theme={theme}
+                        />
+                    </div>
+                )}
+                {!hasMore && <div className="h-2"></div>}
+            </div>
+
+            {/* Scroll to Top Button */}
+            <button
+                onClick={() => {
+                    const root = document.getElementById('root');
+                    root?.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className={`fixed bottom-8 right-8 z-50 p-3 rounded-full shadow-lg transition-all duration-300 transform ${showBackToTop ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0 pointer-events-none'
+                    } ${theme === 'dark' ? 'bg-zinc-800 text-white hover:bg-zinc-700 border border-zinc-700' : 'bg-white text-gray-800 hover:bg-gray-100 border border-gray-300'}`}
+                title="Scroll to top"
+            >
+                <ArrowUp size={20} />
+            </button>
         </div>
     );
 }

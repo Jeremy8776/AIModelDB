@@ -1,4 +1,8 @@
 // Rate limiter for API compliance
+import { loggers } from '../utils/logger';
+
+const logger = loggers.api;
+
 export class RateLimiter {
   private requests: number[] = [];
   private maxRequests: number;
@@ -12,34 +16,41 @@ export class RateLimiter {
   }
 
   async waitForSlot(): Promise<void> {
-    const now = Date.now();
+    // Use iterative loop instead of recursion to prevent potential stack overflow
+    // in extreme rate-limiting scenarios
+    while (true) {
+      const now = Date.now();
 
-    // Remove old requests outside the time window
-    this.requests = this.requests.filter(time => now - time < this.timeWindow);
+      // Remove old requests outside the time window and cap array size to prevent memory leaks
+      this.requests = this.requests
+        .filter(time => now - time < this.timeWindow)
+        .slice(-this.maxRequests); // Keep only the most recent maxRequests entries
 
-    // Check if we're at the limit
-    if (this.requests.length >= this.maxRequests) {
-      const oldestRequest = Math.min(...this.requests);
-      const waitTime = this.timeWindow - (now - oldestRequest) + 1000; // +1s buffer
-      console.log(`Rate limit protection: waiting ${Math.round(waitTime / 1000)}s before next request`);
-      await this.wait(waitTime);
-      return this.waitForSlot(); // Recursive check
-    }
-
-    // Check minimum interval since last request
-    if (this.requests.length > 0) {
-      const lastRequest = Math.max(...this.requests);
-      const timeSinceLastRequest = now - lastRequest;
-
-      if (timeSinceLastRequest < this.minInterval) {
-        const waitTime = this.minInterval - timeSinceLastRequest;
-        console.log(`Rate limit protection: waiting ${Math.round(waitTime / 1000)}s between requests`);
+      // Check if we're at the limit
+      if (this.requests.length >= this.maxRequests) {
+        const oldestRequest = Math.min(...this.requests);
+        const waitTime = this.timeWindow - (now - oldestRequest) + 1000; // +1s buffer
+        logger.debug(`Rate limit protection: waiting ${Math.round(waitTime / 1000)}s before next request`);
         await this.wait(waitTime);
+        continue; // Loop back to check again (was recursive call)
       }
-    }
 
-    // Record this request
-    this.requests.push(now);
+      // Check minimum interval since last request
+      if (this.requests.length > 0) {
+        const lastRequest = Math.max(...this.requests);
+        const timeSinceLastRequest = now - lastRequest;
+
+        if (timeSinceLastRequest < this.minInterval) {
+          const waitTime = this.minInterval - timeSinceLastRequest;
+          logger.debug(`Rate limit protection: waiting ${Math.round(waitTime / 1000)}s between requests`);
+          await this.wait(waitTime);
+        }
+      }
+
+      // Record this request and exit the loop
+      this.requests.push(Date.now());
+      break;
+    }
   }
 
   private wait(ms: number): Promise<void> {

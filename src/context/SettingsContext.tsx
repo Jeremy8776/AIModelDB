@@ -4,7 +4,7 @@ import { DEFAULT_API_DIR } from '../services/api';
 import { CurrencyCode } from '../utils/currency';
 import { LanguageCode } from '../i18n';
 
-interface Settings {
+export interface Settings {
   apiConfig: ApiDir;
   minDownloadsBypass: number;
   autoRefresh: {
@@ -89,7 +89,7 @@ const defaultSettings: Settings = {
   autoMergeDuplicates: true,
   defaultPageSize: 50,
   showImportToast: true,
-  showConsoleButton: true,
+  showConsoleButton: false,
   // Validation settings
   validationBatchSize: 50,
   validationTimeout: 60000, // 60 seconds
@@ -150,7 +150,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
   useEffect(() => {
     const loadSettings = async () => {
       try {
-        const savedSettings = localStorage.getItem('aiModelDBPro_settings');
+        const savedSettings = localStorage.getItem('aiModelDB_settings');
         if (savedSettings) {
           const parsedSettings = JSON.parse(savedSettings);
 
@@ -235,14 +235,14 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
         storageSettings.gitHubToken = await window.electronAPI.encryptString(storageSettings.gitHubToken) || "";
       }
 
-      localStorage.setItem('aiModelDBPro_settings', JSON.stringify(storageSettings));
+      localStorage.setItem('aiModelDB_settings', JSON.stringify(storageSettings));
     } catch (error) {
       console.error('Error saving settings to localStorage:', error);
     }
   };
 
   const resetSettings = () => {
-    localStorage.removeItem('aiModelDBPro_settings');
+    localStorage.removeItem('aiModelDB_settings');
     setSettings(defaultSettings);
   };
 

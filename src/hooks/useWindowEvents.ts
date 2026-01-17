@@ -37,7 +37,7 @@ export interface WindowEventHandlers {
 }
 
 /**
- * Hook for managing custom window events in the AIModelDBPro component.
+ * Hook for managing custom window events in the AIModelDB component.
  * 
  * This hook sets up listeners for custom events dispatched by other components:
  * - 'edit-model' - Triggered when a model should be opened for editing

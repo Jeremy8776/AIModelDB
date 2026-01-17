@@ -112,7 +112,7 @@ function normalizeText(text: string): string {
     .replace(/([a-zA-Z])(\d)/g, '$1 $2')
     .replace(/(\d)([a-zA-Z])/g, '$1 $2')
     // Replace dashes, underscores, dots with spaces
-    .replace(/[-_\.]+/g, ' ')
+    .replace(/[-_.]+/g, ' ')
     // Collapse multiple spaces
     .replace(/\s+/g, ' ')
     // Trim and lowercase
@@ -148,7 +148,10 @@ function analyzeTextForExplicitName(text: string, customKeywords: string[] = [])
   const flaggedTerms: string[] = [];
   let score = 0;
 
-  for (const term of EXPLICIT_NAME_TERMS) {
+  // Combine default explicit terms with custom keywords
+  const allTerms = [...EXPLICIT_NAME_TERMS, ...customKeywords];
+
+  for (const term of allTerms) {
     if (term === '18+') {
       if (text.includes('18+')) {
         flaggedTerms.push(term);
@@ -246,8 +249,28 @@ export function detectNSFW(model: any, customKeywords: string[] = []): NSFWCheck
   const modelName = model.name || '';
   const provider = (model.provider || '').toLowerCase();
   const source = (model.source || '').toLowerCase();
+  const nameLower = modelName.toLowerCase();
 
-  // FIRST: Check for explicit terms in name - this takes priority over everything
+  // FIRST: Check for NSFW detection/safety models BEFORE explicit term check
+  // These are safety tools, not NSFW content generators
+  if (nameLower.includes('nsfw') &&
+    (nameLower.includes('detection') ||
+      nameLower.includes('detector') ||
+      nameLower.includes('classifier') ||
+      nameLower.includes('classification') ||
+      nameLower.includes('filter') ||
+      nameLower.includes('filtering') ||
+      nameLower.includes('safety') ||
+      nameLower.includes('moderation'))) {
+    return {
+      isNSFW: false,
+      confidence: 0,
+      reasons: ['NSFW detection/safety model'],
+      flaggedTerms: []
+    };
+  }
+
+  // SECOND: Check for explicit terms in name - this takes priority over other patterns
   const nameCheck = analyzeTextForExplicitName(modelName, customKeywords);
   if (nameCheck.score > 0) {
     // Found explicit content - flag immediately, don't apply safe patterns
@@ -259,7 +282,7 @@ export function detectNSFW(model: any, customKeywords: string[] = []): NSFWCheck
     };
   }
 
-  // SECOND: Check trusted providers (only if no explicit terms found)
+  // THIRD: Check trusted providers (only if no explicit terms found)
   if (TRUSTED_PROVIDERS.some(trusted => provider.includes(trusted.toLowerCase()))) {
     return {
       isNSFW: false,
@@ -269,25 +292,12 @@ export function detectNSFW(model: any, customKeywords: string[] = []): NSFWCheck
     };
   }
 
-  // THIRD: Check safe model patterns (only if no explicit terms found)
+  // FOURTH: Check safe model patterns (only if no explicit terms found)
   if (SAFE_MODEL_PATTERNS.some(pattern => pattern.test(modelName))) {
     return {
       isNSFW: false,
       confidence: 0,
       reasons: ['Known safe model pattern'],
-      flaggedTerms: []
-    };
-  }
-
-  // Special case: NSFW detection models are safety tools, not NSFW content
-  if (modelName.toLowerCase().includes('nsfw') &&
-    (modelName.toLowerCase().includes('detection') ||
-      modelName.toLowerCase().includes('classifier') ||
-      modelName.toLowerCase().includes('filter'))) {
-    return {
-      isNSFW: false,
-      confidence: 0,
-      reasons: ['NSFW detection/safety model'],
       flaggedTerms: []
     };
   }

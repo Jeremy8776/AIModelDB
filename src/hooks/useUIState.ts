@@ -1,7 +1,7 @@
 /**
  * UI State Hook
  * 
- * Manages all UI-related state for the AIModelDBPro component including
+ * Manages all UI-related state for the AIModelDB component including
  * search, filters, sorting, pagination, and detail panel state.
  * 
  * @module useUIState

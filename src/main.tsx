@@ -3,6 +3,10 @@ import ReactDOM from 'react-dom/client'
 import App from './App'
 import './index.css'
 import './i18n'; // Initialize i18n
+import { migrateLocalStorageKeys } from './utils/migration';
+
+// Run one-time migration from old key prefix (aiModelDBPro_) to new (aiModelDB_)
+migrateLocalStorageKeys();
 
 // Create and mount the React application
 const rootElement = document.getElementById('root')!;
@@ -14,4 +18,5 @@ root.render(
     </React.StrictMode>
 );
 
-console.log('[AI Model DB Pro] Application mounted successfully');
+console.log('[AI Model DB] Application mounted successfully');
+

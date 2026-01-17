@@ -75,7 +75,7 @@ export function FiltersSidebar({
         : "border-gray-500 bg-white text-black placeholder:text-gray-700 focus:outline-none focus:ring-2 focus:ring-violet-500";
 
     return (
-        <aside className="w-full lg:w-72 flex-shrink-0 lg:sticky lg:top-20 h-max">
+        <aside className="w-full lg:w-72 flex-shrink-0 lg:sticky lg:top-[5.5rem] lg:max-h-[calc(100vh-100px)] lg:self-start overflow-y-auto">
             <div className={`rounded-2xl border p-4 ${bgCard}`}>
                 <div className="text-lg font-semibold mb-4 text-center">{t('filters.title')}</div>
 

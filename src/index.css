@@ -2,91 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Custom utility classes that reference CSS variables */
-@layer utilities {
-  .bg-accent {
-    background-color: var(--accent) !important;
-  }
-
-  .bg-accent-dark {
-    background-color: var(--accentDark) !important;
-  }
-
-  .bg-accent-light {
-    background-color: var(--accentLight) !important;
-  }
-
-  .hover\:bg-accent:hover {
-    background-color: var(--accent) !important;
-  }
-
-  .hover\:bg-accent-dark:hover {
-    background-color: var(--accentDark) !important;
-  }
-
-  .hover\:bg-accent-light:hover {
-    background-color: var(--accentLight) !important;
-  }
-
-  .text-accent {
-    color: var(--accent) !important;
-  }
-
-  .text-accent-dark {
-    color: var(--accentDark) !important;
-  }
-
-  .text-accent-light {
-    color: var(--accentLight) !important;
-  }
-
-  .hover\:text-accent:hover {
-    color: var(--accent) !important;
-  }
-
-  .border-accent {
-    border-color: var(--accent) !important;
-  }
-
-  /* Clean input reset */
-  .search-input-reset {
-    outline: none !important;
-    border: none !important;
-    box-shadow: none !important;
-  }
-
-  .search-input-reset:focus {
-    outline: none !important;
-    border: none !important;
-    box-shadow: none !important;
-  }
-
-
-
-  .border-accent-dark {
-    border-color: var(--accentDark) !important;
-  }
-
-  .hover\:border-accent:hover {
-    border-color: var(--accent) !important;
-  }
-
-  .ring-accent {
-    --tw-ring-color: var(--accent) !important;
-  }
-
-  .focus\:ring-accent:focus {
-    --tw-ring-color: var(--accent) !important;
-  }
-
-  .shadow-accent {
-    box-shadow: 0 4px 14px var(--accentGlow) !important;
-  }
-
-  .bg-accent-selected {
-    background-color: var(--accentGlow) !important;
-  }
-}
+/* Custom utility classes removed - handled by tailwind.config.js */
 
 :root {
   color-scheme: dark;
@@ -235,6 +151,11 @@ input[class*="bg-zinc-900"] {
 /* Modal backgrounds need to be solid, not transparent */
 .fixed.inset-0>div[class*='max-w'] {
   background-color: var(--bg) !important;
+}
+
+/* Force specific transparency for search inputs to override global input background */
+input.search-input-reset {
+  background-color: transparent !important;
 }
 
 [data-theme='light'] .fixed.inset-0>div[class*='max-w'] {
@@ -490,36 +411,42 @@ section {
 /* Custom scrollbar styling */
 * {
   scrollbar-width: thin;
-  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+  scrollbar-color: var(--scrollbar-thumb) transparent;
 }
 
 /* Webkit scrollbar styling for Chrome, Safari, Edge */
 *::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 *::-webkit-scrollbar-track {
-  background: var(--scrollbar-track);
-  border-radius: 4px;
+  background: transparent;
+  margin: 4px;
 }
 
 *::-webkit-scrollbar-thumb {
   background: var(--scrollbar-thumb);
-  border-radius: 4px;
-  transition: background-color 0.2s ease;
+  border-radius: 20px;
+  border: 2px solid transparent;
+  /* Creates padding effect if background-clip is content-box, but here we want simple rounded */
+  background-clip: content-box;
+  /* Makes the thumb look "floating" inside the track */
 }
 
+/* On hover, make it more visible */
 *::-webkit-scrollbar-thumb:hover {
-  background: var(--scrollbar-thumb-hover);
+  background-color: var(--scrollbar-thumb-hover);
+  border: 0px solid transparent;
+  /* Fill the width on hover */
 }
 
 *::-webkit-scrollbar-thumb:active {
-  background: var(--scrollbar-thumb-active);
+  background-color: var(--scrollbar-thumb-active);
 }
 
 *::-webkit-scrollbar-corner {
-  background: var(--scrollbar-track);
+  background: transparent;
 }
 
 /* Thin scrollbars for specific components */

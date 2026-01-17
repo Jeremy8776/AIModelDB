@@ -1,21 +1,21 @@
 <p align="center">
-  <img src="public/icons/png/512x512.png" alt="AI Model DB Pro" width="128" height="128">
+  <img src="public/icons/png/512x512.png" alt="AI Model DB" width="128" height="128">
 </p>
 
-<h1 align="center">AI Model DB Pro</h1>
+<h1 align="center">AI Model DB</h1>
 
 <p align="center">
   <strong>The ultimate desktop app for tracking, managing, and validating AI models</strong>
 </p>
 
 <p align="center">
-  <a href="https://github.com/Jeremy8776/AIModelDB/releases/latest/download/AI-Model-DB-Pro-Setup.exe">
+  <a href="https://github.com/Jeremy8776/AIModelDB/releases/latest/download/AI-Model-DB-Setup.exe">
     <img src="https://img.shields.io/badge/Windows-Download-0078D6?style=for-the-badge&logo=windows&logoColor=white" alt="Download for Windows">
   </a>
-  <a href="https://github.com/Jeremy8776/AIModelDB/releases/latest/download/AI-Model-DB-Pro.dmg">
+  <a href="https://github.com/Jeremy8776/AIModelDB/releases/latest/download/AI-Model-DB.dmg">
     <img src="https://img.shields.io/badge/macOS-Download-000000?style=for-the-badge&logo=apple&logoColor=white" alt="Download for macOS">
   </a>
-  <a href="https://github.com/Jeremy8776/AIModelDB/releases/latest/download/AI-Model-DB-Pro.AppImage">
+  <a href="https://github.com/Jeremy8776/AIModelDB/releases/latest/download/AI-Model-DB.AppImage">
     <img src="https://img.shields.io/badge/Linux-Download-FCC624?style=for-the-badge&logo=linux&logoColor=black" alt="Download for Linux">
   </a>
 </p>
@@ -93,7 +93,7 @@
 ### First Launch
 
 1. **Download** the installer for your platform from the [Releases](https://github.com/Jeremy8776/AIModelDB/releases/latest) page
-2. **Install** and launch AI Model DB Pro
+2. **Install** and launch AI Model DB
 3. **Complete** the onboarding wizard to select data sources
 4. **Configure** API keys (optional, for AI validation)
 5. **Sync** to populate your database
@@ -111,14 +111,14 @@ Enable any of these sources in Settings:
 
 ## macOS Installation
 
-> **Note**: When first opening the app on macOS, you may see an error saying **"AI Model DB Pro is damaged and can't be opened"**. This is because the app is not signed with an Apple Developer certificate.
+> **Note**: When first opening the app on macOS, you may see an error saying **"AI Model DB is damaged and can't be opened"**. This is because the app is not signed with an Apple Developer certificate.
 
 ### Fix: Remove Quarantine Attribute
 
 Open **Terminal** and run:
 
 ```bash
-xattr -cr /Applications/AI\ Model\ DB\ Pro.app
+xattr -cr /Applications/AI\ Model\ DB.app
 ```
 
 After running this command, you should be able to open the app normally.
@@ -194,11 +194,11 @@ MIT License - See [LICENSE](LICENSE) for details.
 
 **IMPORTANT: READ BEFORE USE**
 
-This software is provided "as is", without warranty of any kind, express or implied. By using AI Model DB Pro, you acknowledge and agree to the following:
+This software is provided "as is", without warranty of any kind, express or implied. By using AI Model DB, you acknowledge and agree to the following:
 
 ### Data Sources and Terms of Service
 
-AI Model DB Pro is a **tool** that facilitates access to publicly available APIs and data sources. The software itself does not host, store, or redistribute any model data on behalf of users.
+AI Model DB is a **tool** that facilitates access to publicly available APIs and data sources. The software itself does not host, store, or redistribute any model data on behalf of users.
 
 **Users are solely responsible for:**
 - Reviewing and complying with the Terms of Service of each data source they choose to enable
@@ -206,7 +206,7 @@ AI Model DB Pro is a **tool** that facilitates access to publicly available APIs
 - Obtaining any necessary permissions or licenses for their intended use of the data
 - Respecting rate limits and fair usage policies of third-party services
 
-**The developers of AI Model DB Pro:**
+**The developers of AI Model DB:**
 - Do not guarantee the accuracy, completeness, or availability of any third-party data
 - Are not responsible for any changes to third-party APIs or Terms of Service
 - Do not endorse or verify any models, content, or information retrieved through this software

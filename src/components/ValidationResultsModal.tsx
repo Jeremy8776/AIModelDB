@@ -19,24 +19,12 @@ export function ValidationResultsModal({
     const { theme } = useContext(ThemeContext);
     const { t } = useTranslation();
 
-    if (!isOpen || !summary) return null;
-
-    const bgModal = 'bg-bg border-border text-text';
-    const textPrimary = 'text-text';
-    const textSecondary = 'text-text-secondary';
-    const bgInput = 'border border-border bg-input text-text';
-
-    const formatValue = (val: any) => {
-        if (val === null || val === undefined) return <span className="opacity-30">-</span>;
-        if (Array.isArray(val)) return `[${val.length} items]`;
-        if (typeof val === 'object') return '{...}';
-        return String(val);
-    };
-
     // BACKWARD COMPATIBILITY / DEMO MODE:
     // If we have stats but no detailed updates (e.g. from a job run before this feature was added),
     // generate plausible mock data so the user can see the UI populated.
+    // NOTE: This hook must be called before any early returns to comply with React hooks rules.
     const displayUpdates = React.useMemo(() => {
+        if (!summary) return [];
         if (summary.updates && summary.updates.length > 0) return summary.updates;
 
         // Only simulate if we have updates recorded in stats but no event log
@@ -68,6 +56,21 @@ export function ValidationResultsModal({
         }
         return [];
     }, [summary]);
+
+    // Early return AFTER hooks are called
+    if (!isOpen || !summary) return null;
+
+    const bgModal = 'bg-bg border-border text-text';
+    const textPrimary = 'text-text';
+    const textSecondary = 'text-text-secondary';
+    const bgInput = 'border border-border bg-input text-text';
+
+    const formatValue = (val: any) => {
+        if (val === null || val === undefined) return <span className="opacity-30">-</span>;
+        if (Array.isArray(val)) return `[${val.length} items]`;
+        if (typeof val === 'object') return '{...}';
+        return String(val);
+    };
 
     const isSimulated = summary.modelsUpdated > 0 && (!summary.updates || summary.updates.length === 0);
 
