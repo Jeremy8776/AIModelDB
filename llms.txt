@@ -1,0 +1,56 @@
+# AI Model DB
+
+> The ultimate desktop application for tracking, managing, and validating AI models from multiple sources.
+
+## Overview
+
+AI Model DB is a cross-platform Electron desktop application that aggregates AI model information from multiple data sources (Hugging Face, Civitai, OpenModelDB, Artificial Analysis) into a unified, searchable database. It features LLM-powered validation, advanced filtering, and a beautiful modern UI.
+
+## Key Features
+
+- **Multi-Source Aggregation**: Sync models from Hugging Face, Civitai, OpenModelDB, and more
+- **LLM-Powered Validation**: Use OpenAI, Anthropic, Google, or DeepSeek to validate and enrich model metadata
+- **Advanced Filtering**: Filter by domain (LLM, ImageGen, Audio), license type, commercial usage, tags
+- **Auto-Updates**: Built-in update notifications with one-click install
+- **Secure Storage**: All API keys are encrypted locally; credentials never leave your machine
+- **Beautiful UI**: Dark mode by default with customizable themes
+
+## Installation
+
+Download from: https://github.com/Jeremy8776/AIModelDB/releases
+
+- Windows: AI-Model-DB-Setup.exe
+- macOS: AI-Model-DB.dmg  
+- Linux: AI-Model-DB.AppImage
+
+## Technology Stack
+
+- Electron (Desktop framework)
+- React 18 + TypeScript
+- Vite (Build tool)
+- TailwindCSS (Styling)
+
+## API Integrations
+
+- Hugging Face API
+- Civitai API
+- OpenModelDB
+- Artificial Analysis API
+- OpenAI API (for validation)
+- Anthropic API (for validation)
+- Google AI API (for validation)
+- DeepSeek API (for validation)
+
+## License
+
+MIT License - Open source and free to use.
+
+## Links
+
+- Repository: https://github.com/Jeremy8776/AIModelDB
+- Releases: https://github.com/Jeremy8776/AIModelDB/releases
+- Issues: https://github.com/Jeremy8776/AIModelDB/issues
+
+## For More Information
+
+See llms-full.txt for comprehensive technical documentation.

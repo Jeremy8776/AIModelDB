@@ -1,0 +1,31 @@
+# AI Model DB - Robots.txt
+# https://github.com/Jeremy8776/AIModelDB
+
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://jeremy8776.github.io/AIModelDB/sitemap.xml
+
+# AI Crawler Guidelines (AISEO)
+# Allow AI assistants to understand project context
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: Anthropic-AI
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Cohere-AI
+Allow: /

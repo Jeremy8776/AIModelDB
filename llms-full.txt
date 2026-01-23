@@ -1,0 +1,240 @@
+# AI Model DB - Complete Technical Reference
+
+> A comprehensive desktop application for tracking, managing, and validating AI models from multiple sources.
+
+## Project Overview
+
+AI Model DB is a cross-platform desktop application built with Electron and React that serves as a unified database for AI models. It aggregates model information from multiple data sources, provides LLM-powered validation and enrichment, and offers an intuitive interface for browsing, filtering, and managing AI models.
+
+### Target Users
+
+- AI/ML researchers and practitioners
+- Hobbyists exploring AI models
+- Developers integrating AI models into applications
+- Content creators using image generation models
+
+## Architecture
+
+### Technology Stack
+
+| Technology | Purpose |
+|------------|---------|
+| Electron 28 | Desktop application framework |
+| React 18 | UI framework with hooks-based architecture |
+| TypeScript | Type safety throughout the codebase |
+| Vite 7 | Fast development and build tool |
+| TailwindCSS | Utility-first CSS framework |
+| i18next | Internationalization (8+ languages) |
+| electron-updater | Automatic update functionality |
+| electron-builder | Cross-platform installer creation |
+
+### Project Structure
+
+```
+src/
+├── components/     # React UI components
+│   ├── cards/      # Model card components
+│   ├── modals/     # Modal dialogs
+│   ├── panels/     # Side panels
+│   └── shared/     # Reusable UI elements
+├── hooks/          # Custom React hooks (state logic)
+│   ├── useDashboardController.ts
+│   ├── useSyncOperations.ts
+│   └── useSettings.ts
+├── services/       # Business logic
+│   ├── sync/       # Data synchronization
+│   ├── validation/ # LLM-powered validation
+│   └── api/        # API integrations
+├── context/        # React Context providers
+├── utils/          # Pure utility functions
+├── types/          # TypeScript type definitions
+├── data/           # Static data and themes
+└── i18n/           # Internationalization files
+```
+
+### Core Data Flow
+
+```
+User Action → Custom Hook → Service Layer → API/Fetchers → External APIs
+                                                              ↓
+UI Update ← React State ← localStorage ← Persistence ← Data Response
+```
+
+### Data Sources
+
+1. **Hugging Face** - Open-source models repository (10,000+ models)
+2. **Civitai** - Image generation models, LoRAs, embeddings
+3. **OpenModelDB** - Upscaler models database
+4. **Artificial Analysis** - LLM benchmarks and pricing data
+
+### Key Features
+
+#### Multi-Source Synchronization
+- Parallel fetching from multiple APIs
+- Intelligent deduplication across sources
+- Incremental sync with change detection
+- Rate limiting and error handling
+
+#### LLM-Powered Validation
+- Metadata enrichment using AI
+- License classification and commercial usage detection
+- Tag suggestion and categorization
+- Supports OpenAI, Anthropic, Google AI, and DeepSeek
+
+#### Advanced Filtering System
+- Filter by domain: LLM, ImageGen, Audio, Video, Multimodal
+- Filter by license type and commercial availability
+- Tag-based filtering with AND/OR logic
+- Full-text search across all fields
+
+#### User Experience
+- Dark mode by default with multiple themes
+- Responsive layout for different screen sizes
+- Keyboard shortcuts for power users
+- Gallery view with image previews
+- Favorites and NSFW flagging
+
+### API Integration Details
+
+#### Hugging Face Integration
+```typescript
+// Fetches models with pagination and filtering
+fetchHuggingFaceModels(options: { 
+  limit: number, 
+  filter: string, 
+  sort: 'downloads' | 'likes' | 'trending' 
+})
+```
+
+#### Civitai Integration
+```typescript
+// Fetches models with NSFW filtering
+fetchCivitaiModels(options: { 
+  limit: number, 
+  nsfw: 'None' | 'Soft' | 'Mature' | 'X',
+  types: string[] 
+})
+```
+
+### Local Storage Keys
+
+All data persisted with `aiModelDB_` prefix:
+- `aiModelDB_models` - Complete model database
+- `aiModelDB_settings` - User preferences and API keys
+- `aiModelDB_theme` - Theme configuration
+- `aiModelDB_syncHistory` - Sync operation history
+- `aiModelDB_favorites` - User favorited models
+- `aiModelDB_nsfw` - NSFW flagged models
+
+### Security Considerations
+
+- All API keys stored encrypted in localStorage
+- Credentials never transmitted to external servers (except their respective APIs)
+- Electron's context isolation enabled
+- CSP (Content Security Policy) configured
+
+## Installation
+
+### End Users
+
+Download the latest release for your platform:
+- **Windows**: AI-Model-DB-Setup.exe
+- **macOS**: AI-Model-DB.dmg (run `xattr -cr` if quarantined)
+- **Linux**: AI-Model-DB.AppImage
+
+### Developers
+
+```bash
+# Clone repository
+git clone https://github.com/Jeremy8776/AIModelDB.git
+cd AIModelDB
+
+# Install dependencies
+npm install
+
+# Run in development mode
+npm run electron:dev
+
+# Build for production
+npm run electron:build
+```
+
+## Configuration
+
+### Required API Keys (Optional)
+
+None required for basic model browsing. For LLM validation:
+- OpenAI API key
+- Anthropic API key
+- Google AI API key
+- DeepSeek API key
+
+### Data Source API Keys
+
+Some sources may require authentication:
+- Hugging Face: Optional, increases rate limits
+- Civitai: Optional, required for some content
+
+## Common Use Cases
+
+### Browsing AI Models
+1. Launch application
+2. Go to Settings → Data Sources
+3. Enable desired sources
+4. Click Sync to populate database
+5. Use filters to find models
+
+### Validating Model Metadata
+1. Configure LLM API key in Settings
+2. Select model(s) to validate
+3. Click Validate button
+4. Review and accept AI-suggested metadata
+
+### Exporting Model Data
+1. Select models or use filters
+2. Click Export
+3. Choose format (JSON, CSV, Excel)
+4. Save to desired location
+
+## Troubleshooting
+
+### macOS "Damaged" Error
+```bash
+xattr -cr /Applications/AI\ Model\ DB.app
+```
+
+### Sync Failures
+- Check API rate limits
+- Verify network connectivity
+- Check Settings for valid API keys
+
+### Slow Performance
+- Reduce number of synced models
+- Clear sync history in Settings
+- Disable image previews
+
+## Contributing
+
+1. Fork the repository
+2. Create feature branch
+3. Make changes following code conventions
+4. Run tests: `npm test`
+5. Submit pull request
+
+## License
+
+MIT License - See LICENSE file for details.
+
+## Links
+
+- **Repository**: https://github.com/Jeremy8776/AIModelDB
+- **Releases**: https://github.com/Jeremy8776/AIModelDB/releases
+- **Issues**: https://github.com/Jeremy8776/AIModelDB/issues
+- **Documentation**: https://github.com/Jeremy8776/AIModelDB/blob/main/docs/REFERENCE.md
+
+## Keywords
+
+AI models, machine learning, model database, Hugging Face, Civitai, OpenModelDB, 
+LLM, GPT, Claude, Stable Diffusion, LoRA, embeddings, model management, 
+model validation, Electron app, React, TypeScript, open source, MIT license,
+AI assistant, model aggregator, model browser, deep learning, neural networks

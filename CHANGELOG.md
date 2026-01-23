@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.4] - 2026-01-23
+
+### Added
+- **SEO & AISEO Optimization**: Comprehensive search engine and AI search optimization:
+  - Added `llms.txt` and `llms-full.txt` for AI assistant discovery (GPT, Claude, Perplexity, etc.)
+  - Added `robots.txt` with AI crawler directives for GPTBot, Claude-Web, PerplexityBot
+  - Added `sitemap.xml` for search engine indexing
+  - Added `site.webmanifest` for PWA support and mobile SEO
+  - Added `.well-known/ai-plugin.json` for AI assistant integration
+  - Added `SECURITY.md` security policy for GitHub discoverability
+  - Added `CONTRIBUTING.md` comprehensive contributing guide
+
+### Changed
+- **Enhanced Meta Tags**: Improved `index.html` with comprehensive SEO:
+  - Added Twitter Cards (summary_large_image) for social sharing
+  - Added JSON-LD structured data (SoftwareApplication schema)
+  - Added canonical URL and robots directives
+  - Enhanced Open Graph tags with image references
+  - Improved meta description and keywords
+  - Added multiple favicon sizes and manifest link
+
+---
+
 ## [0.4.3] - 2026-01-17
 
 ### Changed
