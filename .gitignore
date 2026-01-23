@@ -47,4 +47,4 @@ cert_base64.txt
 scripts/build_signed_release.ps1
 
 # Agent files
-.agent/
+
