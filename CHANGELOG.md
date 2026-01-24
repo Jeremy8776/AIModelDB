@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.5] - 2026-01-24
+
+### Security
+- **Electron Upgrade**: Major upgrade to Electron 35.7.5 (from v28.x) for enhanced security, performance, and modern Windows feature support.
+- **Dependency Hardening**: Updated core dependencies (`qs`, `undici`, `lodash`) to patch high-severity vulnerabilities.
+
+### Changed
+- **Performance**: Optimized app launch time and memory usage with the new Electron runtime.
+
+---
+
 ## [0.4.4] - 2026-01-23
 
 ### Added
