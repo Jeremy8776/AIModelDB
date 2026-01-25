@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.7] - 2026-01-25
+
+### Fixed
+- **Linux Build**: Fixed build failure on Linux environments caused by case-sensitivity mismatch in imports (`./ui` vs `./UI`).
+
+---
+
+## [0.4.6] - 2026-01-25
+
+### Feature
+- **Improved Sync Architecture**: Fixed a "stale state" bug that caused duplicate model counts during long-running syncs.
+- **Hybrid Validation**: Added hybrid batch-mode GPT validation for faster processing of large databases.
+- **Civitai Failover**: Improved robustness of Civitai scraping to handle region-locked scenarios (e.g., UK blocks) or API outages.
+
+### Fixed
+- **Web Workers**: Updated Content Security Policy (CSP) to allow Web Workers (`blob:`), enabling background processing tasks like duplicate detection.
+- **Translation**: Fixed "missingKey" translation errors in the Onboarding Wizard.
+- **Type Safety**: Resolved various TypeScript errors and lint warnings across the codebase.
+
+---
+
 ## [0.4.5] - 2026-01-24
 
 ### Security
