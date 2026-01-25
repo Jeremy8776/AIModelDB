@@ -615,23 +615,25 @@ export function APIConfigSection() {
                         >
                           <RefreshCw size={12} className={ollamaStatus === 'checking' ? 'animate-spin' : ''} />
                         </button>
-                        {/* Debug / verification tools */}
-                        <div className="flex border-l border-zinc-700 pl-2 ml-1 gap-1">
-                          <button
-                            onClick={() => setOllamaStatus('down')}
-                            className="text-[10px] px-1.5 py-0.5 bg-zinc-800 text-zinc-500 hover:text-zinc-300 rounded"
-                            title="Debug: Simulate 'Not Installed' state"
-                          >
-                            {t('settings.apiConfig.ollama.debug.simMissing')}
-                          </button>
-                          <button
-                            onClick={() => { setOllamaStatus('running'); setOllamaModelCount(0); }}
-                            className="text-[10px] px-1.5 py-0.5 bg-zinc-800 text-zinc-500 hover:text-zinc-300 rounded"
-                            title="Debug: Simulate 'No Models' state"
-                          >
-                            {t('settings.apiConfig.ollama.debug.simEmpty')}
-                          </button>
-                        </div>
+                        {/* Debug / verification tools - Only in DEV */}
+                        {import.meta.env.DEV && (
+                          <div className="flex border-l border-zinc-700 pl-2 ml-1 gap-1">
+                            <button
+                              onClick={() => setOllamaStatus('down')}
+                              className="text-[10px] px-1.5 py-0.5 bg-zinc-800 text-zinc-500 hover:text-zinc-300 rounded"
+                              title="Debug: Simulate 'Not Installed' state"
+                            >
+                              {t('settings.apiConfig.ollama.debug.simMissing')}
+                            </button>
+                            <button
+                              onClick={() => { setOllamaStatus('running'); setOllamaModelCount(0); }}
+                              className="text-[10px] px-1.5 py-0.5 bg-zinc-800 text-zinc-500 hover:text-zinc-300 rounded"
+                              title="Debug: Simulate 'No Models' state"
+                            >
+                              {t('settings.apiConfig.ollama.debug.simEmpty')}
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
 
