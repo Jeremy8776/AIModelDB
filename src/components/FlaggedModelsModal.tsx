@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { CheckCircle, XCircle, Edit3, X, AlertTriangle, Download } from "lucide-react";
 import ThemeContext from "../context/ThemeContext";
 import { Model } from "../types";
-import { DomainIcon } from "./ui";
+import { DomainIcon } from "./UI";
 import { kfmt, fmtDate } from "../utils/format";
 import { formatReleaseDate, isSubscriptionPricing, toPerMillion, formatEnterprisePricing } from "../utils/pricing";
 import { formatCurrency, detectCurrency, convertCurrency } from "../utils/currency";

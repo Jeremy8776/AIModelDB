@@ -4,7 +4,7 @@ import ThemeContext from '../context/ThemeContext';
 import { useSettings } from '../context/SettingsContext';
 import { Model } from '../types';
 import { RoundCheckbox } from './RoundCheckbox';
-import { DomainIcon } from './ui';
+import { DomainIcon } from './UI';
 import { kfmt } from '../utils/format';
 import {
   formatCurrency,

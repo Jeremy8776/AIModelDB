@@ -5,7 +5,7 @@ import {
     AiOutlineCloseCircle,
     AiOutlineDollar,
 } from 'react-icons/ai';
-import { Modal } from './ui';
+import { Modal } from './UI';
 import { Model } from '../types';
 import { useSettings } from '../context/SettingsContext';
 import {

@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { FileText, DollarSign, Info, ExternalLink, Loader2, X, ChevronLeft, ChevronRight, Star, Flag, EyeOff, Download, Copy } from 'lucide-react';
 import ThemeContext from '../context/ThemeContext';
 import { Model } from '../types';
-import { Badge, DomainIcon } from './ui';
+import { Badge, DomainIcon } from './UI';
 import { fmtDate, kfmt } from '../utils/format';
 import { handleExternalLink } from '../utils/external-links';
 import { fetchCivitasBayDetails, CivitasBayDetails } from '../services/api/fetchers/image-platforms/civitas-bay-details';
