@@ -375,12 +375,6 @@ function UpdatesCard({ appVersion, isCheckingUpdate, onCheckForUpdates }: {
           </div>
         )}
 
-        {checking && (
-          <div className="flex items-center gap-2 text-sm text-zinc-400">
-            <Loader2 size={16} className="animate-spin" />
-            <span>{t('settings.system.updates.checking')}</span>
-          </div>
-        )}
 
         <div className="flex items-center gap-2">
           <button

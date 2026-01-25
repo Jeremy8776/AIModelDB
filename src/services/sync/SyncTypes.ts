@@ -21,6 +21,7 @@ export interface SyncOptions {
     apiConfig?: ApiDir;
     preferredModelProvider?: string | null;
     systemPrompt?: string;
+    ignoredModels?: string[];
 }
 
 /**

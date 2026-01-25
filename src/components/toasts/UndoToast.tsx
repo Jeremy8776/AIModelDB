@@ -17,6 +17,12 @@ export function UndoToast({ data, onClose }: UndoToastProps) {
     const { theme } = useContext(ThemeContext);
     const [progress, setProgress] = useState(100);
 
+    const onCloseRef = React.useRef(onClose);
+
+    useEffect(() => {
+        onCloseRef.current = onClose;
+    }, [onClose]);
+
     useEffect(() => {
         if (!data) return;
 
@@ -32,7 +38,7 @@ export function UndoToast({ data, onClose }: UndoToastProps) {
                 const next = prev - decrement;
                 if (next <= 0) {
                     clearInterval(timer);
-                    onClose();
+                    onCloseRef.current();
                     return 0;
                 }
                 return next;
@@ -40,7 +46,7 @@ export function UndoToast({ data, onClose }: UndoToastProps) {
         }, interval);
 
         return () => clearInterval(timer);
-    }, [data, onClose]);
+    }, [data]);
 
     if (!data) return null;
 

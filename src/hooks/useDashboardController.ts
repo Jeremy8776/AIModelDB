@@ -39,10 +39,10 @@ export function useDashboardController() {
 
     // Show update progress when any update activity happens
     useEffect(() => {
-        if (updateState.updateAvailable || updateState.checking || updateState.downloadProgress !== null || updateState.updateDownloaded || updateState.error) {
+        if (updateState.updateAvailable || updateState.downloadProgress !== null || updateState.updateDownloaded || updateState.error) {
             setShowUpdateProgress(true);
         }
-    }, [updateState.updateAvailable, updateState.checking, updateState.downloadProgress, updateState.updateDownloaded, updateState.error]);
+    }, [updateState.updateAvailable, updateState.downloadProgress, updateState.updateDownloaded, updateState.error]);
 
     // Custom hooks for state management
     const uiState = useUIState();
@@ -158,7 +158,9 @@ export function useDashboardController() {
         pageItems,
         setModels,
         setUndoToast: modalState.setUndoToast,
-        addConsoleLog: consoleLogging.addConsoleLog
+        addConsoleLog: consoleLogging.addConsoleLog,
+        settings,
+        saveSettings
     });
 
     const {

@@ -67,8 +67,10 @@ export function useSyncOperations({ models, settings, callbacks }: UseSyncOperat
                     artificialAnalysisApiKey: settings.artificialAnalysisApiKey,
                     enableNSFWFiltering: settings.enableNSFWFiltering,
                     logNSFWAttempts: settings.logNSFWAttempts,
+                    customNSFWKeywords: settings.customNSFWKeywords || [],
                     apiConfig: settings.apiConfig,
                     preferredModelProvider: settings.preferredModelProvider,
+                    ignoredModels: settings.ignoredModels || [],
                     systemPrompt: settings.systemPrompt
                 },
                 {

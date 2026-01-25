@@ -163,8 +163,26 @@ export async function orchestrateSync(
         checkAborted();
 
         // 3. Deduplicate ALL collected models
+        // Filter out ignored models first
+        if (options.ignoredModels && options.ignoredModels.length > 0) {
+            const ignoredSet = new Set(options.ignoredModels);
+            const beforeParams = allModels.length;
+            allModels = allModels.filter(m => {
+                const url = m.url;
+                const id = m.id;
+                // Check exact ID or URL match
+                if (ignoredSet.has(id)) return false;
+                if (url && ignoredSet.has(url)) return false;
+                return true;
+            });
+            const ignoredCount = beforeParams - allModels.length;
+            if (ignoredCount > 0 && onLog) {
+                onLog(`[Sync] Filtered out ${ignoredCount} ignored models (previously deleted).`);
+            }
+        }
+
         const beforeCount = allModels.length;
-        let allComplete = deduplicateModels(allModels);
+        let allComplete = deduplicateModels(allModels, options.ignoredModels);
         const afterCount = allComplete.length;
         const consolidated = beforeCount - afterCount;
 
@@ -214,7 +232,7 @@ export async function orchestrateSync(
 /**
  * Helper to deduplicate and merge models from different sources
  */
-function deduplicateModels(models: Model[]): Model[] {
+function deduplicateModels(models: Model[], ignoredModels?: string[]): Model[] {
     const map = new Map<string, Model>();
 
     for (const model of models) {

@@ -63,6 +63,8 @@ export interface Settings {
   nsfwFilteringStrict: boolean;
   logNSFWAttempts: boolean; // Log NSFW attempts for compliance
   customNSFWKeywords: string[]; // User-defined NSFW keywords
+  // Ignored models (prevent re-sync after deletion)
+  ignoredModels: string[];
   // System state
   configVersion: number;
 }
@@ -136,6 +138,7 @@ const defaultSettings: Settings = {
   nsfwFilteringStrict: true, // Strict filtering for corporate environment
   logNSFWAttempts: true, // Log NSFW attempts for compliance
   customNSFWKeywords: [], // Default to empty list
+  ignoredModels: [],
   // System state
   configVersion: 1, // Default to 1 (pre-Ollama update)
 };
