@@ -43,6 +43,7 @@ export interface Settings {
     shakker: boolean;
     openmodeldb: boolean;
     civitasbay: boolean;
+    ollamaLibrary: boolean;
   };
   // External API keys (user-provided)
   artificialAnalysisApiKey: string;
@@ -115,6 +116,7 @@ const defaultSettings: Settings = {
     shakker: true,
     openmodeldb: true,
     civitasbay: true, // Enabled - good for model preservation
+    ollamaLibrary: true,
   },
   // External API keys (user-provided)
   artificialAnalysisApiKey: "",

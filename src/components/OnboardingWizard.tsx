@@ -27,17 +27,17 @@ export function OnboardingWizard({ isOpen, onClose, onComplete, initialStep = 1 
         }
     }, [isOpen, initialStep]);
 
-    const [selectedSources, setSelectedSources] = useState<Record<string, boolean>>({
-        huggingface: true,
-        github: true,
-        artificialanalysis: true,
-        civitai: true,
-        openmodeldb: true,
-        civitasbay: true,
-        apiDiscovery: true,
-        localDiscovery: true,
-        ollamaLibrary: true,
-    });
+    const [selectedSources, setSelectedSources] = useState<Record<string, boolean>>(() => ({
+        huggingface: settings?.dataSources?.huggingface ?? true,
+        github: settings?.dataSources?.github ?? true,
+        artificialanalysis: settings?.dataSources?.artificialanalysis ?? true,
+        civitai: settings?.dataSources?.civitai ?? true,
+        openmodeldb: settings?.dataSources?.openmodeldb ?? true,
+        civitasbay: settings?.dataSources?.civitasbay ?? true,
+        ollamaLibrary: settings?.dataSources?.ollamaLibrary ?? true,
+        apiDiscovery: settings?.dataSources?.apiDiscovery ?? true,
+        localDiscovery: settings?.dataSources?.localDiscovery ?? true,
+    }));
 
     // ... (rest of state initialization)
     const [apiKeys, setApiKeys] = useState({

@@ -3,6 +3,7 @@ import { Model } from '../types';
 import { useSettings } from '../context/SettingsContext';
 import { mapDomain, cleanModelDescription } from '../utils/format';
 import { toNormalizedModel } from '../utils/importNormalization';
+import { performMergeBatch } from '../utils/mergeLogic';
 
 export function useModelMerge(
     models: Model[],
@@ -56,16 +57,31 @@ export function useModelMerge(
                 }
             });
         } else {
-            console.warn('Worker not ready, falling back to main thread (or skipping)');
+            console.warn('Worker not ready, falling back to main thread');
+            try {
+                const result = performMergeBatch(
+                    modelsRef.current,
+                    incomingList,
+                    settings.autoMergeDuplicates ?? false
+                );
+                setModels(result.models);
+                setLastMergeStats({
+                    added: result.added,
+                    updated: result.updated,
+                    duplicates: result.duplicates
+                });
+            } catch (err) {
+                console.error("Main thread merge failed:", err);
+            }
         }
-    }, [settings.autoMergeDuplicates]);
-
-    // ...
+    }, [settings.autoMergeDuplicates, setModels]);
 
     const importModels = useCallback((newModels: Model[]) => {
         const normalized: Model[] = (newModels || []).map((m: any, idx: number) => toNormalizedModel(m, idx));
 
-        // Send to worker for merging
+        // Turn this off for large imports if using main thread to prevent freeze? 
+        // For now we assume safety.
+
         if (workerRef.current) {
             workerRef.current.postMessage({
                 type: 'MERGE_MODELS',
@@ -75,8 +91,25 @@ export function useModelMerge(
                     autoMergeDuplicates: settings.autoMergeDuplicates ?? false
                 }
             });
+        } else {
+            console.warn('Worker not ready, falling back to main thread for import');
+            try {
+                const result = performMergeBatch(
+                    modelsRef.current,
+                    normalized,
+                    settings.autoMergeDuplicates ?? false
+                );
+                setModels(result.models);
+                setLastMergeStats({
+                    added: result.added,
+                    updated: result.updated,
+                    duplicates: result.duplicates
+                });
+            } catch (err) {
+                console.error("Main thread import failed:", err);
+            }
         }
-    }, [settings.autoMergeDuplicates]);
+    }, [settings.autoMergeDuplicates, setModels]);
 
     return {
         importModels,
