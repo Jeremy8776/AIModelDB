@@ -118,7 +118,8 @@ describe('Data Source Configuration', () => {
             huggingface: true,
             github: true,
             artificialanalysis: true,
-            llmDiscovery: true,
+            apiDiscovery: true,
+            localDiscovery: true,
             roboflow: false,
             kaggle: false,
             tensorart: true,
@@ -133,7 +134,7 @@ describe('Data Source Configuration', () => {
 
         // Count enabled sources
         const enabledCount = Object.values(dataSources).filter(v => v).length;
-        expect(enabledCount).toBe(11);
+        expect(enabledCount).toBe(12);
     });
 
     it('should handle empty data sources gracefully', () => {

@@ -25,17 +25,9 @@ interface LoadingScreenProps {
 export function LoadingScreen({ theme, progress }: LoadingScreenProps) {
     const { t } = useTranslation();
 
-    const bgRoot = theme === 'dark'
-        ? 'bg-black text-zinc-100'
-        : 'bg-white text-black';
-
-    const textSubtle = theme === 'dark'
-        ? 'text-zinc-400'
-        : 'text-gray-800';
-
-    const progressBg = theme === 'dark'
-        ? 'bg-gray-700'
-        : 'bg-gray-200';
+    const bgRoot = 'bg-bg text-text';
+    const textSubtle = 'text-text-secondary';
+    const progressBg = 'bg-bg-input';
 
     return (
         <div className={`min-h-screen ${bgRoot} flex items-center justify-center`}>

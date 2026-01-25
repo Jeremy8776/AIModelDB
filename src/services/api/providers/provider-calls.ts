@@ -8,6 +8,7 @@ import { safeJsonFromText } from "../../../utils/format";
 import { globalRateLimiter } from '../../rateLimiter';
 import { getEffectiveApiKey } from './api-key-manager';
 import { proxyUrl, useProxy, bypassOpenAIProxy } from '../config';
+import { buildProviderRequest } from './request-builder';
 
 /**
  * Helper to make API calls through Electron's proxy to bypass CORS
@@ -354,120 +355,13 @@ export async function callProviderText(
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
         try {
-            let body: any = {};
-            let url = '';
-            let headers: Record<string, string> = { 'Accept': 'application/json' };
-
-            if (cfg.isCustom || (cfg.baseUrl && cfg.baseUrl.trim() !== '')) {
-                const baseUrl = cfg.baseUrl?.replace(/\/$/, '') || '';
-                const protocol = cfg.protocol || (key === 'ollama' ? 'ollama' : (['anthropic', 'google'].includes(key) ? key : 'openai'));
-
-                headers = { ...headers, 'Content-Type': 'application/json', ...(cfg.headers || {}) };
-                if (effectiveKey && protocol !== 'anthropic') headers['Authorization'] = `Bearer ${effectiveKey}`;
-
-                if (protocol === 'anthropic') {
-                    url = `${baseUrl}/messages`;
-                    if (effectiveKey) headers['x-api-key'] = effectiveKey;
-                    headers['anthropic-version'] = '2023-06-01';
-                    body = {
-                        model: cfg.model,
-                        max_tokens: 4000,
-                        messages: [{ role: 'user', content: `${systemPrompt}\n\n${userPrompt}` }]
-                    };
-                } else if (protocol === 'ollama') {
-                    url = `${baseUrl}/api/chat`;
-                    body = {
-                        model: cfg.model,
-                        messages: [
-                            { role: 'system', content: systemPrompt },
-                            { role: 'user', content: userPrompt }
-                        ],
-                        stream: false
-                    };
-                } else {
-                    // OpenAI Compatible (default)
-                    url = `${baseUrl}/chat/completions`;
-                    body = {
-                        model: cfg.model,
-                        messages: [
-                            { role: 'system', content: systemPrompt },
-                            { role: 'user', content: userPrompt }
-                        ]
-                    };
-                }
-            } else if (key === 'openai' || key === 'openrouter' || key === 'deepseek' || key === 'perplexity') {
-                // OpenAI-compatible chat - use direct URLs since electronProxyFetch handles CORS
-                if (key === 'openai') {
-                    url = 'https://api.openai.com/v1/chat/completions';
-                } else if (key === 'openrouter') {
-                    url = 'https://openrouter.ai/api/v1/chat/completions';
-                } else if (key === 'deepseek') {
-                    url = 'https://api.deepseek.com/v1/chat/completions';
-                } else {
-                    url = 'https://api.perplexity.ai/chat/completions';
-                }
-                headers = {
-                    ...headers,
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${effectiveKey}`,
-                    ...(key === 'openrouter' ? { 'HTTP-Referer': typeof window !== 'undefined' ? window.location.origin : '' } : {})
-                };
-                body = {
-                    model: cfg.model,
-                    messages: [
-                        { role: 'system', content: systemPrompt },
-                        { role: 'user', content: userPrompt }
-                    ]
-                    // Note: omit temperature to avoid provider-specific constraints (defaults to 1 on OpenAI)
-                    // Note: No response_format for text responses
-                };
-            } else if (key === 'anthropic') {
-                // Anthropic API - use direct URL since electronProxyFetch handles CORS
-                url = 'https://api.anthropic.com/v1/messages';
-                headers = {
-                    ...headers,
-                    'Content-Type': 'application/json',
-                    'x-api-key': effectiveKey!,
-                    'anthropic-version': '2023-06-01'
-                };
-                body = {
-                    model: cfg.model || 'claude-3-sonnet-20240229',
-                    max_tokens: 4000,
-                    messages: [{ role: 'user', content: `${systemPrompt}\n\n${userPrompt}` }]
-                };
-            } else if (key === 'cohere') {
-                // Cohere API - use V2 chat endpoint
-                url = 'https://api.cohere.com/v2/chat';
-                headers = {
-                    ...headers,
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${effectiveKey}`
-                };
-                body = {
-                    model: cfg.model || 'command-r',
-                    messages: [
-                        { role: 'system', content: systemPrompt },
-                        { role: 'user', content: userPrompt }
-                    ]
-                };
-            } else if (key === 'google') {
-                // Google Gemini API
-                url = `https://generativelanguage.googleapis.com/v1beta/models/${cfg.model || 'gemini-1.5-flash'}:generateContent`;
-                headers = {
-                    ...headers,
-                    'Content-Type': 'application/json',
-                    'x-goog-api-key': effectiveKey!
-                };
-                body = {
-                    contents: [{ parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }] }]
-                };
-            } else {
-                throw new Error(`Text response not supported for provider: ${key}`);
-            }
+            const { url, method, headers, body } = buildProviderRequest(
+                key, cfg, systemPrompt, userPrompt, effectiveKey || '', 'text'
+            );
 
             // Use Electron proxy to bypass CORS
             const result = await electronProxyFetch(url, {
-                method: 'POST',
+                method,
                 headers,
                 body,
                 signal: options?.signal
@@ -491,14 +385,16 @@ export async function callProviderText(
             const data = result.data;
 
             // Extract text content from response based on provider
-            if (key === 'anthropic') {
+            if (key === 'anthropic' || (cfg.isCustom && cfg.protocol === 'anthropic')) {
                 return data.content?.[0]?.text || '';
-            } else if (key === 'google') {
+            } else if (key === 'google' || (cfg.isCustom && cfg.protocol === 'google')) {
                 // Google Gemini response format
                 return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
             } else if (key === 'cohere') {
                 // Cohere V2 response format
                 return data.message?.content?.[0]?.text || data.text || '';
+            } else if (key === 'ollama' || (cfg.isCustom && cfg.protocol === 'ollama')) {
+                return data.message?.content || '';
             } else {
                 // OpenAI-compatible (OpenAI, OpenRouter, DeepSeek, Perplexity)
                 return data.choices?.[0]?.message?.content || '';
@@ -548,123 +444,13 @@ export async function callProviderLLM(key: ProviderKey, cfg: ProviderCfg, system
     const isOllama = cfg.protocol === 'ollama' || key === 'ollama';
     if (!effectiveKey && !isOllama) throw new Error('no key');
     try {
-        let body: any = {};
-        let url = '';
-        let headers: Record<string, string> = { 'Accept': 'application/json' };
-
-        if (cfg.isCustom || (cfg.baseUrl && cfg.baseUrl.trim() !== '')) {
-            const baseUrl = cfg.baseUrl?.replace(/\/$/, '') || '';
-            const protocol = cfg.protocol || (['anthropic', 'google'].includes(key) ? key : 'openai');
-
-            headers = { ...headers, 'Content-Type': 'application/json', ...(cfg.headers || {}) };
-            if (effectiveKey && protocol !== 'anthropic') headers['Authorization'] = `Bearer ${effectiveKey}`;
-
-            if (protocol === 'anthropic') {
-                url = `${baseUrl}/messages`;
-                if (effectiveKey) headers['x-api-key'] = effectiveKey;
-                headers['anthropic-version'] = '2023-06-01';
-                body = {
-                    model: cfg.model,
-                    max_tokens: 4000,
-                    system: systemPrompt,
-                    messages: [{ role: 'user', content: userPrompt }],
-                    temperature: 0
-                };
-            } else if (protocol === 'ollama') {
-                url = `${baseUrl}/api/chat`;
-                body = {
-                    model: cfg.model,
-                    messages: [
-                        { role: 'system', content: systemPrompt },
-                        { role: 'user', content: userPrompt }
-                    ],
-                    stream: false,
-                    format: "json"
-                };
-            } else {
-                // OpenAI Compatible (default)
-                url = `${baseUrl}/chat/completions`;
-                body = {
-                    model: cfg.model,
-                    messages: [
-                        { role: 'system', content: systemPrompt },
-                        { role: 'user', content: userPrompt }
-                    ],
-                    response_format: { type: 'json_object' }
-                };
-            }
-        } else if (key === 'openai' || key === 'openrouter' || key === 'deepseek' || key === 'perplexity') {
-            // OpenAI-compatible chat
-            if (key === 'openai') {
-                url = 'https://api.openai.com/v1/chat/completions';
-            } else if (key === 'openrouter') {
-                url = 'https://openrouter.ai/api/v1/chat/completions';
-            } else if (key === 'deepseek') {
-                url = 'https://api.deepseek.com/v1/chat/completions';
-            } else {
-                url = 'https://api.perplexity.ai/chat/completions';
-            }
-
-            headers = {
-                ...headers,
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${effectiveKey}`,
-                ...(key === 'openrouter' ? { 'HTTP-Referer': typeof window !== 'undefined' ? window.location.origin : '' } : {})
-            };
-            body = {
-                model: cfg.model,
-                messages: [
-                    { role: 'system', content: systemPrompt },
-                    { role: 'user', content: userPrompt }
-                ],
-                // omit temperature to satisfy models that only support default=1
-                response_format: { type: 'json_object' }
-            };
-        } else if (key === 'anthropic') {
-            url = 'https://api.anthropic.com/v1/messages';
-            headers = {
-                ...headers,
-                'Content-Type': 'application/json',
-                'x-api-key': effectiveKey!,
-                'anthropic-version': '2023-06-01'
-            };
-            body = {
-                model: cfg.model,
-                system: systemPrompt,
-                messages: [{ role: 'user', content: userPrompt }],
-                max_tokens: 2000,
-                temperature: 0
-            };
-        } else if (key === 'cohere') {
-            // Cohere V2 API: /v2/chat with messages array format
-            url = 'https://api.cohere.com/v2/chat';
-            headers = { ...headers, 'Content-Type': 'application/json', 'Authorization': `Bearer ${effectiveKey}` };
-            body = {
-                model: cfg.model,
-                messages: [
-                    { role: 'system', content: systemPrompt },
-                    { role: 'user', content: userPrompt }
-                ]
-            } as any;
-        } else if (key === 'google') {
-            // Gemini via REST
-            url = `https://generativelanguage.googleapis.com/v1beta/models/${cfg.model || 'gemini-1.5-flash'}:generateContent`;
-            headers = {
-                ...headers,
-                'Content-Type': 'application/json',
-                'x-goog-api-key': effectiveKey!
-            };
-            body = {
-                contents: [{ role: 'user', parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }] }],
-                generationConfig: { temperature: 0, responseMimeType: 'application/json' }
-            };
-        } else {
-            throw new Error(`LLM validation not implemented for provider: ${key}`);
-        }
+        const { url, method, headers, body } = buildProviderRequest(
+            key, cfg, systemPrompt, userPrompt, effectiveKey || '', 'json'
+        );
 
         // Use Electron proxy to bypass CORS
         const result = await electronProxyFetch(url, {
-            method: 'POST',
+            method,
             headers,
             body
         });
@@ -675,16 +461,20 @@ export async function callProviderLLM(key: ProviderKey, cfg: ProviderCfg, system
 
         const data = result.data;
         // Parse provider-specific responses
-        if (key === 'anthropic') {
+        if (key === 'anthropic' || (cfg.isCustom && cfg.protocol === 'anthropic')) {
             const text = data?.content?.[0]?.text || '';
             const json = safeJsonFromText(text) || {};
             return Array.isArray(json) ? json : [json];
-        } else if (key === 'google') {
+        } else if (key === 'google' || (cfg.isCustom && cfg.protocol === 'google')) {
             const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
             const json = safeJsonFromText(text) || {};
             return Array.isArray(json) ? json : [json];
         } else if (key === 'cohere') {
             const text = data?.message?.content?.[0]?.text || data?.text || data?.response || '';
+            const json = safeJsonFromText(text) || {};
+            return Array.isArray(json) ? json : [json];
+        } else if (key === 'ollama' || (cfg.isCustom && cfg.protocol === 'ollama')) {
+            const text = data.message?.content || '';
             const json = safeJsonFromText(text) || {};
             return Array.isArray(json) ? json : [json];
         } else {

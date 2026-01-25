@@ -7,7 +7,7 @@ import { useUpdate } from "../context/UpdateContext";
 import { useModels, isModelIncomplete } from "./useModels";
 import { useModelFiltering } from "./useModelFiltering";
 import { useLazyLoad } from "./useLazyLoad";
-import { ValidationSummary } from "./useModelValidation";
+import { ValidationSummary } from "../types/validation";
 import { useSyncOperations } from "./useSyncOperations";
 import { useNSFWScan } from "./useNSFWScan";
 import { useModelSelection } from "./useModelSelection";
@@ -20,6 +20,7 @@ import { useWindowEvents } from "./useWindowEvents";
 import { useConsoleLogging } from "./useConsoleLogging";
 import { useOnlineStatus } from "./useOnlineStatus";
 import { useSyncHistory } from "./useSyncHistory";
+import { useDashboardToggles } from "./useDashboardToggles";
 
 /**
  * Main controller hook for the AI Model Database dashboard.
@@ -229,6 +230,7 @@ export function useDashboardController() {
     }, [settings.apiConfig, hasApiKeys]);
 
     // Update API config and log incomplete models
+    const { addConsoleLog } = consoleLogging;
     useEffect(() => {
         if (settings?.apiConfig) {
             const hasEnabledProvider = Object.entries(settings.apiConfig)
@@ -238,11 +240,11 @@ export function useDashboardController() {
                 setApiConfig(settings.apiConfig);
                 const incompleteModels = models.filter(isModelIncomplete);
                 if (incompleteModels.length > 0) {
-                    consoleLogging.addConsoleLog(`Found ${incompleteModels.length} models with incomplete data.`);
+                    addConsoleLog(`Found ${incompleteModels.length} models with incomplete data.`);
                 }
             }
         }
-    }, [settings?.apiConfig, models, setApiConfig, consoleLogging.addConsoleLog]);
+    }, [settings?.apiConfig, models, setApiConfig, addConsoleLog]);
 
     // Auto-hide import toast
     useEffect(() => {
@@ -290,44 +292,37 @@ export function useDashboardController() {
         if (!lastMergeStats) return;
         const added = lastMergeStats.added || 0;
         const updated = lastMergeStats.updated || 0;
+
+        // Sum cross-source duplicates and internal database matches
+        const syncDuplicates = syncState.syncSummary?.duplicates ?? 0;
+        const mergeDuplicates = lastMergeStats.duplicates ?? 0;
+        const duplicates = syncDuplicates + mergeDuplicates;
+
         const found = syncState.syncSummary?.found ?? (added + updated);
         const flagged = syncState.syncSummary?.flagged ?? 0;
-        const duplicates = syncState.syncSummary?.duplicates ?? 0;
+
         modalState.setImportToast({ found, added, updated, flagged, duplicates });
         syncState.setSyncSummary(null);
+
         if (updated > 0) {
-            consoleLogging.addConsoleLog(`Update complete: ${updated} models updated`);
+            consoleLogging.addConsoleLog(`Update complete: ${updated} models updated with new data`);
+        }
+        if (duplicates > 0) {
+            consoleLogging.addConsoleLog(`Sync found ${duplicates} models already present in database`);
         }
     }, [lastMergeStats, syncState.syncSummary, syncState.setSyncSummary, modalState.setImportToast, consoleLogging.addConsoleLog]);
 
-    // Toggle handlers for models
-    const handleToggleFavorite = useCallback((model: Model) => {
-        setModels(prev => prev.map(m => m.id === model.id ? { ...m, isFavorite: !m.isFavorite } : m));
-    }, [setModels]);
-
-    const handleToggleNSFWFlag = useCallback((model: Model) => {
-        if (model.isNSFWFlagged) {
-            setModels(prev => prev.map(m => m.id === model.id ? { ...m, isNSFWFlagged: false } : m));
-            consoleLogging.addConsoleLog(`Unflagged model: ${model.name}`);
-        } else {
-            setModelToFlag(model);
-            setFlagModalOpen(true);
-        }
-    }, [setModels, consoleLogging]);
-
-    const handleToggleImageNSFW = useCallback((model: Model, imageUrl: string) => {
-        setModels(prev => prev.map(m => {
-            if (m.id !== model.id) return m;
-            const currentFlagged = m.flaggedImageUrls || [];
-            const isFlagged = currentFlagged.includes(imageUrl);
-            const newFlagged = isFlagged
-                ? currentFlagged.filter(url => url !== imageUrl)
-                : [...currentFlagged, imageUrl];
-            return { ...m, flaggedImageUrls: newFlagged };
-        }));
-        const isFlagging = !(model.flaggedImageUrls?.includes(imageUrl));
-        consoleLogging.addConsoleLog(`${isFlagging ? 'Flagged' : 'Unflagged'} image as NSFW for model: ${model.name}`);
-    }, [setModels, consoleLogging]);
+    // Toggle handlers for models using extracted hook
+    const {
+        handleToggleFavorite,
+        handleToggleNSFWFlag,
+        handleToggleImageNSFW
+    } = useDashboardToggles({
+        setModels,
+        consoleLogging,
+        setModelToFlag,
+        setFlagModalOpen
+    });
 
     // Computed values
     const bgRoot = theme === "dark" ? "bg-black text-zinc-100" : "bg-white text-black";

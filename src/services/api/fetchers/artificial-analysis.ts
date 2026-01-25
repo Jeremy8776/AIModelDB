@@ -141,6 +141,11 @@ export async function fetchArtificialAnalysisIndex(apiKey?: string): Promise<{ c
                     // Deduplicate
                     const uniqueImages = [...new Set(images)];
 
+                    // Extract features to tags
+                    if (Array.isArray(item.features)) {
+                        tags.push(...item.features);
+                    }
+
                     const model: Model = {
                         id: `aa-${item.id || item.slug}`,
                         name: item.name,
@@ -161,9 +166,9 @@ export async function fetchArtificialAnalysisIndex(apiKey?: string): Promise<{ c
                         pricing,
                         updated_at: normalizeDate(item.updated_at) || new Date().toISOString(),
                         release_date: normalizedRelease,
-                        tags,
-                        parameters: null,
-                        context_window: null,
+                        tags: [...new Set(tags)], // Dedupe
+                        parameters: item.parameters || item.params || null,
+                        context_window: item.context_window || item.common_context_window || item.max_tokens || null,
                         indemnity: 'VendorProgram',
                         data_provenance: 'Commercial',
                         usage_restrictions: [],
@@ -174,6 +179,12 @@ export async function fetchArtificialAnalysisIndex(apiKey?: string): Promise<{ c
                         },
                         downloads: undefined,
                         benchmarks: benchmarks.length > 0 ? benchmarks : undefined,
+                        analytics: {
+                            elo: item.elo,
+                            rank: item.rank,
+                            quality_index: item.quality_index,
+                            price_index: item.price_index
+                        },
                         images: uniqueImages.length > 0 ? uniqueImages : undefined
                     };
 

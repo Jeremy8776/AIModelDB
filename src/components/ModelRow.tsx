@@ -1,12 +1,24 @@
-import React, { useContext } from 'react';
-import { Database, Download, AlertTriangle, CheckCircle, Star, Flag } from 'lucide-react';
+import React, { useContext, memo, Fragment } from 'react';
+import { Database, Download, CheckCircle, Star, Flag } from 'lucide-react';
 import ThemeContext from '../context/ThemeContext';
 import { useSettings } from '../context/SettingsContext';
 import { Model } from '../types';
 import { RoundCheckbox } from './RoundCheckbox';
-import { DomainIcon } from './UI';
+import { DomainIcon } from './ui';
 import { kfmt } from '../utils/format';
-import { formatCurrency, convertCurrency, detectCurrency, validateModelCost, factCheckModelCost, CurrencyCode } from '../utils/currency';
+import {
+  formatCurrency,
+  convertCurrency,
+  detectCurrency,
+  validateModelCost,
+  factCheckModelCost
+} from '../utils/currency';
+import {
+  formatReleaseDate,
+  isSubscriptionPricing,
+  toPerMillion,
+  formatEnterprisePricing
+} from '../utils/pricing';
 
 interface ModelRowProps {
   m: Model;
@@ -19,52 +31,26 @@ interface ModelRowProps {
   onToggleNSFWFlag?: (m: Model) => void;
 }
 
-export const ModelRow = React.memo(function ModelRow({ m, onOpen, isActive, isSelected, onSelect, isFocused, onToggleFavorite, onToggleNSFWFlag }: ModelRowProps) {
+export const ModelRow = memo(function ModelRow({
+  m,
+  onOpen,
+  isActive,
+  isSelected,
+  onSelect,
+  isFocused,
+  onToggleFavorite,
+  onToggleNSFWFlag,
+}: ModelRowProps) {
   const { theme } = useContext(ThemeContext);
   const { settings } = useSettings();
 
   const rowBg = isActive
-    ? (theme === 'dark' ? 'border-violet-500/50 bg-violet-900/20' : 'border-violet-300 bg-violet-50')
-    : theme === 'dark'
-      ? 'border-zinc-800 bg-zinc-950/40'
-      : 'border-gray-400 bg-white shadow-sm';
+    ? 'border-accent/50 bg-accent/10 shadow-[0_0_15px_rgba(var(--accent-rgb,139,92,246),0.1)]'
+    : 'border-border bg-bg-card';
 
-  const textMain = theme === 'dark'
-    ? 'text-zinc-100'
-    : 'text-black';
-
-  const textSecondary = theme === 'dark'
-    ? 'text-zinc-300'
-    : 'text-gray-800';
-
-  // Hover is now handled by CSS targeting .group/row
-
-  // Checkbox style
-  const checkboxBorder = theme === 'dark' ? 'border-zinc-700 bg-zinc-900' : 'border-gray-300 bg-white';
-  const checkboxChecked = 'bg-violet-600 border-violet-600';
-
-  const subtleText = theme === 'dark'
-    ? 'text-zinc-500'
-    : 'text-gray-700';
-
-  // Format the release date
-  const formatDate = (dateString: string | null | undefined) => {
-    if (!dateString) return "Unknown";
-
-    // Check if flagged as unreleased/future
-    if (m.tags && (m.tags.includes('unreleased') || m.tags.includes('future-release'))) {
-      return "Unreleased";
-    }
-
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", { year: 'numeric', month: 'short', day: 'numeric' });
-  };
-
-  // (getCostDisplay function remains the same, omitted for brevity in prompt but kept in file via tool)
-  // ... Paste getCostDisplay logic here if replacing full file, but using replace_file_content so assume omitted sections are safe if not touched.
-  // Actually, I need to include the full internal function or use a targeted replace.
-  // The 'replace_file_content' replaces the CHUNK proper. I can't easily skip the middle of a function.
-  // I will re-include getCostDisplay. See below.
+  const textMain = 'text-text';
+  const textSecondary = 'text-text-secondary';
+  const subtleText = 'text-text-subtle';
 
   const getCostDisplay = (model: Model): JSX.Element => {
     // Check if model is open-source
@@ -75,10 +61,10 @@ export const ModelRow = React.memo(function ModelRow({ m, onOpen, isActive, isSe
       const vramTag = (model.tags || []).find(t => /vram|gb|gpu/i.test(t));
       return (
         <span className="inline-flex items-center gap-1">
-          <span className="px-1.5 py-0.5 rounded text-green-700 dark:bg-green-900/40 dark:text-green-300 text-sm font-medium">Free</span>
-          <span className="px-1.5 py-0.5 rounded text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 text-sm font-medium">Local</span>
+          <span className="px-1.5 py-0.5 rounded text-green-500 bg-green-500/10 text-sm font-medium">Free</span>
+          <span className="px-1.5 py-0.5 rounded text-blue-500 bg-blue-500/10 text-sm font-medium">Local</span>
           {vramTag && (
-            <span className="px-1.5 py-0.5 rounded text-gray-700 dark:bg-zinc-800 dark:text-zinc-200 text-sm font-medium" title="Minimum VRAM requirement (from tags)">{vramTag}</span>
+            <span className="px-1.5 py-0.5 rounded text-text-secondary bg-bg-input text-sm font-medium" title="Minimum VRAM requirement (from tags)">{vramTag}</span>
           )}
         </span>
       );
@@ -92,27 +78,6 @@ export const ModelRow = React.memo(function ModelRow({ m, onOpen, isActive, isSe
     const targetCurrency = settings.currency;
     const displays: string[] = [];
     let hasValidationIssues = false;
-
-    // Helper to format API pricing - show cost per 1M tokens
-    const formatEnterprisePricing = (inputCost: number, outputCost: number | null, currency: string): string => {
-      if (outputCost !== null) {
-        // Show blended cost (3:1 ratio input:output is typical)
-        const blendedCost = (inputCost * 3 + outputCost) / 4;
-        return formatCurrency(blendedCost, currency as any);
-      }
-      return formatCurrency(inputCost, currency as any);
-    };
-
-    const toPerMillion = (amount: number, unit?: string | null): number => {
-      const u = (unit || '').toLowerCase();
-      let perM = amount;
-      if (u.includes('token')) perM = amount * 1_000_000;
-      else if (u.includes('1k') || u.includes('thousand')) perM = amount * 1_000;
-      // Heuristic: fix scuffed values accidentally scaled up
-      if (perM > 10000) perM = perM / 1_000_000; // if someone passed per 1M but also tagged as per token
-      if (perM > 10000) perM = perM / 1_000;     // last-resort correction
-      return perM;
-    };
 
     // Process API pricing (badge formatting)
     if (apiPricing.length > 0) {
@@ -191,7 +156,7 @@ export const ModelRow = React.memo(function ModelRow({ m, onOpen, isActive, isSe
     }
 
     const renderBadge = (label: string) => (
-      <span className="px-1.5 py-0.5 rounded text-gray-700 dark:bg-zinc-800 dark:text-zinc-200 text-sm font-medium whitespace-nowrap">{label}</span>
+      <span className="px-1.5 py-0.5 rounded text-text-secondary bg-bg-input text-sm font-medium whitespace-nowrap">{label}</span>
     );
 
     // If open-source with API pricing, show both Free/Local AND API cost
@@ -200,16 +165,16 @@ export const ModelRow = React.memo(function ModelRow({ m, onOpen, isActive, isSe
       <div className="flex items-center gap-1">
         <div className="flex flex-wrap gap-1">
           {isOpenSource && (
-            <>
-              <span className="px-1.5 py-0.5 rounded text-green-700 dark:bg-green-900/40 dark:text-green-300 text-sm font-medium">Free</span>
-              <span className="px-1.5 py-0.5 rounded text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 text-sm font-medium">Local</span>
+            <Fragment>
+              <span className="px-1.5 py-0.5 rounded text-green-500 bg-green-500/10 text-sm font-medium">Free</span>
+              <span className="px-1.5 py-0.5 rounded text-blue-500 bg-blue-500/10 text-sm font-medium">Local</span>
               {vramTag && (
-                <span className="px-1.5 py-0.5 rounded text-gray-700 dark:bg-zinc-800 dark:text-zinc-200 text-sm font-medium" title="Minimum VRAM requirement (from tags)">{vramTag}</span>
+                <span className="px-1.5 py-0.5 rounded text-text-secondary bg-bg-input text-sm font-medium" title="Minimum VRAM requirement (from tags)">{vramTag}</span>
               )}
-            </>
+            </Fragment>
           )}
           {displays.map((display, index) => (
-            <React.Fragment key={index}>{renderBadge(display)}</React.Fragment>
+            <Fragment key={index}>{renderBadge(display)}</Fragment>
           ))}
         </div>
         {settings.showCostValidation && !hasValidationIssues && displays.length > 0 && (
@@ -219,18 +184,6 @@ export const ModelRow = React.memo(function ModelRow({ m, onOpen, isActive, isSe
         )}
       </div>
     );
-  };
-
-  // Check if pricing is subscription-based
-  const isSubscriptionPricing = (pricing: any): boolean => {
-    if (!pricing.unit) return false;
-    const unit = pricing.unit.toLowerCase();
-    return unit.includes('month') ||
-      unit.includes('year') ||
-      unit.includes('annual') ||
-      unit.includes('subscription') ||
-      unit.includes('plan') ||
-      (pricing.flat != null && !unit.includes('token') && !unit.includes('request') && !unit.includes('call'));
   };
 
   // Get cost summary for tooltip
@@ -294,14 +247,12 @@ export const ModelRow = React.memo(function ModelRow({ m, onOpen, isActive, isSe
   return (
     <div
       onClick={(e) => {
-        // Don't open if clicking on checkbox, favorites button, or interactive elements
         const target = e.target as HTMLElement;
         if (target.closest('button') || target.closest('input') || target.closest('[role="checkbox"]')) return;
         onOpen(m, e.currentTarget);
       }}
-      className={`group/row relative grid w-full grid-cols-12 items-center gap-3 rounded-xl border ${rowBg} px-3 py-2 text-left transition cursor-pointer ${isFocused ? 'ring-2 ring-violet-500 z-10' : ''}`}
+      className={`group/row relative grid w-full grid-cols-12 items-center gap-3 rounded-xl border ${rowBg} px-3 py-2 text-left transition cursor-pointer hover:border-accent ${isFocused ? 'ring-2 ring-accent z-10' : ''}`}
     >
-      {/* Checkbox Column */}
       <div className="col-span-1 flex justify-center items-center h-full">
         <RoundCheckbox
           checked={!!isSelected}
@@ -311,7 +262,6 @@ export const ModelRow = React.memo(function ModelRow({ m, onOpen, isActive, isSe
         />
       </div>
 
-      {/* Name Column */}
       <div className="col-span-3 flex min-w-0 items-center gap-2 overflow-hidden text-left">
         <Database className={`h-4 w-4 flex-shrink-0 align-middle ${textSecondary}`} />
         <div className="flex min-w-0 flex-col">
@@ -323,7 +273,7 @@ export const ModelRow = React.memo(function ModelRow({ m, onOpen, isActive, isSe
       </div>
 
       <div className={`col-span-2 truncate text-sm ${textSecondary}`}>
-        {formatDate(m.release_date)}
+        {formatReleaseDate(m)}
       </div>
       <div className={`col-span-2 flex items-center gap-2 text-sm ${textSecondary} overflow-hidden`}>
         <DomainIcon d={m.domain} className="h-4 w-4 flex-shrink-0 align-middle" />
@@ -333,27 +283,19 @@ export const ModelRow = React.memo(function ModelRow({ m, onOpen, isActive, isSe
         {getCostDisplay(m)}
       </div>
       <div className={`col-span-2 truncate text-sm ${textSecondary}`} title={m.license?.name || 'Unknown'}>{m.license?.name || 'Unknown'}</div>
-
-
     </div>
   );
 });
 
 export function SkeletonRow() {
-  const { theme } = useContext(ThemeContext);
-
-  const border = theme === 'dark' ? 'border-zinc-800' : 'border-zinc-200';
-  const bg = theme === 'dark' ? 'bg-zinc-950/40' : 'bg-zinc-50/80';
-  const shimmer = theme === 'dark' ? 'bg-zinc-800' : 'bg-zinc-200';
-
   return (
-    <div className={`grid w-full grid-cols-12 items-center gap-3 rounded-xl border ${border} ${bg} px-3 py-3`}>
-      <div className={`col-span-1 h-4 rounded w-4 mx-auto ${shimmer}`} />
-      <div className={`col-span-3 h-4 rounded ${shimmer}`} />
-      <div className={`col-span-2 h-4 rounded ${shimmer}`} />
-      <div className={`col-span-2 h-4 rounded ${shimmer}`} />
-      <div className={`col-span-2 h-4 rounded ${shimmer}`} />
-      <div className={`col-span-2 h-4 rounded ${shimmer}`} />
+    <div className="grid w-full grid-cols-12 items-center gap-3 rounded-xl border border-border bg-bg-card px-3 py-3">
+      <div className="col-span-1 h-4 rounded w-4 mx-auto bg-bg-input animate-pulse" />
+      <div className="col-span-3 h-4 rounded bg-bg-input animate-pulse" />
+      <div className="col-span-2 h-4 rounded bg-bg-input animate-pulse" />
+      <div className="col-span-2 h-4 rounded bg-bg-input animate-pulse" />
+      <div className="col-span-2 h-4 rounded bg-bg-input animate-pulse" />
+      <div className="col-span-2 h-4 rounded bg-bg-input animate-pulse" />
     </div>
   );
 }

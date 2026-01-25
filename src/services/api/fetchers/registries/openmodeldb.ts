@@ -21,7 +21,7 @@ import { Fetcher, SyncOptions, SyncCallbacks, SyncResult } from '../../../sync/S
 export const openModelDBFetcher: Fetcher = {
     id: 'openmodeldb',
     name: 'OpenModelDB',
-    isEnabled: (options: SyncOptions) => !!options.dataSources?.openmodeldb,
+    isEnabled: (options: SyncOptions) => options.dataSources?.openmodeldb === true,
 
     async fetch(options: SyncOptions, callbacks?: SyncCallbacks): Promise<SyncResult> {
         try {
@@ -124,7 +124,8 @@ export const openModelDBFetcher: Fetcher = {
                             indemnity: 'None',
                             data_provenance: 'Open Source',
                             usage_restrictions: [],
-                            downloads: undefined
+                            downloads: undefined,
+                            analytics: item.scale ? { scale: parseInt(String(item.scale), 10) || item.scale } : undefined
                         };
 
                         return model;

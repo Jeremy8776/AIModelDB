@@ -1,32 +1,8 @@
 import { Model } from "../types";
+import { ValidationSource, ValidationJobStatus, ValidationJob } from "../types/validation";
 
-// Define the sources to check for model information
-export enum ValidationSource {
-  API = "api",
-  WEBSEARCH = "websearch",
-  SCRAPING = "scraping"
-}
-
-// Define validation job status
-export type ValidationJobStatus =
-  | "pending"
-  | "processing"
-  | "completed"
-  | "failed";
-
-// Define a validation job
-export interface ValidationJob {
-  id: string;
-  model: Model;
-  sources: ValidationSource[];
-  status: ValidationJobStatus;
-  attempts: number;
-  maxAttempts: number;
-  error?: string;
-  result?: Model;
-  createdAt: Date;
-  updatedAt: Date;
-}
+export { ValidationSource } from "../types/validation";
+export type { ValidationJobStatus, ValidationJob } from "../types/validation";
 
 // ValidationQueue class for managing model validation
 export class ValidationQueue {

@@ -34,7 +34,8 @@ export function OnboardingWizard({ isOpen, onClose, onComplete, initialStep = 1 
         civitai: true,
         openmodeldb: true,
         civitasbay: true,
-        llmDiscovery: true,
+        apiDiscovery: true,
+        localDiscovery: true,
         ollamaLibrary: true,
     });
 
@@ -451,31 +452,60 @@ export function OnboardingWizard({ isOpen, onClose, onComplete, initialStep = 1 
                                     {t('onboarding.discovery.desc')}
                                 </p>
 
-                                <div className={`p-4 rounded-lg border border-zinc-700 bg-zinc-900/30 mb-4`}>
-                                    <label className="flex items-start gap-3 cursor-pointer">
-                                        <div className="relative flex items-center mt-0.5">
-                                            <input
-                                                type="checkbox"
-                                                checked={selectedSources.llmDiscovery}
-                                                onChange={() => toggleSource('llmDiscovery')}
-                                                className="sr-only"
-                                            />
-                                            <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${selectedSources.llmDiscovery
-                                                ? 'bg-accent border-accent'
-                                                : 'border-zinc-600 bg-zinc-800'
-                                                }`}>
-                                                {selectedSources.llmDiscovery && <CheckCircle size={12} className="text-white" />}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                    <div className={`p-4 rounded-lg border border-zinc-700 bg-zinc-900/30`}>
+                                        <label className="flex items-start gap-3 cursor-pointer">
+                                            <div className="relative flex items-center mt-0.5">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedSources.apiDiscovery}
+                                                    onChange={() => toggleSource('apiDiscovery')}
+                                                    className="sr-only"
+                                                />
+                                                <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${selectedSources.apiDiscovery
+                                                    ? 'bg-accent border-accent'
+                                                    : 'border-zinc-600 bg-zinc-800'
+                                                    }`}>
+                                                    {selectedSources.apiDiscovery && <CheckCircle size={12} className="text-white" />}
+                                                </div>
                                             </div>
-                                        </div>
-                                        <div className="flex-1">
-                                            <div className={`text-sm font-medium ${selectedSources.llmDiscovery ? 'text-white' : 'text-zinc-300'}`}>
-                                                {t('onboarding.discovery.enableDiscovery')}
+                                            <div className="flex-1">
+                                                <div className={`text-sm font-medium ${selectedSources.apiDiscovery ? 'text-white' : 'text-zinc-300'}`}>
+                                                    {t('onboarding.discovery.apiTitle', 'AI Cloud Discovery')}
+                                                </div>
+                                                <div className="text-xs text-zinc-500 mt-0.5">
+                                                    {t('onboarding.discovery.apiDesc', 'Discover new models using AI providers.')}
+                                                </div>
                                             </div>
-                                            <div className="text-xs text-zinc-500 mt-0.5">
-                                                {t('onboarding.discovery.enableDiscoveryDesc')}
+                                        </label>
+                                    </div>
+
+                                    <div className={`p-4 rounded-lg border border-zinc-700 bg-zinc-900/30`}>
+                                        <label className="flex items-start gap-3 cursor-pointer">
+                                            <div className="relative flex items-center mt-0.5">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedSources.localDiscovery}
+                                                    onChange={() => toggleSource('localDiscovery')}
+                                                    className="sr-only"
+                                                />
+                                                <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${selectedSources.localDiscovery
+                                                    ? 'bg-accent border-accent'
+                                                    : 'border-zinc-600 bg-zinc-800'
+                                                    }`}>
+                                                    {selectedSources.localDiscovery && <CheckCircle size={12} className="text-white" />}
+                                                </div>
                                             </div>
-                                        </div>
-                                    </label>
+                                            <div className="flex-1">
+                                                <div className={`text-sm font-medium ${selectedSources.localDiscovery ? 'text-white' : 'text-zinc-300'}`}>
+                                                    {t('onboarding.discovery.localTitle', 'Local Discovery')}
+                                                </div>
+                                                <div className="text-xs text-zinc-500 mt-0.5">
+                                                    {t('onboarding.discovery.localDesc', 'Find models installed on your machine.')}
+                                                </div>
+                                            </div>
+                                        </label>
+                                    </div>
                                 </div>
                             </div>
 
@@ -538,7 +568,7 @@ export function OnboardingWizard({ isOpen, onClose, onComplete, initialStep = 1 
                                     <h4 className="font-medium mb-2">{t('onboarding.selectedSources')}</h4>
                                     <ul className="text-sm text-zinc-500 space-y-1">
                                         {Object.entries(selectedSources)
-                                            .filter(([key, enabled]) => enabled && key !== 'llmDiscovery') // Exclude LLM toggle from sources list
+                                            .filter(([key, enabled]) => enabled && key !== 'apiDiscovery' && key !== 'localDiscovery') // Exclude discovery toggles from sources list
                                             .map(([key]) => {
                                                 const source = dataSources.find(s => s.key === key);
                                                 if (!source) return null; // Skip if no matching source definition

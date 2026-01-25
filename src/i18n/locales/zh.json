@@ -107,7 +107,8 @@
         "updatedAt": "更新时间",
         "actions": "操作",
         "noResults": "未找到模型",
-        "noResultsHint": "尝试调整筛选条件或同步以添加模型"
+        "noResultsHint": "尝试调整筛选条件或同步以添加模型",
+        "search": "Search"
     },
     "domains": {
         "All": "全部",
@@ -354,6 +355,14 @@
                 "noModelsFound": "响应中未找到模型",
                 "genericFetchError": "获取模型时出错",
                 "apiKeyRequired": "需要 API 密钥"
+            },
+            "apiDiscovery": {
+                "title": "AI Cloud Discovery",
+                "description": "Use configured LLMs to automatically discover models from unstructured sources."
+            },
+            "localDiscovery": {
+                "title": "Local Model Discovery",
+                "description": "Automatically detect and import models installed on your machine (via Ollama)."
             }
         },
         "system": {
@@ -474,7 +483,28 @@
         "startValidation": "验证 {{count}} 个模型",
         "running": "运行中...",
         "eta": "预计剩余时间",
-        "tokens": "词元"
+        "tokens": "词元",
+        "description": "Enrich and verify metadata using {{provider}} • {{model}}",
+        "filtersScope": "Filters & Scope",
+        "missing": "Missing",
+        "limitApplied": "Limit applied to validation candidates",
+        "ordering": {
+            "incomplete": "Most Incomplete First",
+            "recent": "Most Recent First",
+            "oldest": "Oldest First"
+        },
+        "validateModels": "Validate {{count}} Models",
+        "modelsVia": "Estimating for {{count}} models via {{provider}}",
+        "free": "Free",
+        "cancel": "Cancel",
+        "configureProvider": "Please configure a provider",
+        "successMessage": "Successfully sent {{count}} models for validation",
+        "failedMessage": "Validation request failed",
+        "batchSize": "Batch Size",
+        "pauseMs": "Pause (ms)",
+        "manualDelay": "Manual delay between batches",
+        "enabled": "Enabled",
+        "matchingFilters": "{{count}} matches"
     },
     "validationResults": {
         "title": "验证结果",
@@ -684,6 +714,10 @@
             "title": "AI 验证",
             "alpha": "Alpha",
             "desc": "添加 LLM API 密钥以启用 AI 驱动的验证。这是可选且实验性的。",
+            "apiTitle": "AI 云端发现",
+            "apiDesc": "利用 AI 提供商发现新模型。",
+            "localTitle": "本地发现",
+            "localDesc": "查找安装在您机器上的模型。",
             "enableDiscovery": "启用 LLM 驱动的模型发现",
             "enableDiscoveryDesc": "使用 AI 从非结构化来源自动发现和分类模型。需要下方的 API 密钥。",
             "skip": "您可以跳过此步骤，稍后在设置中添加 API 密钥。"
@@ -738,8 +772,16 @@
             "benchmarks": "基准测试",
             "analytics": "分析"
         },
+        "licenseIPDeployment": "许可证、知识产权与部署",
+        "dataProvenance": "数据来源",
+        "weights": "权重可用",
+        "api": "API 可用",
+        "onPrem": "适合本地部署",
+        "usageRestrictions": "使用限制",
+        "tags": "模型标签",
         "links": {
-            "modelPage": "模型页面"
+            "modelPage": "模型页面",
+            "sources": "来源与外部链接"
         },
         "licenseTipDefault": "查看许可证条款以了解商业权利、署名和限制。",
         "licenseTips": {
@@ -752,8 +794,10 @@
             "CC-BY-NC": "知识共享非商业性使用。未经许可不允许商业用途。",
             "CC0": "公共领域贡献。可免费用于任何用途，无需署名。",
             "OpenRAIL": "负责任的 AI 许可证。可能适用使用限制；请查看变体。",
-            "Proprietary": "供应商专用许可证。查看商业用途和再分发的条款。"
-        }
+            "Proprietary": "供应商专用许可证。查看商业用途和再分发的条款。",
+            "Unknown": "License information not available. Review the model page for details."
+        },
+        "gallery": "Gallery"
     },
     "modelEditor": {
         "title": "编辑模型：{{name}}",
@@ -872,6 +916,25 @@
             "commercialUse": "商业用途",
             "attributionRequired": "需署名",
             "pricing": "定价 (输入/输出 每百万)"
-        }
+        },
+        "comparing_count": "Comparing {{count}} models",
+        "tabs": {
+            "overview": "Overview",
+            "capabilities": "Capabilities",
+            "technical": "Technical Specs",
+            "pricing": "Pricing & Costs"
+        },
+        "downloads": "Downloads",
+        "license": "License",
+        "capability": "Capability",
+        "specification": "Specification",
+        "technical": {
+            "parameters": "Parameters",
+            "context": "Context Window",
+            "domain": "Domain"
+        },
+        "estimated_cost": "Estimated Cost",
+        "currency": "Currency",
+        "license_type": "License Type"
     }
 }

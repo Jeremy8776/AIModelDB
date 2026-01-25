@@ -7,7 +7,7 @@
  * @module ModelTable
  */
 
-import React from 'react';
+import React, { useRef, useState, useLayoutEffect, useEffect } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Model } from '../../types';
 import { SortKey } from '../../hooks/useUIState';
@@ -59,14 +59,14 @@ export function ModelTable({
     activeModelId
 }: ModelTableProps) {
     // Styling based on theme
-    const bgCard = theme === 'dark' ? 'border-zinc-800 bg-black' : 'border-gray-400 bg-white shadow-sm';
+    const bgCard = 'border-border bg-bg-card';
 
     // Ref for the table body container to measure offset
-    const parentRef = React.useRef<HTMLDivElement>(null);
-    const [offsetTop, setOffsetTop] = React.useState(0);
+    const parentRef = useRef<HTMLDivElement>(null);
+    const [offsetTop, setOffsetTop] = useState(0);
 
     // Measure the offset of the table relative to the scroll container (#root)
-    React.useLayoutEffect(() => {
+    useLayoutEffect(() => {
         const updateOffset = () => {
             if (parentRef.current) {
                 const scrollEl = document.getElementById('root');
@@ -95,14 +95,14 @@ export function ModelTable({
     const virtualItems = rowVirtualizer.getVirtualItems();
 
     // Keyboard Navigation
-    const [focusedIndex, setFocusedIndex] = React.useState<number>(-1);
+    const [focusedIndex, setFocusedIndex] = useState<number>(-1);
 
     // Reset focus when models change significantly (e.g. filtering)
-    React.useEffect(() => {
+    useEffect(() => {
         setFocusedIndex(-1);
     }, [models.length]); // Reset on length change
 
-    React.useEffect(() => {
+    useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             const activeTag = document.activeElement?.tagName.toLowerCase();
             if (['input', 'textarea', 'select'].includes(activeTag || '')) return;
@@ -150,13 +150,13 @@ export function ModelTable({
     const isAllSelected = models.length > 0 && selectedIds && models.every(m => selectedIds.has(m.id));
 
     // Extract border color for split styling
-    const borderColor = theme === 'dark' ? 'border-zinc-800' : 'border-gray-400';
-    const bgColor = theme === 'dark' ? 'bg-black' : 'bg-white';
+    const borderColor = 'border-border';
+    const bgColor = 'bg-bg';
 
     // Scroll to top visibility
-    const [showBackToTop, setShowBackToTop] = React.useState(false);
+    const [showBackToTop, setShowBackToTop] = useState(false);
 
-    React.useEffect(() => {
+    useEffect(() => {
         const handleScroll = () => {
             const root = document.getElementById('root');
             if (root) {
@@ -267,7 +267,7 @@ export function ModelTable({
                     root?.scrollTo({ top: 0, behavior: 'smooth' });
                 }}
                 className={`fixed bottom-8 right-8 z-50 p-3 rounded-full shadow-lg transition-all duration-300 transform ${showBackToTop ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0 pointer-events-none'
-                    } ${theme === 'dark' ? 'bg-zinc-800 text-white hover:bg-zinc-700 border border-zinc-700' : 'bg-white text-gray-800 hover:bg-gray-100 border border-gray-300'}`}
+                    } bg-bg-card text-text hover:bg-bg/10 border-border`}
                 title="Scroll to top"
             >
                 <ArrowUp size={20} />

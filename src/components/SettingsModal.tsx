@@ -39,7 +39,7 @@ export function SettingsModal({ isOpen, onClose, onSync, addConsoleLog, currentM
 
   const bgModal = 'border-border';
   const bgTab = 'bg-transparent border-transparent text-text-secondary';
-  const bgActiveTab = 'bg-card border-border text-text';
+  const bgActiveTab = 'bg-bg-card border-border text-text';
 
   const tabs = [
     { id: 'data-sources', label: t('settings.tabs.dataSources'), icon: Database },
@@ -81,13 +81,13 @@ export function SettingsModal({ isOpen, onClose, onSync, addConsoleLog, currentM
 
         {/* Header */}
         <div className="settings-modal-header flex items-center justify-between p-4 border-b border-border">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 text-text">
             <Settings size={20} />
             <h2 className="text-lg font-semibold">{t('settings.title')}</h2>
           </div>
           <button
             onClick={onClose}
-            className="rounded-lg p-1 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+            className="rounded-lg p-1 hover:bg-bg-input transition-colors text-text"
           >
             <X size={18} />
           </button>
@@ -106,10 +106,10 @@ export function SettingsModal({ isOpen, onClose, onSync, addConsoleLog, currentM
                     onClick={() => setActiveTab(tab.id)}
                     className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors relative ${isActive
                       ? `${bgActiveTab} shadow-sm`
-                      : `${bgTab} hover:bg-card`
+                      : `${bgTab} hover:bg-bg-card`
                       }`}
                   >
-                    <Icon size={16} className={isActive ? 'text-accent' : 'text-zinc-500'} />
+                    <Icon size={16} className={isActive ? 'text-accent' : 'text-text-subtle'} />
                     {tab.label}
                     {tab.hasNotification && (
                       <span className="absolute right-2 w-2 h-2 bg-red-500 rounded-full animate-pulse" />

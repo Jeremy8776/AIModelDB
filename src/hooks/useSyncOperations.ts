@@ -80,9 +80,11 @@ export function useSyncOperations({ models, settings, callbacks }: UseSyncOperat
                 }
             );
 
-            const uniqueCount = dedupe(result.complete).length;
-            const dups = Math.max(0, result.complete.length - uniqueCount);
-            setSyncSummary({ found: result.complete.length, flagged: result.flagged.length, duplicates: dups });
+            setSyncSummary({
+                found: result.complete.length,
+                flagged: result.flagged.length,
+                duplicates: result.duplicates || 0
+            });
             mergeInModels(result.complete);
             setLastSync(new Date().toISOString());
             setPage(1);
@@ -143,9 +145,11 @@ export function useSyncOperations({ models, settings, callbacks }: UseSyncOperat
                     }
                 );
 
-                const uniqueCount = dedupe(result.complete).length;
-                const dups = Math.max(0, result.complete.length - uniqueCount);
-                setSyncSummary({ found: result.complete.length, flagged: result.flagged.length, duplicates: dups });
+                setSyncSummary({
+                    found: result.complete.length,
+                    flagged: result.flagged.length,
+                    duplicates: result.duplicates || 0
+                });
                 mergeInModels(result.complete);
                 setLastSync(new Date().toISOString());
                 setPage(1);

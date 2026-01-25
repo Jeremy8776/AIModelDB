@@ -452,44 +452,76 @@ export function APIConfigSection() {
     <div className="space-y-6">
       <div>
         <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
-          <Server size={20} className="text-zinc-500" />
+          <Server size={20} className="text-text-secondary" />
           {t('settings.apiConfig.title')}
-          <span className="px-2 py-0.5 text-[10px] font-bold bg-amber-500/20 text-amber-400 rounded-full uppercase">{t('settings.apiConfig.alpha')}</span>
+          <span className="px-2 py-0.5 text-[10px] font-bold bg-accent/20 text-accent rounded-full uppercase">{t('settings.apiConfig.alpha')}</span>
         </h3>
-        <p className="text-sm text-zinc-700 dark:text-zinc-400">
+        <p className="text-sm text-text-secondary">
           {t('settings.apiConfig.subtitle')}
         </p>
       </div>
 
       {/* Discovery Configuration */}
-      <div className={`rounded-xl border p-4 ${bgCard}`}>
-        <label className="flex items-center justify-between cursor-pointer group">
-          <div>
-            <h4 className="font-medium text-base">{t('settings.apiConfig.discovery.title')}</h4>
-            <p className="text-sm text-zinc-500 mt-1">
-              {t('settings.apiConfig.discovery.description')}
-            </p>
-          </div>
-          <div className="relative flex items-center justify-center">
-            <input
-              type="checkbox"
-              checked={settings.dataSources?.llmDiscovery ?? false}
-              onChange={(e) => saveSettings({
-                dataSources: {
-                  ...settings.dataSources,
-                  llmDiscovery: e.target.checked
-                }
-              })}
-              className="sr-only"
-            />
-            <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${settings.dataSources?.llmDiscovery
-              ? 'bg-accent border-accent'
-              : 'border-zinc-600 group-hover:border-zinc-500'
-              }`}>
-              {settings.dataSources?.llmDiscovery && <Check size={14} strokeWidth={3} className="text-white" />}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className={`rounded-xl border p-4 ${bgCard}`}>
+          <label className="flex items-center justify-between cursor-pointer group">
+            <div className="pr-4">
+              <h4 className="font-medium text-base">{t('settings.apiConfig.apiDiscovery.title')}</h4>
+              <p className="text-xs text-text-subtle mt-1">
+                {t('settings.apiConfig.apiDiscovery.description')}
+              </p>
             </div>
-          </div>
-        </label>
+            <div className="relative flex items-center justify-center shrink-0">
+              <input
+                type="checkbox"
+                checked={settings.dataSources?.apiDiscovery ?? false}
+                onChange={(e) => saveSettings({
+                  dataSources: {
+                    ...settings.dataSources,
+                    apiDiscovery: e.target.checked
+                  }
+                })}
+                className="sr-only"
+              />
+              <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${settings.dataSources?.apiDiscovery
+                ? 'bg-accent border-accent'
+                : 'border-border-input group-hover:border-accent'
+                }`}>
+                {settings.dataSources?.apiDiscovery && <Check size={14} strokeWidth={3} className="text-white" />}
+              </div>
+            </div>
+          </label>
+        </div>
+
+        <div className={`rounded-xl border p-4 ${bgCard}`}>
+          <label className="flex items-center justify-between cursor-pointer group">
+            <div className="pr-4">
+              <h4 className="font-medium text-base">{t('settings.apiConfig.localDiscovery.title')}</h4>
+              <p className="text-xs text-text-subtle mt-1">
+                {t('settings.apiConfig.localDiscovery.description')}
+              </p>
+            </div>
+            <div className="relative flex items-center justify-center shrink-0">
+              <input
+                type="checkbox"
+                checked={settings.dataSources?.localDiscovery ?? false}
+                onChange={(e) => saveSettings({
+                  dataSources: {
+                    ...settings.dataSources,
+                    localDiscovery: e.target.checked
+                  }
+                })}
+                className="sr-only"
+              />
+              <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${settings.dataSources?.localDiscovery
+                ? 'bg-accent border-accent'
+                : 'border-zinc-600 group-hover:border-zinc-500'
+                }`}>
+                {settings.dataSources?.localDiscovery && <Check size={14} strokeWidth={3} className="text-white" />}
+              </div>
+            </div>
+          </label>
+        </div>
       </div>
 
       {/* Preferred Provider Selection - only show if multiple providers are available */}

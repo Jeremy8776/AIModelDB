@@ -72,22 +72,21 @@
   --scrollbar-thumb-active: var(--textSubtle);
 }
 
+/* Global Root Styles */
 html,
-body {
+body,
+#root {
   height: 100%;
   overflow: hidden;
-  background-color: var(--bg) !important;
-  color: var(--text) !important;
+  background-color: var(--bg);
+  color: var(--text);
 }
 
 #root {
-  height: 100%;
   overflow-y: auto;
-  background-color: var(--bg) !important;
-  color: var(--text) !important;
 }
 
-/* Override Tailwind Preflight's default text color */
+/* Ensure common elements use theme text color */
 body,
 #root,
 div,
@@ -103,31 +102,7 @@ h6 {
   color: var(--text);
 }
 
-/* Override Tailwind's hardcoded backgrounds with theme variables */
-.bg-black,
-.bg-black\/80,
-.bg-black\/90,
-.bg-black\/95 {
-  background-color: var(--bg) !important;
-}
-
-.bg-zinc-900,
-.bg-zinc-900\/70 {
-  background-color: var(--bgInput) !important;
-}
-
-.bg-zinc-950,
-.bg-zinc-950\/95 {
-  background-color: var(--bgCard) !important;
-}
-
 /* Input backgrounds */
-.bg-zinc-900\/60,
-.bg-zinc-900 {
-  background-color: var(--bgInput) !important;
-}
-
-/* All text inputs, number inputs, and textareas should use pure black */
 input[type="text"],
 input[type="number"],
 input[type="search"],
@@ -137,120 +112,44 @@ input[type="url"],
 input[type="tel"],
 input:not([type]),
 textarea {
-  background-color: var(--bg) !important;
-  color: var(--text) !important;
-  border-color: var(--border) !important;
+  background-color: var(--bgInput);
+  color: var(--text);
+  border-color: var(--border);
 }
 
-/* Override specific Tailwind background classes on inputs */
-input.bg-zinc-900\/70,
-input[class*="bg-zinc-900"] {
-  background-color: var(--bg) !important;
-}
-
-/* Modal backgrounds need to be solid, not transparent */
+/* Modal backgrounds */
 .fixed.inset-0>div[class*='max-w'] {
-  background-color: var(--bg) !important;
+  background-color: var(--bgCard);
+  border: 1px solid var(--border);
 }
 
-/* Force specific transparency for search inputs to override global input background */
-input.search-input-reset {
-  background-color: transparent !important;
-}
-
-[data-theme='light'] .fixed.inset-0>div[class*='max-w'] {
-  background-color: var(--bg) !important;
-}
-
-/* Dropdown menus need visible background using theme colors */
+/* Dropdown menus */
 .relative>div[class*='absolute'] {
-  background-color: var(--bg) !important;
-  border-color: var(--border) !important;
+  background-color: var(--bgCard);
+  border: 1px solid var(--border);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
-/* Dropdown menu items */
-.relative>div[class*='absolute'] button {
-  color: var(--text) !important;
-  background-color: transparent !important;
-}
-
-.relative>div[class*='absolute'] button:hover,
-.themed-select-item:hover {
-  background-color: var(--accent) !important;
-  color: #ffffff !important;
-}
-
-/* Selected item in dropdown */
-.relative>div[class*='absolute'] button[class*='bg-zinc-800'] {
-  background-color: var(--bgCard) !important;
-}
-
-/* ThemedSelect component styling */
+/* ThemedSelect Specific Overrides (legacy support) */
 .themed-select-button {
-  background-color: var(--bg) !important;
+  background-color: var(--bgInput) !important;
   border-color: var(--border) !important;
   color: var(--text) !important;
-}
-
-.themed-select-text {
-  color: var(--text) !important;
-}
-
-.themed-select-icon {
-  fill: var(--text) !important;
 }
 
 .themed-select-menu {
-  background-color: var(--bg) !important;
+  background-color: var(--bgCard) !important;
   border-color: var(--border) !important;
 }
 
 .themed-select-item {
-  background-color: var(--bg) !important;
   color: var(--text) !important;
 }
 
-.themed-select-item:hover {
-  background-color: var(--accent) !important;
-  color: #ffffff !important;
-}
-
+.themed-select-item:hover,
 .themed-select-item-selected {
   background-color: var(--accent) !important;
-  color: #ffffff !important;
-}
-
-/* ThemedSelect button styling - only when not using custom themed classes */
-.relative>button[class*='border']:not(.themed-select-button) {
-  background-color: var(--bgCard) !important;
-  border-color: var(--border) !important;
-  color: var(--text) !important;
-}
-
-.relative>button[class*='border']:not(.themed-select-button):hover:not(:disabled) {
-  background-color: var(--bgInput) !important;
-  border-color: var(--accent) !important;
-}
-
-.bg-zinc-800,
-.bg-zinc-700 {
-  background-color: var(--bgInput) !important;
-}
-
-.bg-white,
-.bg-gray-50,
-.bg-gray-100 {
-  background-color: var(--bg) !important;
-}
-
-/* Model rows and cards - base opacity variants */
-.bg-zinc-950\/40,
-.bg-zinc-950\/50,
-.bg-zinc-900\/40,
-.bg-zinc-900\/50,
-.bg-zinc-800\/40,
-.bg-zinc-800\/50 {
-  background-color: var(--bg) !important;
+  color: white !important;
 }
 
 /* Model Row Hover Styling - Per Theme */
@@ -359,53 +258,21 @@ button[style*="--bgCard"] svg {
   color: var(--textSubtle) !important;
 }
 
-/* Light theme overrides */
-[data-theme='light'] .text-zinc-100,
-[data-theme='light'] .text-zinc-200,
-[data-theme='light'] .text-black {
-  color: var(--text) !important;
-}
-
 /* Ensure labels always use theme text color */
 label {
-  color: var(--text) !important;
-}
-
-.border-zinc-800,
-.border-zinc-900,
-.border-zinc-900\/80,
-.border-zinc-200,
-.border-gray-200,
-.border-gray-300 {
-  border-color: var(--border) !important;
-}
-
-.border-zinc-700,
-.border-gray-400,
-.border-gray-500 {
-  border-color: var(--borderInput) !important;
+  color: var(--text);
 }
 
 /* Override header and card backgrounds */
 header {
-  background-color: var(--bg) !important;
-  border-color: var(--border) !important;
-}
-
-/* Override section borders in detail panel */
-section {
-  border-color: var(--border) !important;
+  background-color: var(--bg);
+  border-color: var(--border);
 }
 
 /* Ensure all borders use theme color */
 .border,
 [class*='border-'] {
-  border-color: var(--border) !important;
-}
-
-/* Override inline styles for borders */
-[style*='borderColor'] {
-  border-color: var(--border) !important;
+  border-color: var(--border);
 }
 
 /* Custom scrollbar styling */

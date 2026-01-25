@@ -210,7 +210,11 @@ export async function fetchCivitasBay(
                                 indemnity: 'None',
                                 data_provenance: 'Community Preserved',
                                 usage_restrictions: ['Torrent download only', 'Archival purpose'],
-                                downloads: undefined
+                                downloads: undefined,
+                                analytics: {
+                                    seeds: seeds,
+                                    peers: parseInt(item.querySelector('torrent\\:peers')?.textContent || '0', 10) || 0
+                                }
                             });
                         } catch (e) {
                             // ignore item error

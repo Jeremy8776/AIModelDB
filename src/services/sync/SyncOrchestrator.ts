@@ -14,6 +14,8 @@ import {
 import { runLLMDiscovery } from "./DiscoveryService";
 import { runTranslation } from "./TranslationService";
 import { runSafetyCheck } from "./SafetyService";
+import { normalizeNameForMatch } from "../../utils/format";
+import { mergeRecords } from "../../utils/mergeLogic";
 
 /**
  * Orchestrates the synchronization process across multiple sources.
@@ -46,7 +48,7 @@ export async function orchestrateSync(
         const aaFetcher: Fetcher = {
             id: 'artificialAnalysis',
             name: 'Artificial Analysis',
-            isEnabled: (opts) => !!opts.dataSources?.artificialanalysis,
+            isEnabled: (opts) => opts.dataSources?.artificialanalysis === true,
             fetch: async (opts) => fetchArtificialAnalysisIndex(opts.artificialAnalysisApiKey)
         };
         registry.register(aaFetcher);
@@ -55,7 +57,7 @@ export async function orchestrateSync(
         const civitasFetcher: Fetcher = {
             id: 'civitasBay',
             name: 'CivitasBay',
-            isEnabled: (opts) => !!opts.dataSources?.civitasbay,
+            isEnabled: (opts) => opts.dataSources?.civitasbay === true,
             fetch: async (opts, cb) => {
                 const civitasBayLogger = (msg: string) => {
                     if (onLog) onLog(msg);
@@ -147,27 +149,41 @@ export async function orchestrateSync(
 
         checkAborted();
 
-        // Collect all models
-        let allComplete = results.map(r => r.complete || []).flat();
+        // 1. Collect initial models from fetchers
+        let allModels = results.map(r => r.complete || []).flat();
+        const initialSafetyFlagged = results.map(r => r.flagged || []).flat();
 
-        if (onLog) {
-            onLog(`Collected ${allComplete.length} models from all sources`);
+        // 2. Run LLM Discovery (API & Local)
+        // This adds to the pool before we deduplicate and safety-check
+        const discoveredModels = await runLLMDiscovery(options, callbacks);
+        if (discoveredModels.length > 0) {
+            allModels = allModels.concat(discoveredModels);
         }
 
-        // Run Safety Checks
+        checkAborted();
+
+        // 3. Deduplicate ALL collected models
+        const beforeCount = allModels.length;
+        let allComplete = deduplicateModels(allModels);
+        const afterCount = allComplete.length;
+        const consolidated = beforeCount - afterCount;
+
+        if (onLog) {
+            onLog(`[Sync] Processed ${beforeCount} total models from all sources.`);
+            if (consolidated > 0) {
+                onLog(`[Sync] Successfully consolidated ${consolidated} duplicate models based on name matching.`);
+            }
+            onLog(`[Sync] Resulting unique database: ${afterCount} models.`);
+        }
+
+        // 4. Run Safety Checks on the consolidated list
         const safetyResult = await runSafetyCheck(allComplete, options, callbacks);
         allComplete = safetyResult.complete;
         const safetyFlagged = safetyResult.flagged;
 
         checkAborted();
 
-        // Run LLM Discovery
-        const discoveredModels = await runLLMDiscovery(options, callbacks);
-        if (discoveredModels.length > 0) {
-            allComplete = allComplete.concat(discoveredModels);
-        }
-
-        // Run Translation
+        // 5. Run Translation
         allComplete = await runTranslation(allComplete, options, callbacks, completedSources, totalSources);
 
         // Final Status Update
@@ -183,7 +199,8 @@ export async function orchestrateSync(
 
         return {
             complete: allComplete,
-            flagged: allFlagged
+            flagged: allFlagged,
+            duplicates: allModels.length - allComplete.length
         };
     } catch (error) {
         console.error("Error syncing models:", error);
@@ -192,4 +209,31 @@ export async function orchestrateSync(
         }
         throw error;
     }
+}
+
+/**
+ * Helper to deduplicate and merge models from different sources
+ */
+function deduplicateModels(models: Model[]): Model[] {
+    const map = new Map<string, Model>();
+
+    for (const model of models) {
+        // Create an extremely robust key for fuzzy matching using centralized normalization
+        const key = normalizeNameForMatch(model.name);
+
+        if (!key) {
+            map.set(model.id, model); // Fallback to ID if name normalization fails
+            continue;
+        }
+
+        if (map.has(key)) {
+            const existing = map.get(key)!;
+            console.log(`[Sync] Merging duplicate: "${model.name}" -> "${existing.name}" (Key: ${key})`);
+            map.set(key, mergeRecords(existing, model));
+        } else {
+            map.set(key, { ...model });
+        }
+    }
+
+    return Array.from(map.values());
 }

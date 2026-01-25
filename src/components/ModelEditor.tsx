@@ -22,11 +22,6 @@ export function ModelEditor({ model, onSave, onClose, isOpen }: ModelEditorProps
     "Audio", "ASR", "TTS", "3D", "World/Sim", "Other"
   ];
 
-  // Inline styles for inputs to ensure background is visible
-  const inputStyle = {
-    backgroundColor: theme === "dark" ? "rgba(24, 24, 27, 0.6)" : "#ffffff"
-  };
-
   // Reset form when model changes
   useEffect(() => {
     if (model) {
@@ -114,7 +109,7 @@ export function ModelEditor({ model, onSave, onClose, isOpen }: ModelEditorProps
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div
         className="w-full max-w-3xl max-h-[85vh] overflow-y-auto rounded-2xl border p-4 border-border bg-bg text-text"
       >
@@ -122,7 +117,7 @@ export function ModelEditor({ model, onSave, onClose, isOpen }: ModelEditorProps
           <h2 className="text-xl font-semibold mb-4">{t('modelEditor.title', { name: model?.name })}</h2>
 
           {error && (
-            <div className="text-red-700 dark:bg-red-900/30 dark:text-red-200 p-3 rounded-md mb-4 border border-red-600 dark:border-red-700">
+            <div className="text-red-500 bg-red-500/10 p-3 rounded-md mb-4 border border-red-500/30">
               {error}
             </div>
           )}
@@ -145,13 +140,12 @@ export function ModelEditor({ model, onSave, onClose, isOpen }: ModelEditorProps
                 </div>
 
                 <div className="flex flex-col">
-                  <label className="text-sm text-zinc-600 dark:text-zinc-400">{t('table.provider')}</label>
+                  <label className="text-sm text-text-secondary">{t('table.provider')}</label>
                   <input
                     type="text"
                     name="provider"
                     value={editedModel.provider || ''}
                     onChange={handleChange}
-
                     className="w-full rounded-lg border px-2 py-1.5 text-sm border-border bg-input text-text"
                   />
                 </div>
@@ -162,7 +156,6 @@ export function ModelEditor({ model, onSave, onClose, isOpen }: ModelEditorProps
                     name="domain"
                     value={editedModel.domain || ''}
                     onChange={handleChange}
-
                     className="w-full rounded-lg border px-2 py-1.5 text-sm border-border bg-input text-text"
                   >
                     <option value="" disabled>{t('modelEditor.placeholders.selectDomain')}</option>
@@ -250,7 +243,7 @@ export function ModelEditor({ model, onSave, onClose, isOpen }: ModelEditorProps
                       name="license.commercial_use"
                       checked={editedModel.license?.commercial_use || false}
                       onChange={handleCheckboxChange}
-                      className="mr-2"
+                      className="mr-2 accent-accent"
                     />
                     <label htmlFor="commercial_use" className="text-sm">{t('modelEditor.commercialUse')}</label>
                   </div>
@@ -262,7 +255,7 @@ export function ModelEditor({ model, onSave, onClose, isOpen }: ModelEditorProps
                       name="license.attribution_required"
                       checked={editedModel.license?.attribution_required || false}
                       onChange={handleCheckboxChange}
-                      className="mr-2"
+                      className="mr-2 accent-accent"
                     />
                     <label htmlFor="attribution_required" className="text-sm">{t('modelEditor.attribution')}</label>
                   </div>
@@ -274,7 +267,7 @@ export function ModelEditor({ model, onSave, onClose, isOpen }: ModelEditorProps
                       name="license.share_alike"
                       checked={editedModel.license?.share_alike || false}
                       onChange={handleCheckboxChange}
-                      className="mr-2"
+                      className="mr-2 accent-accent"
                     />
                     <label htmlFor="share_alike" className="text-sm">{t('modelEditor.shareAlike')}</label>
                   </div>
@@ -286,7 +279,7 @@ export function ModelEditor({ model, onSave, onClose, isOpen }: ModelEditorProps
                       name="license.copyleft"
                       checked={editedModel.license?.copyleft || false}
                       onChange={handleCheckboxChange}
-                      className="mr-2"
+                      className="mr-2 accent-accent"
                     />
                     <label htmlFor="copyleft" className="text-sm">{t('modelEditor.copyleft')}</label>
                   </div>
@@ -360,7 +353,7 @@ export function ModelEditor({ model, onSave, onClose, isOpen }: ModelEditorProps
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 rounded-lg border transition-colors border-border bg-card text-text hover:bg-accent hover:text-white"
+                className="px-4 py-2 rounded-lg border transition-colors border-border bg-bg-card text-text-secondary hover:bg-bg-input hover:text-text"
               >
                 {t('common.cancel')}
               </button>

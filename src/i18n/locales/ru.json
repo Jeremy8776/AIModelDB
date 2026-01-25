@@ -46,7 +46,25 @@
         "redo": "Повторить",
         "runCheck": "Запустить проверку",
         "runLlmCheck": "Запустить проверку LLM NSFW?",
-        "runLlmCheckMessage": "Найдено {{modelCount}} моделей для сканирования. Это займет примерно {{time}}. Пропустите для более быстрой синхронизации."
+        "runLlmCheckMessage": "Найдено {{modelCount}} моделей для сканирования. Это займет примерно {{time}}. Пропустите для более быстрой синхронизации.",
+        "approve": "Approve",
+        "deny": "Deny",
+        "reject": "Reject",
+        "update": "Update",
+        "remove": "Remove",
+        "status": "Status",
+        "unknown": "Unknown",
+        "local": "Local",
+        "varies": "Varies",
+        "unnamed": "Unnamed",
+        "saveAndApprove": "Save & Approve",
+        "favorite": "Favorite",
+        "favorited": "Favorited",
+        "flag": "Flag",
+        "flagged": "Flagged",
+        "unflag": "Unflag",
+        "addToFavorites": "Add to favorites",
+        "removeFromFavorites": "Remove from favorites"
     },
     "header": {
         "searchPlaceholder": "Поиск моделей...",
@@ -89,7 +107,8 @@
         "updatedAt": "Обновлено",
         "actions": "Действия",
         "noResults": "Модели не найдены",
-        "noResultsHint": "Измените фильтры или синхронизируйте для добавления моделей"
+        "noResultsHint": "Измените фильтры или синхронизируйте для добавления моделей",
+        "search": "Search"
     },
     "domains": {
         "All": "Все",
@@ -123,14 +142,18 @@
             "apiConfig": "Настройка API",
             "display": "Отображение",
             "security": "Безопасность",
-            "system": "Система"
+            "system": "Система",
+            "history": "History & Rollback",
+            "validation": "Validation"
         },
         "general": {
             "title": "Общие настройки",
             "language": "Язык",
             "languageHint": "Выберите предпочтительный язык",
             "autoRefresh": "Автообновление",
-            "autoRefreshHint": "Автоматическая синхронизация моделей через регулярные интервалы"
+            "autoRefreshHint": "Автоматическая синхронизация моделей через регулярные интервалы",
+            "currency": "Currency",
+            "currencyHint": "Display currency for pricing information"
         },
         "history": {
             "title": "История синхронизации и откат",
@@ -240,6 +263,14 @@
                 "noModelsFound": "Модели не найдены в ответе",
                 "genericFetchError": "Ошибка получения моделей",
                 "apiKeyRequired": "Требуется ключ API"
+            },
+            "apiDiscovery": {
+                "title": "AI Cloud Discovery",
+                "description": "Use configured LLMs to automatically discover models from unstructured sources."
+            },
+            "localDiscovery": {
+                "title": "Local Model Discovery",
+                "description": "Automatically detect and import models installed on your machine (via Ollama)."
             }
         },
         "display": {
@@ -275,7 +306,22 @@
             "showCost": "Показать валидацию и оценку стоимости",
             "interfaceOptions": "Опции интерфейса",
             "pagination": "Пагинация",
-            "defaultPageSize": "Размер страницы по умолчанию"
+            "defaultPageSize": "Размер страницы по умолчанию",
+            "stylePresetHint": "Choose a pre-defined visual style for the application.",
+            "uploadNewStyle": "Upload New Style",
+            "uploadNewStyleHint": "Upload a .css file. It will be saved as a new preset.",
+            "uploadCSS": "Upload CSS",
+            "currencyAndCosts": "Currency & Costs",
+            "showCostValidation": "Show cost validation and estimates",
+            "showConsoleButton": "Show Console Button",
+            "showConsoleButtonDesc": "Display the console button for debugging",
+            "autoExpandSections": "Auto-expand Sections",
+            "autoExpandSectionsDesc": "Automatically expand collapsible sections",
+            "theme": "Theme",
+            "themeAuto": "Auto",
+            "themeLight": "Light",
+            "themeDark": "Dark",
+            "compactMode": "Compact Mode"
         },
         "security": {
             "title": "Безопасность и фильтрация контента",
@@ -357,6 +403,32 @@
                 "error": "Ошибка: {{message}}",
                 "simulate": "Симуляция"
             }
+        },
+        "dataSources": {
+            "title": "Data Sources",
+            "description": "Enable or disable data sources for model synchronization",
+            "huggingface": "Hugging Face",
+            "civitai": "Civitai",
+            "openmodeldb": "OpenModelDB",
+            "artificialanalysis": "Artificial Analysis",
+            "civitasbay": "CivitasBay",
+            "ollama": "Ollama Library",
+            "syncModels": "Sync Models",
+            "syncModelsDesc": "Fetch latest models from enabled sources",
+            "syncNow": "Sync Now",
+            "syncing": "Syncing...",
+            "done": "Done",
+            "availableSources": "Available Sources",
+            "syncSettings": "Sync Settings",
+            "descriptions": {
+                "huggingface": "Popular open-source models",
+                "github": "AI repositories and projects",
+                "artificialanalysis": "Model performance benchmarks",
+                "civitai": "Community AI models",
+                "openmodeldb": "Open model database",
+                "civitasbay": "AI model marketplace",
+                "ollamaLibrary": "Top models from Ollama library"
+            }
         }
     },
     "sync": {
@@ -364,19 +436,45 @@
         "syncComplete": "Синхронизация завершена",
         "syncFailed": "Синхронизация не удалась",
         "foundModels": "Найдено {{count}} моделей",
-        "noChanges": "Изменения не обнаружены"
+        "noChanges": "Изменения не обнаружены",
+        "addedModels": "Added {{count}} new models",
+        "updatedModels": "Updated {{count}} models",
+        "flaggedModels": "Flagged {{count}} models"
     },
     "validation": {
         "title": "Проверка",
-        "complete": "Проверка завершена"
+        "complete": "Проверка завершена",
+        "validating": "Validating models...",
+        "failed": "Validation failed",
+        "progress": "Validating {{current}} of {{total}}",
+        "estimatedTime": "Estimated time: {{time}}"
     },
     "export": {
         "title": "Экспорт моделей",
-        "exportButton": "Экспорт"
+        "exportButton": "Экспорт",
+        "format": "Format",
+        "scope": "Scope",
+        "entireDatabase": "Entire Database",
+        "customFilter": "Custom Filter"
     },
     "import": {
         "title": "Импорт моделей",
-        "importButton": "Импорт"
+        "importButton": "Импорт",
+        "description": "Import models from multiple sources. Supports CSV, TSV, JSON, XLSX formats.",
+        "dropzone": "Drag and drop your file here, or click to browse",
+        "supportedFormats": "Supported formats: JSON, CSV, TSV, XLSX",
+        "tabs": {
+            "file": "File Upload",
+            "url": "From URL",
+            "paste": "Paste"
+        },
+        "browse": "Browse Files",
+        "process": "Process File",
+        "enterUrl": "Enter URL",
+        "pasteData": "Paste Data",
+        "pastePlaceholder": "Paste JSON or CSV data here...",
+        "fetch": "Fetch from URL",
+        "preview": "Preview ({{count}} items found)"
     },
     "onboarding": {
         "welcome": "Добро пожаловать в Model Database",
@@ -433,7 +531,12 @@
             "readyToSync": "Готово к синхронизации",
             "connected": "Подключено и готово",
             "notConnected": "Не подключено"
-        }
+        },
+        "completionTitle": "You're All Set!",
+        "completionDesc": "Your data sources are configured. Click \"Start Syncing\" to fetch models from your selected sources.",
+        "startSyncing": "Start Syncing",
+        "selectedSources": "Selected Sources",
+        "localAIStatus": "Local AI Status"
     },
     "flagged": {
         "title": "Модели, отмеченные для утверждения",
@@ -475,7 +578,28 @@
         "startValidation": "Проверить {{count}} моделей",
         "running": "Выполнение...",
         "eta": "Время",
-        "tokens": "Токены"
+        "tokens": "Токены",
+        "description": "Enrich and verify metadata using {{provider}} • {{model}}",
+        "filtersScope": "Filters & Scope",
+        "missing": "Missing",
+        "limitApplied": "Limit applied to validation candidates",
+        "ordering": {
+            "incomplete": "Most Incomplete First",
+            "recent": "Most Recent First",
+            "oldest": "Oldest First"
+        },
+        "validateModels": "Validate {{count}} Models",
+        "modelsVia": "Estimating for {{count}} models via {{provider}}",
+        "free": "Free",
+        "cancel": "Cancel",
+        "configureProvider": "Please configure a provider",
+        "successMessage": "Successfully sent {{count}} models for validation",
+        "failedMessage": "Validation request failed",
+        "batchSize": "Batch Size",
+        "pauseMs": "Pause (ms)",
+        "manualDelay": "Manual delay between batches",
+        "enabled": "Enabled",
+        "matchingFilters": "{{count}} matches"
     },
     "validationResults": {
         "title": "Результаты проверки",
@@ -506,7 +630,27 @@
         "selectModels": "Выбрать модели для проверки",
         "deselectAll": "Снять выделение",
         "selectAll": "Выбрать все",
-        "incompleteWarning": "{{count}} моделей имеют неполную информацию"
+        "incompleteWarning": "{{count}} моделей имеют неполную информацию",
+        "selectIncomplete": "Select only incomplete models",
+        "modelsSelected": "{{count}} of {{total}} models selected",
+        "startIndividual": "Start Individual Validation",
+        "startDatabase": "Validate Database with AI",
+        "validatingDatabase": "Validating Database...",
+        "alerts": {
+            "unavailableTitle": "Validation Unavailable",
+            "unavailableMessage": "Database validation is not available.",
+            "providerRequiredTitle": "API Provider Required",
+            "providerRequiredMessage": "Please configure at least one API provider in the Sync settings before validating.",
+            "sourceRequiredTitle": "Validation Source Required",
+            "sourceRequiredMessage": "Please select at least one validation source.",
+            "modelsRequiredTitle": "Models Required",
+            "modelsRequiredMessage": "Please select at least one model to validate.",
+            "completeTitle": "Validation Complete",
+            "completeMessage": "Database validation completed successfully! {{count}} models were validated and updated.",
+            "failedTitle": "Validation Failed",
+            "failedMessage": "Database validation failed: {{error}}",
+            "errorTitle": "Validation Error"
+        }
     },
     "shortcutsModal": {
         "title": "Горячие клавиши",
@@ -608,8 +752,16 @@
             "benchmarks": "Бенчмарки",
             "analytics": "Аналитика"
         },
+        "licenseIPDeployment": "Лицензия, ИС и развертывание",
+        "dataProvenance": "Происхождение данных",
+        "weights": "Веса доступны",
+        "api": "API доступен",
+        "onPrem": "Подходит для локального использования",
+        "usageRestrictions": "Ограничения использования",
+        "tags": "Теги модели",
         "links": {
-            "modelPage": "Страница модели"
+            "modelPage": "Страница модели",
+            "sources": "Источники и внешние ссылки"
         },
         "licenseTipDefault": "Ознакомьтесь с условиями лицензии для коммерческих прав, атрибуции и ограничений.",
         "licenseTips": {
@@ -622,8 +774,10 @@
             "CC-BY-NC": "Creative Commons Некоммерческая. Коммерческое использование не разрешено без разрешения.",
             "CC0": "Посвящение в общественное достояние. Бесплатно для любого использования без атрибуции.",
             "OpenRAIL": "Лицензия ответственного ИИ. Могут применяться ограничения использования; проверьте вариант.",
-            "Proprietary": "Проприетарная лицензия поставщика. Проверьте условия для коммерческого использования и распространения."
-        }
+            "Proprietary": "Проприетарная лицензия поставщика. Проверьте условия для коммерческого использования и распространения.",
+            "Unknown": "License information not available. Review the model page for details."
+        },
+        "gallery": "Gallery"
     },
     "modelEditor": {
         "title": "Редактировать модель: {{name}}",
@@ -700,21 +854,89 @@
             "commercialUse": "Коммерческое использование",
             "attributionRequired": "Атрибуция требуется",
             "pricing": "Цены (Ввод/Вывод за 1M)"
-        }
+        },
+        "comparing_count": "Comparing {{count}} models",
+        "tabs": {
+            "overview": "Overview",
+            "capabilities": "Capabilities",
+            "technical": "Technical Specs",
+            "pricing": "Pricing & Costs"
+        },
+        "downloads": "Downloads",
+        "license": "License",
+        "capability": "Capability",
+        "specification": "Specification",
+        "technical": {
+            "parameters": "Parameters",
+            "context": "Context Window",
+            "domain": "Domain"
+        },
+        "estimated_cost": "Estimated Cost",
+        "currency": "Currency",
+        "license_type": "License Type"
     },
     "errors": {
         "networkError": "Ошибка сети.",
-        "unknownError": "Произошла неизвестная ошибка"
+        "unknownError": "Произошла неизвестная ошибка",
+        "apiError": "API error: {{message}}",
+        "modelNotFound": "Model not found",
+        "invalidFormat": "Invalid format",
+        "importFailed": "Import failed: {{reason}}",
+        "exportFailed": "Export failed: {{reason}}",
+        "syncFailed": "Sync failed: {{reason}}",
+        "emptyUrl": "Please enter a URL",
+        "parseFile": "Failed to parse file: {{error}}",
+        "fetchError": "Failed to fetch or parse URL: {{error}}",
+        "emptyPaste": "Please paste some content",
+        "parsePaste": "Failed to parse pasted content: {{error}}",
+        "noDataToImport": "No valid data to import"
     },
     "updates": {
         "checking": "Проверка обновлений...",
-        "upToDate": "У вас последняя версия!"
+        "upToDate": "У вас последняя версия!",
+        "available": "Update available: v{{version}}",
+        "downloading": "Downloading update...",
+        "downloaded": "Update downloaded. Restart to install.",
+        "error": "Update check failed"
     },
     "console": {
         "title": "Консоль",
-        "clear": "Очистить"
+        "clear": "Очистить",
+        "copy": "Copy All"
     },
     "shortcuts": {
-        "title": "Горячие клавиши"
+        "title": "Горячие клавиши",
+        "search": "Focus Search",
+        "sync": "Sync Models",
+        "settings": "Open Settings",
+        "escape": "Close Modal / Deselect"
+    },
+    "modelDetail": {
+        "description": "Description",
+        "license": "License",
+        "hosting": "Hosting",
+        "weightsAvailable": "Weights Available",
+        "apiAvailable": "API Available",
+        "onPremiseFriendly": "On-Premise Friendly",
+        "parameters": "Parameters",
+        "contextWindow": "Context Window",
+        "pricing": "Pricing",
+        "tags": "Tags",
+        "source": "Source",
+        "lastUpdated": "Last Updated",
+        "releaseDate": "Release Date",
+        "viewOnSource": "View on {{source}}",
+        "editModel": "Edit Model",
+        "deleteModel": "Delete Model",
+        "licenseAndIP": "License & IP",
+        "benchmarks": "Benchmarks",
+        "analytics": "Analytics",
+        "linksAndDates": "Links & Dates"
+    },
+    "confirmations": {
+        "deleteModel": "Are you sure you want to delete this model?",
+        "deleteSelected": "Are you sure you want to delete {{count}} selected models?",
+        "resetDatabase": "Are you sure you want to reset the database? This cannot be undone.",
+        "unsavedChanges": "You have unsaved changes. Are you sure you want to leave?"
     }
 }

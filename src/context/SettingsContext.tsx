@@ -31,7 +31,8 @@ export interface Settings {
     huggingface: boolean;
     github: boolean;
     artificialanalysis: boolean;
-    llmDiscovery: boolean;
+    apiDiscovery: boolean;
+    localDiscovery: boolean;
     roboflow: boolean;
     kaggle: boolean;
     tensorart: boolean;
@@ -102,7 +103,8 @@ const defaultSettings: Settings = {
     huggingface: true,
     github: true,
     artificialanalysis: true,
-    llmDiscovery: true,
+    apiDiscovery: true,
+    localDiscovery: true,
     roboflow: true,
     kaggle: true,
     tensorart: true,
@@ -154,8 +156,29 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
         if (savedSettings) {
           const parsedSettings = JSON.parse(savedSettings);
 
-          // Deep copy to avoid mutating the parsed object directly
-          const decryptedSettings = { ...parsedSettings };
+          // Deep merge with defaults to ensure all keys exist
+          const mergedSettings: Settings = {
+            ...defaultSettings,
+            ...parsedSettings,
+            // Deep merge nested objects
+            dataSources: {
+              ...defaultSettings.dataSources,
+              ...(parsedSettings.dataSources || {})
+            },
+            autoRefresh: {
+              ...defaultSettings.autoRefresh,
+              ...(parsedSettings.autoRefresh || {})
+            },
+            // apiConfig needs special handling for encryption below, so we start with merged
+            apiConfig: {
+              ...defaultSettings.apiConfig,
+              ...(parsedSettings.apiConfig || {})
+            }
+          };
+
+          const decryptedSettings = { ...mergedSettings };
+
+          setSettings(decryptedSettings); // Update state immediately before decryption finishes
 
           // Decrypt API keys in apiConfig
           if (decryptedSettings.apiConfig) {
@@ -165,7 +188,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
                 const decryptedKey = await window.electronAPI.decryptString(config.apiKey);
                 apiConfig[key] = {
                   ...config,
-                  apiKey: decryptedKey || "" // specific fallback if decryption fails (e.g. machine change)
+                  apiKey: decryptedKey || ""
                 };
               }
             }

@@ -9,16 +9,16 @@ export function SecuritySection() {
   const { theme } = useContext(ThemeContext);
   const { settings, saveSettings } = useSettings();
 
-  const bgCard = 'border-zinc-800 bg-black';
+  const bgCard = 'border-border bg-bg-card';
 
   return (
     <div className="space-y-6">
       <div>
         <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
-          <Shield size={20} className="text-zinc-500" />
+          <Shield size={20} className="text-text-secondary" />
           {t('settings.security.title')}
         </h3>
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+        <p className="text-sm text-text-secondary">
           {t('settings.security.description')}
         </p>
       </div>
@@ -37,8 +37,8 @@ export function SecuritySection() {
                 className="sr-only"
               />
               <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${(settings.enableNSFWFiltering ?? true)
-                ? 'bg-accent border-accent'
-                : 'border-zinc-600 group-hover:border-zinc-500'
+                ? 'bg-accent border-accent text-white'
+                : 'border-border-input group-hover:border-accent border-text-subtle'
                 }`}>
                 {(settings.enableNSFWFiltering ?? true) && <Check size={14} strokeWidth={3} className="text-white" />}
               </div>
@@ -47,7 +47,7 @@ export function SecuritySection() {
               <div className="font-medium text-sm">
                 {t('settings.security.enableNSFWFiltering')}
               </div>
-              <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
+              <p className="text-xs text-text-secondary mt-1">
                 {t('settings.security.enableNSFWFilteringHint')}
               </p>
             </div>
@@ -63,8 +63,8 @@ export function SecuritySection() {
                 className="sr-only"
               />
               <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${(settings.logNSFWAttempts ?? false)
-                ? 'bg-accent border-accent'
-                : 'border-zinc-600 group-hover:border-zinc-500'
+                ? 'bg-accent border-accent text-white'
+                : 'border-border-input group-hover:border-accent border-text-subtle'
                 }`}>
                 {(settings.logNSFWAttempts ?? false) && <Check size={14} strokeWidth={3} className="text-white" />}
               </div>
@@ -73,7 +73,7 @@ export function SecuritySection() {
               <div className="font-medium text-sm">
                 {t('settings.security.logNSFWAttempts')}
               </div>
-              <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
+              <p className="text-xs text-text-secondary mt-1">
                 {t('settings.security.logNSFWAttemptsHint')}
               </p>
             </div>
@@ -82,14 +82,14 @@ export function SecuritySection() {
       </div>
 
       {/* Corporate Notice */}
-      <div className="rounded-xl border border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-900/20 p-4">
+      <div className="rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-4">
         <div className="flex items-start gap-3">
-          <AlertTriangle size={20} className="text-yellow-600 dark:text-yellow-400 mt-0.5" />
+          <AlertTriangle size={20} className="text-yellow-500 mt-0.5" />
           <div>
-            <h4 className="font-medium text-yellow-800 dark:text-yellow-200 mb-2">
+            <h4 className="font-medium text-yellow-600 dark:text-yellow-400 mb-2">
               {t('settings.security.corporateNotice')}
             </h4>
-            <p className="text-sm text-yellow-800 dark:text-yellow-200">
+            <p className="text-sm text-yellow-700 dark:text-yellow-300">
               {t('settings.security.corporateNoticeText')}
             </p>
           </div>
@@ -100,21 +100,21 @@ export function SecuritySection() {
       <div className={`rounded-xl border p-4 ${bgCard}`}>
         <h4 className="font-medium mb-4">{t('settings.security.apiSecurity')}</h4>
         <div className="space-y-4">
-          <div className="p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
+          <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/30">
             <div className="flex items-center gap-2 mb-2">
               <Shield size={16} className="text-accent" />
-              <span className="font-medium text-green-800 dark:text-green-200 text-sm">
+              <span className="font-medium text-green-500 text-sm">
                 {t('settings.security.keysSecured')}
               </span>
             </div>
-            <p className="text-xs text-green-700 dark:text-green-300">
+            <p className="text-xs text-green-500">
               {t('settings.security.keysSecuredDesc')}
             </p>
           </div>
 
-          <div className="text-sm text-zinc-600 dark:text-zinc-400">
+          <div className="text-sm text-text-secondary">
             <h5 className="font-medium mb-2">{t('settings.security.bestPractices')}</h5>
-            <ul className="space-y-1 text-xs">
+            <ul className="space-y-1 text-xs text-text-subtle">
               <li>• {t('settings.security.bestPracticesList.minimalPermissions')}</li>
               <li>• {t('settings.security.bestPracticesList.rotateKeys')}</li>
               <li>• {t('settings.security.bestPracticesList.monitorUsage')}</li>

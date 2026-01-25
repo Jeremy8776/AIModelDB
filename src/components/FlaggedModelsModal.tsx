@@ -4,95 +4,56 @@ import { useTranslation } from "react-i18next";
 import { CheckCircle, XCircle, Edit3, X, AlertTriangle, Download } from "lucide-react";
 import ThemeContext from "../context/ThemeContext";
 import { Model } from "../types";
-import { DomainIcon } from "./UI";
+import { DomainIcon } from "./ui";
 import { kfmt, fmtDate } from "../utils/format";
+import { formatReleaseDate, isSubscriptionPricing, toPerMillion, formatEnterprisePricing } from "../utils/pricing";
+import { formatCurrency, detectCurrency, convertCurrency } from "../utils/currency";
 import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
+import { useSettings } from "../context/SettingsContext";
 
-// Helper function to display cost information
-const getCostDisplay = (model: Model, t: any): string => {
-	const isOpenSource = (model.license?.type === 'OSI' || model.license?.type === 'Copyleft') && model.license?.name && model.license.name !== 'Proprietary';
-	if ((!model.pricing || model.pricing.length === 0) && isOpenSource) {
-		const vramTag = (model.tags || []).find(t => /vram|gb|gpu/i.test(t));
-		return `${t('comparison.free')} • ${t('common.local')}${vramTag ? ` • ${vramTag}` : ''}`;
-	}
-	if (!model.pricing || model.pricing.length === 0) return '—';
-
-	// Separate API and subscription pricing
-	const apiPricing = model.pricing.filter(p => !isSubscriptionPricing(p));
-	const subPricing = model.pricing.filter(p => isSubscriptionPricing(p));
-
-	const displays: string[] = [];
-
-	const toPerMillion = (amount: number, unit?: string | null): number => {
-		const u = (unit || '').toLowerCase();
-		let perM = amount;
-		if (u.includes('token')) perM = amount * 1_000_000;
-		else if (u.includes('1k') || u.includes('thousand')) perM = amount * 1_000;
-		if (perM > 10000) perM = perM / 1_000_000; // heuristic correction
-		if (perM > 10000) perM = perM / 1_000;
-		return perM;
-	};
-	// Process API pricing (enterprise-friendly format)
-	if (apiPricing.length > 0) {
-		const pricing = apiPricing[0];
-		const currency = pricing.currency || '$';
-
-		if (pricing.flat != null) {
-			const val = toPerMillion(Number(pricing.flat), pricing.unit);
-			const per1K = val / 1000;
-			displays.push(`API • ~${currency}${per1K.toFixed(3)}/1K requests`);
-		} else if (pricing.input != null && pricing.output != null) {
-			const i = toPerMillion(Number(pricing.input), pricing.unit);
-			const o = toPerMillion(Number(pricing.output), pricing.unit);
-			// Blended cost (3:1 ratio)
-			const blended = ((i / 1000) * 3 + (o / 1000)) / 4;
-			displays.push(`API • ~${currency}${blended.toFixed(3)}/1K requests`);
-		} else if (pricing.input != null) {
-			const i = toPerMillion(Number(pricing.input), pricing.unit);
-			const per1K = i / 1000;
-			displays.push(`API • ~${currency}${per1K.toFixed(3)}/1K requests`);
-		}
-	}
-
-	// Process subscription pricing
-	if (subPricing.length > 0) {
-		const pricing = subPricing[0];
-		if (pricing.flat != null) {
-			const unit = pricing.unit || 'month';
-			const period = unit.toLowerCase().includes('year') || unit.toLowerCase().includes('annual') ? '/yr' : '/mo';
-			displays.push(`Sub: ${pricing.currency || '$'}${pricing.flat}${period}`);
-		}
-	}
-
-	return displays.length > 0 ? displays.join(' • ') : t('common.varies');
-};
-
-// Check if pricing is subscription-based
-const isSubscriptionPricing = (pricing: any): boolean => {
-	if (!pricing.unit) return false;
-	const unit = pricing.unit.toLowerCase();
-	return unit.includes('month') ||
-		unit.includes('year') ||
-		unit.includes('annual') ||
-		unit.includes('subscription') ||
-		unit.includes('plan') ||
-		(pricing.flat != null && !unit.includes('token') && !unit.includes('request') && !unit.includes('call'));
-};
 
 interface FlaggedModelsModalProps {
 	flagged: Model[];
 	isOpen: boolean;
 	onApprove: (model: Model) => void;
 	onDeny: (model: Model) => void;
+	onApproveAll?: () => void;
+	onDenyAll?: () => void;
 	onEdit: (model: Model) => void;
 	onClose: () => void;
 	addConsoleLog: (msg: string) => void;
 }
 
-export const FlaggedModelsModal: React.FC<FlaggedModelsModalProps> = ({ flagged, isOpen, onApprove, onDeny, onEdit, onClose, addConsoleLog }) => {
+export const FlaggedModelsModal: React.FC<FlaggedModelsModalProps> = ({ flagged, isOpen, onApprove, onDeny, onApproveAll, onDenyAll, onEdit, onClose, addConsoleLog }) => {
 	const { theme } = useContext(ThemeContext);
+	const { settings } = useSettings();
 	const { t } = useTranslation();
 	const [editingModel, setEditingModel] = useState<Model | null>(null);
+
+	const getCostDisplayLocal = (model: Model): string => {
+		if (!model.pricing || model.pricing.length === 0) return '—';
+		const p = model.pricing[0];
+		const targetCurrency = settings.currency;
+		const sourceCurrency = detectCurrency(p);
+
+		try {
+			if (p.input != null && p.output != null) {
+				const inputPerM = toPerMillion(Number(p.input), p.unit);
+				const outputPerM = toPerMillion(Number(p.output), p.unit);
+				const inputConverted = convertCurrency(inputPerM, sourceCurrency, targetCurrency);
+				const outputConverted = convertCurrency(outputPerM, sourceCurrency, targetCurrency);
+				return formatEnterprisePricing(inputConverted, outputConverted, targetCurrency);
+			}
+			if (p.flat != null) {
+				const amount = isSubscriptionPricing(p) ? Number(p.flat) : toPerMillion(Number(p.flat), p.unit);
+				const converted = convertCurrency(amount, sourceCurrency, targetCurrency);
+				return formatCurrency(converted, targetCurrency) + (isSubscriptionPricing(p) ? ` ${p.unit || ''}` : '');
+			}
+		} catch (e) {
+			console.error('Error formatting cost in flagged modal:', e);
+		}
+		return '—';
+	};
 
 	// Lock body scroll when modal is open
 	useBodyScrollLock(isOpen);
@@ -138,7 +99,12 @@ export const FlaggedModelsModal: React.FC<FlaggedModelsModalProps> = ({ flagged,
 								<button
 									onClick={() => {
 										addConsoleLog(`FlaggedModelsModal: Approved all ${flagged.length} models`);
-										flagged.forEach(model => onApprove(model));
+										if (onApproveAll) {
+											onApproveAll();
+										} else {
+											// Fallback (though unreliable as noted)
+											flagged.forEach(model => onApprove(model));
+										}
 									}}
 									className="flex items-center gap-2 rounded-xl bg-green-600 hover:bg-green-700 text-white px-4 py-2 text-sm font-medium transition-colors"
 									title={t('flagged.approveAll')}
@@ -149,7 +115,12 @@ export const FlaggedModelsModal: React.FC<FlaggedModelsModalProps> = ({ flagged,
 								<button
 									onClick={() => {
 										addConsoleLog(`FlaggedModelsModal: Rejected all ${flagged.length} models`);
-										flagged.forEach(model => onDeny(model));
+										if (onDenyAll) {
+											onDenyAll();
+										} else {
+											// Fallback
+											flagged.forEach(model => onDeny(model));
+										}
 									}}
 									className="flex items-center gap-2 rounded-xl bg-red-600 hover:bg-red-700 text-white px-4 py-2 text-sm font-medium transition-colors"
 									title={t('flagged.rejectAll')}
@@ -215,7 +186,7 @@ export const FlaggedModelsModal: React.FC<FlaggedModelsModalProps> = ({ flagged,
 													</div>
 													<div>
 														<span className={`block ${textSubtle} mb-1`}>{t('modelDetail.pricing')}</span>
-														<span className={textMain}>{getCostDisplay(model, t)}</span>
+														<span className={textMain}>{getCostDisplayLocal(model)}</span>
 													</div>
 													<div>
 														<span className={`block ${textSubtle} mb-1`}>{t('modelDetail.releaseDate')}</span>

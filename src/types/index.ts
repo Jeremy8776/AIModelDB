@@ -107,6 +107,8 @@ export type Model = {
   isNSFWFlagged?: boolean;
   flaggedImageUrls?: string[];
   images?: string[];
+  links?: { label: string; url: string }[];
+  source_stats?: Record<string, { downloads?: number; updated_at?: string }>;
 };
 
 // API Directory Types

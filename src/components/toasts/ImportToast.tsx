@@ -46,24 +46,24 @@ export function ImportToast({ importToast, onDismiss, theme }: ImportToastProps)
                 </div>
                 <div className="space-y-1.5 text-xs opacity-90">
                     <div className="flex items-center justify-between">
-                        <span className="opacity-70">Found</span>
+                        <span className="opacity-70">Discovered</span>
                         <span className="font-medium">{importToast.found}</span>
                     </div>
                     <div className="h-px bg-current opacity-10 my-1" />
                     <div className="flex items-center justify-between text-yellow-500/90">
-                        <span>Duplicates</span>
+                        <span>Already in DB</span>
                         <span className="font-medium">{importToast.duplicates ?? 0}</span>
                     </div>
                     <div className="flex items-center justify-between text-red-500/90">
-                        <span>Blocked</span>
+                        <span>Blocked/NSFW</span>
                         <span className="font-medium">{importToast.flagged ?? 0}</span>
                     </div>
                     <div className="flex items-center justify-between text-green-500/90">
-                        <span>New</span>
+                        <span>Brand New</span>
                         <span className="font-medium">{importToast.added}</span>
                     </div>
                     <div className="flex items-center justify-between text-blue-500/90">
-                        <span>Updated</span>
+                        <span>Data Updated</span>
                         <span className="font-medium">{importToast.updated}</span>
                     </div>
                 </div>

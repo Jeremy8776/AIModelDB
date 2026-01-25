@@ -109,6 +109,14 @@ Enable any of these sources in Settings:
 
 ---
 
+## NSFW Filtering Note
+
+> **⚠️ Important**: While AI Model DB includes robust NSFW filtering (metadataregex + optional AI validation), **some NSFW models may still slip through** if their names and metadata contain no flagged keywords.
+>
+> If you require a **100% SFW environment** (e.g., for workplace use), we strongly recommend **disabling the CivitasBay/Civitai data source** in Settings, as this source contains the highest volume of unfiltered user-generated content.
+
+---
+
 ## macOS Installation
 
 > **Note**: When first opening the app on macOS, you may see an error saying **"AI Model DB is damaged and can't be opened"**. This is because the app is not signed with an Apple Developer certificate.

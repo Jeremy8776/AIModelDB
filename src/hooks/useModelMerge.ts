@@ -9,7 +9,7 @@ export function useModelMerge(
     setModels: React.Dispatch<React.SetStateAction<Model[]>>
 ) {
     const { settings } = useSettings();
-    const [lastMergeStats, setLastMergeStats] = useState<{ added: number; updated: number } | null>(null);
+    const [lastMergeStats, setLastMergeStats] = useState<{ added: number; updated: number; duplicates?: number } | null>(null);
     const workerRef = useRef<Worker | null>(null);
 
     useEffect(() => {
@@ -21,9 +21,9 @@ export function useModelMerge(
             workerRef.current.onmessage = (event) => {
                 const { type, payload, error } = event.data;
                 if (type === 'MERGE_COMPLETE') {
-                    const { models: newModels, added, updated } = payload;
+                    const { models: newModels, added, updated, duplicates } = payload;
                     setModels(newModels);
-                    setLastMergeStats({ added, updated });
+                    setLastMergeStats({ added, updated, duplicates });
                 } else if (type === 'ERROR') {
                     console.error('Worker error:', error);
                 }
@@ -38,6 +38,11 @@ export function useModelMerge(
         }
     }, [setModels]);
 
+    const modelsRef = useRef(models);
+    useEffect(() => {
+        modelsRef.current = models;
+    }, [models]);
+
     const mergeInModels = useCallback((incomingList: Model[]) => {
         if (!incomingList || incomingList.length === 0) return;
 
@@ -45,7 +50,7 @@ export function useModelMerge(
             workerRef.current.postMessage({
                 type: 'MERGE_MODELS',
                 payload: {
-                    currentModels: models,
+                    currentModels: modelsRef.current,
                     newModels: incomingList,
                     autoMergeDuplicates: settings.autoMergeDuplicates ?? false
                 }
@@ -53,7 +58,7 @@ export function useModelMerge(
         } else {
             console.warn('Worker not ready, falling back to main thread (or skipping)');
         }
-    }, [models, settings.autoMergeDuplicates]);
+    }, [settings.autoMergeDuplicates]);
 
     // ...
 
@@ -65,13 +70,13 @@ export function useModelMerge(
             workerRef.current.postMessage({
                 type: 'MERGE_MODELS',
                 payload: {
-                    currentModels: models,
+                    currentModels: modelsRef.current,
                     newModels: normalized,
                     autoMergeDuplicates: settings.autoMergeDuplicates ?? false
                 }
             });
         }
-    }, [models, settings.autoMergeDuplicates]);
+    }, [settings.autoMergeDuplicates]);
 
     return {
         importModels,

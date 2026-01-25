@@ -44,7 +44,7 @@ export function SystemSection() {
     };
   }, []);
 
-  const bgCard = 'border-zinc-800 bg-black';
+  const bgCard = 'border-border bg-bg-card';
 
   const runDiagnostics = async () => {
     setDiagRunning(true);
@@ -121,10 +121,10 @@ export function SystemSection() {
     <div className="space-y-6">
       <div>
         <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
-          <Settings size={20} className="text-zinc-500" />
+          <Settings size={20} className="text-text-secondary" />
           {t('settings.system.diagnostics.title')}
         </h3>
-        <p className="text-sm text-zinc-700 dark:text-zinc-400">
+        <p className="text-sm text-text-secondary">
           {t('settings.system.diagnostics.description')}
         </p>
       </div>
@@ -140,7 +140,7 @@ export function SystemSection() {
             onClick={runDiagnostics}
             disabled={diagRunning}
             className={`text-xs px-3 py-1 rounded-md transition-colors ${diagRunning ? 'opacity-60' : ''
-              } ${theme === 'dark' ? 'bg-zinc-800 hover:bg-zinc-700' : 'bg-gray-100 hover:bg-gray-200'}`}
+              } ${'bg-bg-input hover:bg-bg-elevated'}`}
           >
             {diagRunning ? (
               <>
@@ -158,7 +158,7 @@ export function SystemSection() {
             {diagResults.map(r => (
               <div
                 key={r.name}
-                className="flex items-center justify-between rounded-lg px-3 py-2 border bg-zinc-950 border-zinc-800"
+                className="flex items-center justify-between rounded-lg px-3 py-2 border bg-bg-input border-border"
               >
                 <span>{r.name}</span>
                 <span className={r.ok ? 'text-green-500' : 'text-red-500'}>
@@ -173,41 +173,41 @@ export function SystemSection() {
       {/* Application Info */}
       <div className={`rounded-xl border p-4 ${bgCard}`}>
         <h4 className="font-medium mb-4 flex items-center gap-2">
-          <Info size={18} className="text-zinc-500" />
+          <Info size={18} className="text-text-secondary" />
           {t('settings.system.appInfo.title')}
         </h4>
         <div className="space-y-4">
           <div className="space-y-3">
             <div className="flex justify-between items-center">
-              <span className="text-sm text-zinc-700 dark:text-zinc-400">{t('settings.system.appInfo.version')}</span>
-              <span className="text-sm font-mono bg-zinc-100 dark:bg-zinc-800 px-2 py-1 rounded">{appVersion}</span>
+              <span className="text-sm text-text-secondary">{t('settings.system.appInfo.version')}</span>
+              <span className="text-sm font-mono bg-bg-input px-2 py-1 rounded">{appVersion}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-zinc-700 dark:text-zinc-400">{t('settings.system.appInfo.platform')}</span>
-              <span className="text-sm font-mono bg-zinc-100 dark:bg-zinc-800 px-2 py-1 rounded capitalize">{platform}</span>
+              <span className="text-sm text-text-secondary">{t('settings.system.appInfo.platform')}</span>
+              <span className="text-sm font-mono bg-bg-input px-2 py-1 rounded capitalize">{platform}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-zinc-700 dark:text-zinc-400">{t('settings.system.appInfo.runtime')}</span>
-              <span className="text-sm font-mono bg-zinc-100 dark:bg-zinc-800 px-2 py-1 rounded">
+              <span className="text-sm text-text-secondary">{t('settings.system.appInfo.runtime')}</span>
+              <span className="text-sm font-mono bg-bg-input px-2 py-1 rounded">
                 {isElectronApp ? t('settings.system.appInfo.desktop') : t('settings.system.appInfo.browser')}
               </span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-zinc-700 dark:text-zinc-400">{t('settings.system.appInfo.language')}</span>
-              <span className="text-sm font-mono bg-zinc-100 dark:bg-zinc-800 px-2 py-1 rounded">{navigator.language}</span>
+              <span className="text-sm text-text-secondary">{t('settings.system.appInfo.language')}</span>
+              <span className="text-sm font-mono bg-bg-input px-2 py-1 rounded">{navigator.language}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-zinc-700 dark:text-zinc-400">{t('settings.system.appInfo.status')}</span>
+              <span className="text-sm text-text-secondary">{t('settings.system.appInfo.status')}</span>
               <span className={`text-sm font-medium px-2 py-1 rounded ${navigator.onLine ? 'text-green-600 bg-green-50 dark:bg-green-900/20' : 'text-red-600 bg-red-50 dark:bg-red-900/20'}`}>
                 {navigator.onLine ? t('settings.system.appInfo.online') : t('settings.system.appInfo.offline')}
               </span>
             </div>
           </div>
 
-          <div className="h-px bg-zinc-200 dark:bg-zinc-800" />
+          <div className="h-px bg-border" />
 
           <div className="space-y-2">
-            <h5 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-2">{t('settings.system.resources.title')}</h5>
+            <h5 className="text-xs font-semibold uppercase tracking-wider text-text-subtle mb-2">{t('settings.system.resources.title')}</h5>
             <a
               href="https://github.com/Jeremy8776/AIModelDB"
               target="_blank"
@@ -239,7 +239,7 @@ export function SystemSection() {
       {/* Maintenance */}
       <div className={`rounded-xl border p-4 ${bgCard}`}>
         <h4 className="font-medium mb-4 flex items-center gap-2">
-          <Trash2 size={18} className="text-zinc-500" />
+          <Trash2 size={18} className="text-text-secondary" />
           {t('settings.system.maintenance.title')}
         </h4>
         <div className="space-y-4">
@@ -282,12 +282,12 @@ function UpdatesCard({ appVersion, isCheckingUpdate, onCheckForUpdates }: {
   const { updateAvailable, updateVersion, updateDownloaded, downloadProgress, downloadUpdate, installUpdate, checking, error, simulateUpdate } = useUpdate();
   const isDev = import.meta.env.DEV;
 
-  const bgCard = 'border-zinc-800 bg-black';
+  const bgCard = 'border-border bg-bg-card';
 
   // If update is available but not downloaded
   if (updateAvailable && !updateDownloaded) {
     return (
-      <div className={`rounded-xl border-2 border-violet-500 p-4 bg-gradient-to-br from-violet-900/20 to-black`}>
+      <div className={`rounded-xl border-2 border-accent p-4 bg-gradient-to-br from-accent/20 to-bg`}>
         <div className="flex items-start gap-4">
           <div className="p-3 bg-violet-600 rounded-xl text-white">
             <Download size={24} />
@@ -302,7 +302,7 @@ function UpdatesCard({ appVersion, isCheckingUpdate, onCheckForUpdates }: {
 
             {downloadProgress !== null ? (
               <div className="space-y-2">
-                <div className="flex items-center gap-2 text-sm text-zinc-400">
+                <div className="flex items-center gap-2 text-sm text-text-secondary">
                   <Loader2 size={14} className="animate-spin" />
                   <span>{t('settings.system.updates.downloading', { percent: Math.round(downloadProgress) })}</span>
                 </div>
@@ -331,16 +331,16 @@ function UpdatesCard({ appVersion, isCheckingUpdate, onCheckForUpdates }: {
   // If update is downloaded and ready to install
   if (updateDownloaded) {
     return (
-      <div className={`rounded-xl border-2 border-green-500 p-4 bg-gradient-to-br from-green-900/20 to-black`}>
+      <div className={`rounded-xl border-2 border-green-500 p-4 bg-gradient-to-br from-green-500/20 to-bg`}>
         <div className="flex items-start gap-4">
           <div className="p-3 bg-green-600 rounded-xl text-white">
             <CheckCircle size={24} />
           </div>
           <div className="flex-1">
-            <h4 className="font-semibold text-lg text-white mb-1">
+            <h4 className="font-semibold text-lg text-text mb-1">
               {t('settings.system.updates.ready')}
             </h4>
-            <p className="text-sm text-zinc-400 mb-3">
+            <p className="text-sm text-text-secondary mb-3">
               {t('settings.system.updates.readyDesc', { version: updateVersion })}
             </p>
             <button
@@ -360,11 +360,11 @@ function UpdatesCard({ appVersion, isCheckingUpdate, onCheckForUpdates }: {
   return (
     <div className={`rounded-xl border p-4 ${bgCard}`}>
       <h4 className="font-medium mb-4 flex items-center gap-2">
-        <Download size={18} className="text-zinc-500" />
+        <Download size={18} className="text-text-secondary" />
         {t('settings.system.updates.title')}
       </h4>
       <div className="space-y-4">
-        <p className="text-sm text-zinc-700 dark:text-zinc-400">
+        <p className="text-sm text-text-secondary">
           {t('settings.system.updates.description')}
         </p>
 

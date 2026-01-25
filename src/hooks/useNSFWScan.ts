@@ -105,7 +105,7 @@ export function useNSFWScan({
                 });
             });
         }
-    }, [models.length, isLoading, customNSFWKeywords, setModels, addConsoleLog]);
+    }, [models, models.length, isLoading, customNSFWKeywords, setModels, addConsoleLog]);
 
     /**
      * Reset the scan flag to allow re-scanning (useful for testing or manual trigger)

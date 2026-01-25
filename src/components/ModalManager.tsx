@@ -14,7 +14,7 @@ import { ModalState } from '../hooks/useModalState';
 import { UIState } from '../hooks/useUIState';
 import { ConsoleLogging } from '../hooks/useConsoleLogging';
 import { ValidationState } from '../hooks/useValidationState';
-import { ValidationSummary } from '../hooks/useModelValidation';
+import { ValidationSummary, ValidationJob } from '../types/validation';
 import { filterModels, FilterOptions } from '../utils/filterLogic';
 import { exportModels } from '../services/exportService';
 import { dedupe } from '../utils/format';
@@ -59,7 +59,7 @@ interface ModalManagerProps {
     showValidationModal: boolean;
     closeValidationModal: () => void;
     validateEntireDatabase: (options?: { batchSize?: number; pauseMs?: number; maxBatches?: number; apiConfig?: any; preferredModelProvider?: string | null; modelsOverride?: Model[] }) => Promise<{ success: boolean; updatedModels?: Model[]; error?: string; summary?: ValidationSummary }>;
-    validationJobs: any[]; // ValidationJob[] (need to import ValidationJob if available, otherwise leave any or use simple object)
+    validationJobs: ValidationJob[];
     isValidating: boolean;
     stopValidation: () => void;
     clearFinishedValidationJobs: () => void;
@@ -147,6 +147,13 @@ export function ModalManager({
     const onDenyFlagged = (model: Model) => {
         modalState.setFlaggedModels(modalState.flaggedModels.filter((m: Model) => m.id !== model.id));
     };
+    const onApproveAllFlagged = () => {
+        setModels((prev: Model[]) => dedupe([...prev, ...modalState.flaggedModels]));
+        modalState.setFlaggedModels([]);
+    };
+    const onDenyAllFlagged = () => {
+        modalState.setFlaggedModels([]);
+    };
     const onEditFlagged = (model: Model) => {
         modalState.setFlaggedModels(modalState.flaggedModels.map((m: Model) => m.id === model.id ? model : m));
     };
@@ -195,6 +202,8 @@ export function ModalManager({
                 isOpen={modalState.showFlaggedModal}
                 onApprove={onApproveFlagged}
                 onDeny={onDenyFlagged}
+                onApproveAll={onApproveAllFlagged}
+                onDenyAll={onDenyAllFlagged}
                 onEdit={onEditFlagged}
                 onClose={() => modalState.setShowFlaggedModal(false)}
                 addConsoleLog={consoleLogging.addConsoleLog}
@@ -410,11 +419,13 @@ export function ModalManager({
                 onClose={() => setShowShortcutsModal(false)}
             />
 
-            <ConsoleButton
-                showConsole={consoleLogging.showConsole}
-                onShowConsole={() => consoleLogging.setShowConsole(true)}
-                theme={theme}
-            />
+            {settings.showConsoleButton && (
+                <ConsoleButton
+                    showConsole={consoleLogging.showConsole}
+                    onShowConsole={() => consoleLogging.setShowConsole(true)}
+                    theme={theme}
+                />
+            )}
         </>
     );
 }

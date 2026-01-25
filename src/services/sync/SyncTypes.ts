@@ -11,7 +11,8 @@ export interface SyncOptions {
         openmodeldb?: boolean;
         civitasbay?: boolean;
         ollamaLibrary?: boolean;
-        llmDiscovery?: boolean;
+        apiDiscovery?: boolean;
+        localDiscovery?: boolean;
     };
     artificialAnalysisApiKey?: string;
     enableNSFWFiltering?: boolean;
@@ -48,6 +49,7 @@ export interface SyncResult {
     complete: Model[];
     /** Models that were flagged during sync (e.g., NSFW content) */
     flagged: Model[];
+    duplicates?: number;
 }
 
 /**

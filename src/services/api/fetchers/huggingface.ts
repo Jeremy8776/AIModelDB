@@ -26,7 +26,7 @@ const logger = loggers.sync;
 export const huggingFaceFetcher: Fetcher = {
     id: 'huggingface',
     name: 'HuggingFace',
-    isEnabled: (options: SyncOptions) => !!options.dataSources?.huggingface,
+    isEnabled: (options: SyncOptions) => options.dataSources?.huggingface === true,
 
     async fetch(options: SyncOptions, callbacks?: SyncCallbacks): Promise<SyncResult> {
         try {
@@ -95,10 +95,13 @@ export const huggingFaceFetcher: Fetcher = {
                     downloads: item.downloads,
                     updated_at: normalizeDate(item.lastModified) || normalizeDate(item.lastModifiedAt) || null,
                     release_date: normalizeDate(item.createdAt) || normalizeDate(item.created) || null,
-                    tags: item.tags || [],
+                    tags: [
+                        ...(item.tags || []),
+                        item.pipeline_tag ? `task:${item.pipeline_tag}` : null
+                    ].filter(Boolean) as string[],
                     hosting: {
                         weights_available: true,
-                        api_available: true,
+                        api_available: false,
                         on_premise_friendly: true
                     },
                     parameters: item.params || inferParametersFromNameTags(item.id || item.name, item.tags) || null,
@@ -106,6 +109,10 @@ export const huggingFaceFetcher: Fetcher = {
                     indemnity: 'None',
                     data_provenance: 'Open Source',
                     usage_restrictions: [],
+                    analytics: {
+                        likes: item.likes || 0,
+                        downloads: item.downloads || 0
+                    },
                     pricing: []
                 };
 

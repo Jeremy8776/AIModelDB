@@ -47,8 +47,8 @@ function determineDomainFromTopics(topics: string[]): Domain {
 export async function fetchPopularGenerativeRepos(limit = 30, gitHubToken?: string): Promise<{ complete: Model[], flagged: Model[] }> {
     console.log(`[GitHub] Fetching popular generative repos (limit: ${limit})...`);
 
-    let complete: Model[] = [];
-    let flagged: Model[] = [];
+    const complete: Model[] = [];
+    const flagged: Model[] = [];
 
     try {
         const query = encodeURIComponent(
@@ -127,6 +127,11 @@ export async function fetchPopularGenerativeRepos(limit = 30, gitHubToken?: stri
                     weights_available: true,
                     api_available: false,
                     on_premise_friendly: true
+                },
+                analytics: {
+                    stars: repo.stargazers_count,
+                    forks: repo.forks_count,
+                    issues: repo.open_issues_count
                 }
             };
 

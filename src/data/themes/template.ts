@@ -37,16 +37,15 @@ export const TEMPLATE_CSS = `/* ============================================
  *   --text         Main text color
  *   --border       Border color
  * 
- * DERIVED VARIATIONS (auto-generated):
- *   --accentHover  Lighter accent for hover
- *   --accentGlow   30% opacity (for glows/shadows)
- *   --accentFaint  15% opacity (subtle backgrounds)
- *   --accentMuted  25% opacity
- *   --bgInput      Input field background
- *   --textSecondary 70% opacity text
- *   --textMuted    50% opacity text
- *   --borderSubtle 50% opacity border
- *   --borderFaint  25% opacity border
+ * SEMANTIC DERIVED VARIATIONS (auto-generated):
+ *   --bgInput      Background for input fields and text areas
+ *   --bgElevated   Background for hovered items or tooltips
+ *   --textSecondary 75% opacity text (labels, descriptions)
+ *   --textSubtle   50% opacity text (placeholders, hints)
+ *   --borderInput  Border for interactive form elements
+ *   --accentHover  Lighter accent for hover states
+ *   --accentGlow   Translucent accent for shadows/glows
+ *   --accentFaint  Subtle tint of accent for backgrounds
  */
 
 /* ============================================
@@ -98,7 +97,7 @@ input:focus, select:focus, textarea:focus {
 }
 
 input::placeholder {
-  color: var(--textMuted) !important;
+  color: var(--textSubtle) !important;
 }
 
 /* ============================================
@@ -108,8 +107,8 @@ input::placeholder {
  * Copy this entire section to ensure dropdowns work!
  */
 .themed-select-button {
-  background-color: var(--bg) !important;
-  border-color: var(--border) !important;
+  background-color: var(--bgInput) !important;
+  border-color: var(--borderInput) !important;
   color: var(--text) !important;
 }
 
@@ -118,13 +117,13 @@ input::placeholder {
 }
 
 .themed-select-menu {
-  background-color: var(--bg) !important;
+  background-color: var(--bgElevated) !important;
   border: 1px solid var(--border) !important;
 }
 
 .themed-select-item {
-  background-color: var(--bg) !important;
-  color: var(--text) !important;
+  background-color: var(--bgElevated) !important;
+  color: var(--textSecondary) !important;
 }
 
 .themed-select-item:hover {
@@ -187,7 +186,7 @@ p, span, div, label, td, th, li, a {
 }
 
 /* Secondary/muted text */
-.text-zinc-400, .text-zinc-500, .text-gray-400, .text-gray-500 {
+.text-zinc-400, .text-zinc-500, .text-gray-400, .text-gray-500, .text-text-secondary {
   color: var(--textSecondary) !important;
 }
 

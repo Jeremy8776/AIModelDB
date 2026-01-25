@@ -291,9 +291,13 @@
             "title": "API Configuration",
             "subtitle": "Configure LLM API keys for AI-powered validation and enrichment.",
             "alpha": "Alpha",
-            "discovery": {
-                "title": "AI Model Discovery",
-                "description": "Use configured LLMs to automatically discover, validate, and classify new models from unstructured sources."
+            "apiDiscovery": {
+                "title": "AI Cloud Discovery",
+                "description": "Use configured LLMs to automatically discover models from unstructured sources."
+            },
+            "localDiscovery": {
+                "title": "Local Model Discovery",
+                "description": "Automatically detect and import models installed on your machine (via Ollama)."
             },
             "preferredProvider": {
                 "title": "Preferred Model Provider",
@@ -701,6 +705,10 @@
             "title": "AI Validation",
             "alpha": "Alpha",
             "desc": "Add an LLM API key to enable AI-powered validation. This is optional and experimental.",
+            "apiTitle": "AI Cloud Discovery",
+            "apiDesc": "Discover new models using AI providers.",
+            "localTitle": "Local Discovery",
+            "localDesc": "Find models installed on your machine.",
             "enableDiscovery": "Enable LLM-powered Model Discovery",
             "enableDiscoveryDesc": "Use AI to automatically discover and classify models from unstructured sources. Requires an API key below.",
             "skip": "You can skip this step and add API keys later in Settings."
@@ -755,9 +763,17 @@
             "benchmarks": "Benchmarks",
             "analytics": "Analytics"
         },
+        "licenseIPDeployment": "License, IP & Deployment",
+        "dataProvenance": "Data Provenance",
+        "weights": "Weights Available",
+        "api": "API Available",
+        "onPrem": "On-Prem Friendly",
+        "usageRestrictions": "Usage Restrictions",
         "gallery": "Gallery",
+        "tags": "Model Tags",
         "links": {
-            "modelPage": "Model Page"
+            "modelPage": "Model Page",
+            "sources": "Sources & External Links"
         },
         "licenseTipDefault": "Review the license terms for commercial rights, attribution, and restrictions.",
         "licenseTips": {
@@ -859,24 +875,34 @@
     },
     "comparison": {
         "title": "Compare Models",
-        "subtitle": "Comparing {{count}} models",
-        "highlightDifferences": "Highlight Differences",
-        "attribute": "Attribute",
-        "pin": "Pin as reference",
-        "unpin": "Unpin as reference",
+        "comparing_count": "Comparing {{count}} models",
+        "tabs": {
+            "overview": "Overview",
+            "capabilities": "Capabilities",
+            "technical": "Technical Specs",
+            "pricing": "Pricing & Costs"
+        },
+        "downloads": "Downloads",
+        "license": "License",
+        "capability": "Capability",
+        "capabilities": {
+            "weights": "Model Weights",
+            "api": "API Access",
+            "on_prem": "On-Premise Friendly"
+        },
+        "specification": "Specification",
+        "technical": {
+            "parameters": "Parameters",
+            "context": "Context Window",
+            "domain": "Domain"
+        },
+        "estimated_cost": "Estimated Cost",
+        "currency": "Currency",
+        "license_type": "License Type",
         "free": "Free",
         "tokens": "tokens",
         "best": "Best",
         "done": "Done",
-        "basicInfo": "Basic Information",
-        "technicalSpecs": "Technical Specs",
-        "capabilities": "Capabilities",
-        "licensing": "Licensing",
-        "pricing": "Pricing",
-        "tags": "Tags",
-        "moreTags": "+{{count}} more",
-        "legendDifferences": "Highlighted rows show differences",
-        "legendBest": "Best value (where applicable)",
         "attributes": {
             "provider": "Provider",
             "domain": "Domain",
@@ -890,7 +916,7 @@
             "license": "License",
             "commercialUse": "Commercial Use",
             "attributionRequired": "Attribution Required",
-            "pricing": "Pricing (In/Out per 1M)"
+            "pricing": "Pricing (Blended)"
         }
     }
 }

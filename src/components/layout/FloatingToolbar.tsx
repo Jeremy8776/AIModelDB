@@ -1,7 +1,7 @@
 import React from 'react';
 import { Model } from '../../types';
 import { Trash2, Download, X } from 'lucide-react';
-import { ComparisonView } from '../ComparisonView';
+import { ModelComparison } from '../ModelComparison';
 
 interface FloatingToolbarProps {
     selectedIds: Set<string>;
@@ -81,10 +81,9 @@ export function FloatingToolbar({
 
             {/* Comparison View Modal */}
             {isComparing && (
-                <ComparisonView
+                <ModelComparison
                     models={selectedModels}
                     onClose={() => setIsComparing(false)}
-                    theme={theme}
                 />
             )}
         </>

@@ -13,31 +13,86 @@ export const kfmt = (n?: number | null) =>
       n >= 1_000 ? (n / 1_000).toFixed(n % 1_000 ? 1 : 0) + "k" :
         String(n);
 
+export const parseRelativeDate = (text: string): Date | null => {
+  if (!text) return null;
+  const now = new Date();
+
+  // Clean text
+  const t = text.toLowerCase().trim();
+
+  // "updated 2 days ago" -> "2 days ago"
+  const match = t.match(/(\d+)\s+(second|minute|hour|day|week|month|year)s?\s+ago/);
+
+  if (!match) return null;
+
+  const value = parseInt(match[1]);
+  const unit = match[2];
+
+  if (value === 0) return now;
+
+  const d = new Date(now);
+
+  switch (unit) {
+    case 'second': d.setSeconds(d.getSeconds() - value); break;
+    case 'minute': d.setMinutes(d.getMinutes() - value); break;
+    case 'hour': d.setHours(d.getHours() - value); break;
+    case 'day': d.setDate(d.getDate() - value); break;
+    case 'week': d.setDate(d.getDate() - (value * 7)); break;
+    case 'month': d.setMonth(d.getMonth() - value); break; // Approximate
+    case 'year': d.setFullYear(d.getFullYear() - value); break;
+  }
+
+  return d;
+};
+
 export const cleanId = (s: string) => s.replace(/[^a-zA-Z0-9._-]/g, '_');
 
 // Normalize model names for matching across small formatting differences
 export function normalizeNameForMatch(name?: string | null): string {
   if (!name) return '';
+
+  // 1. Convert to string and lowercase
   let s = String(name).toLowerCase();
-  // Unwrap bracket qualifiers: "FLUX.1 [pro]" -> "flux.1 pro"
-  s = s.replace(/\[([^\]]+)\]/g, ' $1 ');
-  // Collapse punctuation and dots/hyphens/underscores into spaces
-  s = s.replace(/[^a-z0-9]+/g, ' ');
-  // Trim and collapse spaces
-  s = s.trim().replace(/\s+/g, ' ');
-  return s;
+
+  // 2. Take only the tail of any path/scoped name (e.g. "org/model" -> "model")
+  if (s.includes('/')) {
+    const parts = s.split('/');
+    s = parts[parts.length - 1];
+  }
+
+  // 3. Remove version prefixes like 'v' if followed by a digit (e.g. "v1.5" -> "1.5")
+  s = s.replace(/^v(?=\d)/, '');
+
+  // 4. Strip EVERYTHING that is not a letter or number
+  // This collapses "flux.1-pro", "Flux 1 (Pro)", and "flux1pro" to "flux1pro"
+  s = s.replace(/[^a-z0-9]/g, '');
+
+  return s.trim();
 }
 
 // Collection utilities
 export const dedupe = (items: Model[]) => {
   const map = new Map<string, Model>();
   for (const m of items) {
-    if (!m) continue; // Skip null/undefined items
-    const nameKeyRaw = m?.name ? String(m.name) : (m.id ? String(m.id) : "");
-    const nameKey = normalizeNameForMatch(nameKeyRaw) || nameKeyRaw.toLowerCase();
-    const providerKey = (m.provider ? String(m.provider) : '').toLowerCase().replace(/[^a-z0-9]/g, '');
-    const key = `${providerKey}::${nameKey}`;
-    if (!map.has(key)) map.set(key, m);
+    if (!m) continue;
+    const nameKeyRaw = m.name || m.id || "";
+    const key = normalizeNameForMatch(nameKeyRaw);
+
+    if (!key) {
+      map.set(m.id || Math.random().toString(), m);
+      continue;
+    }
+
+    if (map.has(key)) {
+      // Merge logic for dedupe utility (simple fallback)
+      const existing = map.get(key)!;
+      // Prefer the one with more info (e.g. downloads)
+      if ((m.downloads || 0) > (existing.downloads || 0)) {
+        map.set(key, { ...existing, ...m });
+      }
+    } else {
+      map.set(key, m);
+    }
   }
   return Array.from(map.values());
 };

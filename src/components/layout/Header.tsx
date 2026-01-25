@@ -54,18 +54,13 @@ export function Header({
 }: HeaderProps) {
     const { t } = useTranslation();
     // Styling based on theme
-    const bgHeader = theme === "dark" ? "border-zinc-900/80 bg-black/80" : "border-gray-400 bg-white shadow-sm";
-    const bgInput = theme === "dark"
-        ? "border-zinc-700 bg-zinc-900/70 text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus-within:ring-2 focus-within:ring-violet-500 focus-within:border-transparent transition-all"
-        : "border-gray-500 bg-white text-black placeholder:text-gray-700 focus:outline-none focus-within:ring-2 focus-within:ring-violet-500 focus-within:border-transparent transition-all";
+    const bgHeader = "border-border bg-bg/80 backdrop-blur-md";
+    const bgInput = "border-border bg-bg-input text-text placeholder:text-text-secondary focus-within:ring-2 focus-within:ring-accent focus-within:border-transparent transition-all";
 
     return (
         <header className={`app-header relative z-10 ${bgHeader} border-b`}>
             <div className="flex w-full items-center justify-between gap-3 px-4 py-2">
-                <div className={`flex w-full max-w-md items-center gap-2 rounded-xl px-3 py-2 border transition-all ${theme === 'dark'
-                    ? 'bg-zinc-900/70 border-zinc-700 text-zinc-100 focus-within:border-accent focus-within:ring-1 focus-within:ring-accent'
-                    : 'bg-white border-gray-500 text-black focus-within:border-accent focus-within:ring-1 focus-within:ring-accent'
-                    }`}>
+                <div className={`flex w-full max-w-md items-center gap-2 rounded-xl px-3 py-2 border transition-all ${bgInput}`}>
                     <Search className="size-4 opacity-50 flex-shrink-0" />
                     <input
                         ref={searchRef}
@@ -112,12 +107,7 @@ export function Header({
                     </button>
                     <button
                         onClick={onSettings}
-                        className="header-action-btn rounded-xl h-10 w-10 flex items-center justify-center border relative"
-                        style={{
-                            backgroundColor: 'var(--bgCard)',
-                            borderColor: 'var(--border)',
-                            color: 'var(--text)'
-                        }}
+                        className="header-action-btn rounded-xl h-10 w-10 flex items-center justify-center border relative bg-bg-card border-border text-text"
                         title={t('header.openSettings')}
                     >
                         <Wrench className="size-4" />

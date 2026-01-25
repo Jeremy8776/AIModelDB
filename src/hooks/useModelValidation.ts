@@ -1,35 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { Model, ApiDir, ProviderCfg, ProviderKey } from '../types';
 import { ValidationJob, ValidationQueue, ValidationSource } from '../services/validation';
+import { ValidationSummary, ValidationUpdateEvent } from '../types/validation';
+export type { ValidationSummary, ValidationUpdateEvent };
 import { callProviderLLM } from '../services/api';
-
-// ValidationUpdateEvent tracks specific changes for detailed reporting
-export interface ValidationUpdateEvent {
-    modelId: string;
-    modelName: string;
-    field: string;
-    oldValue: any;
-    newValue: any;
-}
-
-// ValidationSummary tracks what fields were updated during validation
-export interface ValidationSummary {
-    totalModels: number;
-    modelsUpdated: number;
-    fieldsUpdated: {
-        description: number;
-        parameters: number;
-        context_window: number;
-        license: number;
-        release_date: number;
-        tags: number;
-        pricing: number;
-        other: number;
-    };
-    updates: ValidationUpdateEvent[];
-    errors: number;
-    webSearchUsed: boolean;
-}
 
 // Helper to create an empty validation summary
 function createEmptySummary(): ValidationSummary {

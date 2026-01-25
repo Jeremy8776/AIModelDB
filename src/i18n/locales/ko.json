@@ -46,7 +46,25 @@
         "redo": "다시 실행",
         "runCheck": "검사 실행",
         "runLlmCheck": "LLM NSFW 검사를 실행하시겠습니까?",
-        "runLlmCheckMessage": "{{modelCount}}개의 모델을 스캔합니다. 약 {{time}} 소요됩니다. 빠른 동기화를 위해 건너뛰시겠습니까?"
+        "runLlmCheckMessage": "{{modelCount}}개의 모델을 스캔합니다. 약 {{time}} 소요됩니다. 빠른 동기화를 위해 건너뛰시겠습니까?",
+        "approve": "Approve",
+        "deny": "Deny",
+        "reject": "Reject",
+        "update": "Update",
+        "remove": "Remove",
+        "status": "Status",
+        "unknown": "Unknown",
+        "local": "Local",
+        "varies": "Varies",
+        "unnamed": "Unnamed",
+        "saveAndApprove": "Save & Approve",
+        "favorite": "Favorite",
+        "favorited": "Favorited",
+        "flag": "Flag",
+        "flagged": "Flagged",
+        "unflag": "Unflag",
+        "addToFavorites": "Add to favorites",
+        "removeFromFavorites": "Remove from favorites"
     },
     "header": {
         "searchPlaceholder": "모델 검색...",
@@ -89,7 +107,8 @@
         "updatedAt": "업데이트됨",
         "actions": "작업",
         "noResults": "모델을 찾을 수 없음",
-        "noResultsHint": "필터를 조정하거나 동기화하여 모델을 추가하세요"
+        "noResultsHint": "필터를 조정하거나 동기화하여 모델을 추가하세요",
+        "search": "Search"
     },
     "domains": {
         "All": "모두",
@@ -336,6 +355,14 @@
                 "noModelsFound": "응답에서 모델을 찾을 수 없음",
                 "genericFetchError": "모델 가져오기 오류",
                 "apiKeyRequired": "API 키 필요"
+            },
+            "apiDiscovery": {
+                "title": "AI Cloud Discovery",
+                "description": "Use configured LLMs to automatically discover models from unstructured sources."
+            },
+            "localDiscovery": {
+                "title": "Local Model Discovery",
+                "description": "Automatically detect and import models installed on your machine (via Ollama)."
             }
         },
         "system": {
@@ -428,7 +455,20 @@
         "title": "모델 가져오기",
         "dropzone": "파일을 여기에 드롭하거나 클릭하여 찾아보기",
         "supportedFormats": "지원 형식: JSON, CSV",
-        "importButton": "가져오기"
+        "importButton": "가져오기",
+        "description": "Import models from multiple sources. Supports CSV, TSV, JSON, XLSX formats.",
+        "tabs": {
+            "file": "File Upload",
+            "url": "From URL",
+            "paste": "Paste"
+        },
+        "browse": "Browse Files",
+        "process": "Process File",
+        "enterUrl": "Enter URL",
+        "pasteData": "Paste Data",
+        "pastePlaceholder": "Paste JSON or CSV data here...",
+        "fetch": "Fetch from URL",
+        "preview": "Preview ({{count}} items found)"
     },
     "modelDetail": {
         "description": "설명",
@@ -446,7 +486,11 @@
         "releaseDate": "출시일",
         "viewOnSource": "{{source}}에서 보기",
         "editModel": "모델 편집",
-        "deleteModel": "모델 삭제"
+        "deleteModel": "모델 삭제",
+        "licenseAndIP": "License & IP",
+        "benchmarks": "Benchmarks",
+        "analytics": "Analytics",
+        "linksAndDates": "Links & Dates"
     },
     "onboarding": {
         "welcome": "Model Database 사용을 환영합니다",
@@ -503,7 +547,12 @@
             "readyToSync": "동기화 준비 완료",
             "connected": "연결됨 & 준비 완료",
             "notConnected": "연결되지 않음"
-        }
+        },
+        "completionTitle": "You're All Set!",
+        "completionDesc": "Your data sources are configured. Click \"Start Syncing\" to fetch models from your selected sources.",
+        "startSyncing": "Start Syncing",
+        "selectedSources": "Selected Sources",
+        "localAIStatus": "Local AI Status"
     },
     "flagged": {
         "title": "승인 대기 중인 플래그된 모델",
@@ -545,7 +594,28 @@
         "startValidation": "{{count}} 모델 검증",
         "running": "실행 중...",
         "eta": "도착 예정 시간",
-        "tokens": "토큰"
+        "tokens": "토큰",
+        "description": "Enrich and verify metadata using {{provider}} • {{model}}",
+        "filtersScope": "Filters & Scope",
+        "missing": "Missing",
+        "limitApplied": "Limit applied to validation candidates",
+        "ordering": {
+            "incomplete": "Most Incomplete First",
+            "recent": "Most Recent First",
+            "oldest": "Oldest First"
+        },
+        "validateModels": "Validate {{count}} Models",
+        "modelsVia": "Estimating for {{count}} models via {{provider}}",
+        "free": "Free",
+        "cancel": "Cancel",
+        "configureProvider": "Please configure a provider",
+        "successMessage": "Successfully sent {{count}} models for validation",
+        "failedMessage": "Validation request failed",
+        "batchSize": "Batch Size",
+        "pauseMs": "Pause (ms)",
+        "manualDelay": "Manual delay between batches",
+        "enabled": "Enabled",
+        "matchingFilters": "{{count}} matches"
     },
     "validationResults": {
         "title": "검증 결과",
@@ -576,7 +646,27 @@
         "selectModels": "검증할 모델 선택",
         "deselectAll": "모두 선택 해제",
         "selectAll": "모두 선택",
-        "incompleteWarning": "{{count}} 모델에 불완전한 정보가 있습니다"
+        "incompleteWarning": "{{count}} 모델에 불완전한 정보가 있습니다",
+        "selectIncomplete": "Select only incomplete models",
+        "modelsSelected": "{{count}} of {{total}} models selected",
+        "startIndividual": "Start Individual Validation",
+        "startDatabase": "Validate Database with AI",
+        "validatingDatabase": "Validating Database...",
+        "alerts": {
+            "unavailableTitle": "Validation Unavailable",
+            "unavailableMessage": "Database validation is not available.",
+            "providerRequiredTitle": "API Provider Required",
+            "providerRequiredMessage": "Please configure at least one API provider in the Sync settings before validating.",
+            "sourceRequiredTitle": "Validation Source Required",
+            "sourceRequiredMessage": "Please select at least one validation source.",
+            "modelsRequiredTitle": "Models Required",
+            "modelsRequiredMessage": "Please select at least one model to validate.",
+            "completeTitle": "Validation Complete",
+            "completeMessage": "Database validation completed successfully! {{count}} models were validated and updated.",
+            "failedTitle": "Validation Failed",
+            "failedMessage": "Database validation failed: {{error}}",
+            "errorTitle": "Validation Error"
+        }
     },
     "shortcutsModal": {
         "title": "키보드 단축키",
@@ -678,8 +768,16 @@
             "benchmarks": "벤치마크",
             "analytics": "분석"
         },
+        "licenseIPDeployment": "라이선스, IP 및 배포",
+        "dataProvenance": "데이터 출처",
+        "weights": "가중치 사용 가능",
+        "api": "API 사용 가능",
+        "onPrem": "온프레미스 친화적",
+        "usageRestrictions": "사용 제한",
+        "tags": "모델 태그",
         "links": {
-            "modelPage": "모델 페이지"
+            "modelPage": "모델 페이지",
+            "sources": "소스 및 외부 링크"
         },
         "licenseTipDefault": "상업적 권리, 저작자 표시 및 제한 사항에 대한 라이센스 약관을 검토하세요.",
         "licenseTips": {
@@ -692,8 +790,10 @@
             "CC-BY-NC": "크리에이티브 커먼즈 비상업적. 허가 없이 상업적 사용 불가.",
             "CC0": "퍼블릭 도메인 기증. 저작자 표시 없이 모든 용도로 무료 사용.",
             "OpenRAIL": "책임감 있는 AI 라이센스. 사용 제한이 적용될 수 있습니다; 변형 검토.",
-            "Proprietary": "공급업체 고유 라이센스. 상업적 사용 및 재배포에 대한 약관 검토."
-        }
+            "Proprietary": "공급업체 고유 라이센스. 상업적 사용 및 재배포에 대한 약관 검토.",
+            "Unknown": "License information not available. Review the model page for details."
+        },
+        "gallery": "Gallery"
     },
     "modelEditor": {
         "title": "모델 편집: {{name}}",
@@ -770,7 +870,26 @@
             "commercialUse": "상업적 사용",
             "attributionRequired": "저작자 표시 필수",
             "pricing": "가격 (입력/출력 1M 당)"
-        }
+        },
+        "comparing_count": "Comparing {{count}} models",
+        "tabs": {
+            "overview": "Overview",
+            "capabilities": "Capabilities",
+            "technical": "Technical Specs",
+            "pricing": "Pricing & Costs"
+        },
+        "downloads": "Downloads",
+        "license": "License",
+        "capability": "Capability",
+        "specification": "Specification",
+        "technical": {
+            "parameters": "Parameters",
+            "context": "Context Window",
+            "domain": "Domain"
+        },
+        "estimated_cost": "Estimated Cost",
+        "currency": "Currency",
+        "license_type": "License Type"
     },
     "errors": {
         "networkError": "네트워크 오류. 연결을 확인하세요.",
@@ -780,7 +899,13 @@
         "invalidFormat": "잘못된 형식",
         "importFailed": "가져오기 실패: {{reason}}",
         "exportFailed": "내보내기 실패: {{reason}}",
-        "syncFailed": "동기화 실패: {{reason}}"
+        "syncFailed": "동기화 실패: {{reason}}",
+        "emptyUrl": "Please enter a URL",
+        "parseFile": "Failed to parse file: {{error}}",
+        "fetchError": "Failed to fetch or parse URL: {{error}}",
+        "emptyPaste": "Please paste some content",
+        "parsePaste": "Failed to parse pasted content: {{error}}",
+        "noDataToImport": "No valid data to import"
     },
     "confirmations": {
         "deleteModel": "이 모델을 삭제하시겠습니까?",

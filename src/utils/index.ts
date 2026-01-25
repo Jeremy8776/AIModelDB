@@ -4,7 +4,7 @@
  */
 
 // Formatting utilities
-export { fmtDate, kfmt, cleanId, normalizeNameForMatch, dedupe, cleanModelDescription } from './format';
+export { fmtDate, kfmt, cleanId, normalizeNameForMatch, dedupe, cleanModelDescription, parseRelativeDate } from './format';
 
 // CSV/TSV parsing
 export { toCSV, parseCSV, parseTSV } from './format';

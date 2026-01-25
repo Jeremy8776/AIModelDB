@@ -64,7 +64,7 @@ export function Toolbar({
     hasDetailOpen = false,
 }: ToolbarProps) {
     const { t } = useTranslation();
-    const textSubtle = theme === "dark" ? "text-zinc-400" : "text-gray-600";
+    const textSubtle = "text-text-secondary";
     const pageSafe = Math.max(1, Math.min(page, totalPages));
 
     return (
@@ -99,7 +99,7 @@ export function Toolbar({
             {/* Right Zone - Pagination + Action buttons */}
             <div className={`flex items-center justify-end gap-2 ml-auto ${hasDetailOpen ? 'lg:w-2/5' : ''}`}>
                 {/* Pagination */}
-                <label className="text-xs" style={{ color: 'var(--text)' }}>{t('toolbar.pageSize')}</label>
+                <label className="text-xs text-text">{t('toolbar.pageSize')}</label>
                 <div className="min-w-[80px]">
                     <ThemedSelect
                         value={(pageSize ?? 0).toString()}
@@ -122,12 +122,7 @@ export function Toolbar({
                 <button
                     disabled={pageSafe <= 1}
                     onClick={() => onPageChange(Math.max(1, page - 1))}
-                    className="rounded-lg px-1.5 py-1 disabled:opacity-40 border"
-                    style={{
-                        backgroundColor: 'var(--bgCard)',
-                        borderColor: 'var(--border)',
-                        color: 'var(--text)'
-                    }}
+                    className="rounded-lg px-1.5 py-1 disabled:opacity-40 border bg-bg-card border-border text-text"
                 >
                     <ChevronLeft className="size-4" />
                 </button>
@@ -135,40 +130,25 @@ export function Toolbar({
                 <button
                     disabled={pageSafe >= totalPages}
                     onClick={() => onPageChange(Math.min(totalPages, page + 1))}
-                    className="rounded-lg px-1.5 py-1 disabled:opacity-40 border"
-                    style={{
-                        backgroundColor: 'var(--bgCard)',
-                        borderColor: 'var(--border)',
-                        color: 'var(--text)'
-                    }}
+                    className="rounded-lg px-1.5 py-1 disabled:opacity-40 border bg-bg-card border-border text-text"
                 >
                     <ChevronRight className="size-4" />
                 </button>
 
                 {/* Separator */}
-                <div className="h-4 w-px bg-zinc-700 mx-1"></div>
+                <div className="h-4 w-px bg-border mx-1"></div>
 
                 {/* Action buttons */}
                 <button
                     onClick={onExport}
-                    className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs transition-colors border hover:bg-white/5"
-                    style={{
-                        backgroundColor: 'var(--bgCard)',
-                        borderColor: 'var(--border)',
-                        color: 'var(--text)'
-                    }}
+                    className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs transition-colors border bg-bg-card border-border text-text hover:bg-bg/10"
                 >
                     <DownloadIcon className="size-3" />
                     {t('toolbar.export')}
                 </button>
                 <button
                     onClick={onDeleteDatabase}
-                    className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs transition-colors border hover:bg-white/5"
-                    style={{
-                        backgroundColor: 'var(--bgCard)',
-                        borderColor: 'var(--border)',
-                        color: 'var(--text)'
-                    }}
+                    className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs transition-colors border bg-bg-card border-border text-text hover:bg-bg/10"
                     title={t('toolbar.deleteDatabase')}
                 >
                     <Trash2 className="size-3" />
@@ -176,12 +156,7 @@ export function Toolbar({
                 </button>
                 <button
                     onClick={onValidateModels}
-                    className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs transition-colors border hover:bg-white/5"
-                    style={{
-                        backgroundColor: 'var(--bgCard)',
-                        borderColor: 'var(--border)',
-                        color: 'var(--text)'
-                    }}
+                    className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs transition-colors border bg-bg-card border-border text-text hover:bg-bg/10"
                     title={t('toolbar.validate')}
                 >
                     <ShieldCheck className="size-3" />

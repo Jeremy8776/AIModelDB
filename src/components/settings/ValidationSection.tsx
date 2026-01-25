@@ -10,7 +10,7 @@ export function ValidationSection() {
   const { theme } = useContext(ThemeContext);
   const { settings, saveSettings } = useSettings();
 
-  const bgCard = 'border-border bg-card text-text';
+  const bgCard = 'border-border bg-bg-card text-text';
 
   const providerOptions = useMemo(() => {
     const opts = [{ value: '', label: t('settings.validation.autoDetect') }];
@@ -49,9 +49,9 @@ export function ValidationSection() {
     <div className="space-y-6">
       <div>
         <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
-          <Shield size={20} className="text-zinc-500" />
+          <Shield size={20} className="text-text-secondary" />
           {t('settings.validation.title')}
-          <span className="px-2 py-0.5 text-[10px] font-bold bg-amber-500/20 text-amber-400 rounded-full uppercase">{t('settings.apiConfig.alpha')}</span>
+          <span className="px-2 py-0.5 text-[10px] font-bold bg-accent/20 text-accent rounded-full uppercase">{t('settings.apiConfig.alpha')}</span>
         </h3>
         <p className="text-sm text-zinc-700 dark:text-zinc-400">
           {t('settings.validation.description')}
@@ -60,7 +60,7 @@ export function ValidationSection() {
 
       <div className={`rounded-xl border p-4 ${bgCard}`}>
         <h4 className="font-medium mb-4">{t('settings.validation.preferredProvider')}</h4>
-        <p className="text-xs text-zinc-500 mb-3">
+        <p className="text-xs text-text-subtle mb-3">
           {t('settings.validation.preferredProviderDesc')}
         </p>
         <ThemedSelect
@@ -86,7 +86,7 @@ export function ValidationSection() {
                 />
                 <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${(Boolean(settings[option.key as keyof typeof settings]) ?? true)
                   ? 'bg-accent border-accent'
-                  : 'border-zinc-600 group-hover:border-zinc-500'
+                  : 'border-border-input group-hover:border-accent border-text-subtle'
                   }`}>
                   {(Boolean(settings[option.key as keyof typeof settings]) ?? true) && <Check size={14} strokeWidth={3} className="text-white" />}
                 </div>
@@ -95,7 +95,7 @@ export function ValidationSection() {
                 <div className="font-medium text-sm">
                   {option.label}
                 </div>
-                <p className="text-xs text-zinc-700 dark:text-zinc-400 mt-1">
+                <p className="text-xs text-text-secondary mt-1">
                   {option.description}
                 </p>
               </div>
@@ -113,7 +113,7 @@ export function ValidationSection() {
               type="number"
               value={settings.validationBatchSize || 50}
               onChange={(e) => saveSettings({ validationBatchSize: parseInt(e.target.value) || 50 })}
-              className="w-full rounded-lg border px-3 py-2 text-sm border-border bg-input text-text"
+              className="w-full rounded-lg border px-3 py-2 text-sm border-border bg-bg-input text-text"
               min="1"
               max="200"
             />

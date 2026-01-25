@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { FileText, DollarSign, Info, ExternalLink, Loader2, X, ChevronLeft, ChevronRight, Star, Flag, EyeOff, Download, Copy } from 'lucide-react';
 import ThemeContext from '../context/ThemeContext';
 import { Model } from '../types';
-import { Badge, DomainIcon } from './UI';
+import { Badge, DomainIcon } from './ui';
 import { fmtDate, kfmt } from '../utils/format';
 import { handleExternalLink } from '../utils/external-links';
 import { fetchCivitasBayDetails, CivitasBayDetails } from '../services/api/fetchers/image-platforms/civitas-bay-details';
@@ -12,20 +12,7 @@ import { fetchHuggingFaceDetails } from '../services/api/fetchers/huggingface-de
 import { GalleryImage } from './detail/GalleryImage';
 import { LicenseHover } from './detail/LicenseHover';
 import { useImageContextMenu } from '../hooks/useImageContextMenu';
-
-
-const getPricingType = (pricing: any): string => {
-  if (pricing.input != null || pricing.output != null) {
-    return 'API';
-  }
-  if (pricing.flat != null) {
-    const unit = pricing.unit?.toLowerCase() || '';
-    const isSubscription = unit.includes('month') || unit.includes('year') ||
-      unit.includes('annual') || unit.includes('subscription') || unit.includes('plan');
-    return isSubscription ? 'Subscription' : 'API';
-  }
-  return 'Variable';
-};
+import { getPricingType, isSubscriptionPricing, formatReleaseDate } from '../utils/pricing';
 
 interface DetailPanelProps {
   model: Model | null;
@@ -148,8 +135,8 @@ export function DetailPanel({ model, onClose, onDelete, triggerElement, onToggle
 
   if (!model) return null;
 
-  const textSubtle = theme === 'dark' ? 'text-zinc-400' : 'text-zinc-600';
-  const bgInput = theme === 'dark' ? 'border-zinc-800 bg-zinc-900/60' : 'border-zinc-300 bg-white';
+  const textSubtle = "text-text-secondary";
+  const bgInput = "border-border bg-bg-input text-text";
 
   const handleNextImage = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -170,7 +157,7 @@ export function DetailPanel({ model, onClose, onDelete, triggerElement, onToggle
       id="model-detail-panel"
       className={`
         h-full flex flex-col rounded-2xl border backdrop-blur-sm
-        ${theme === 'dark' ? 'border-zinc-800 bg-zinc-950/95' : 'border-zinc-200 bg-white/95'} 
+        border-border bg-bg/95
         ${!debouncedTriggerElement ? '' : 'shadow-2xl'} 
         ${debouncedTriggerElement && !isAnimating ? 'shadow-2xl' : ''}
         ${isAnimating ? 'shadow-xl' : ''}
@@ -265,11 +252,11 @@ export function DetailPanel({ model, onClose, onDelete, triggerElement, onToggle
               {t('common.close')}
             </button>
           </div>
-        </div>        <section className={`mt-4 rounded-xl border p-4`}
-          style={{ borderColor: theme === 'dark' ? '#27272a' : '#e4e4e7' }}>
+        </div>
+        <section className="mt-4 rounded-xl border border-border p-4">
           <div className="mb-2 flex items-center gap-2">
             <FileText className="size-4" />
-            <strong className="text-sm">{t('detailPanel.licenseIP')}</strong>
+            <strong className="text-sm">{t('detailPanel.licenseIPDeployment', 'License, IP & Deployment')}</strong>
           </div>
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div>
@@ -298,10 +285,54 @@ export function DetailPanel({ model, onClose, onDelete, triggerElement, onToggle
               <span className={textSubtle}>{t('detailPanel.indemnity')}</span>
               <div>{model.indemnity || t('common.none')}</div>
             </div>
+            {model.data_provenance && (
+              <div>
+                <span className={textSubtle}>{t('detailPanel.dataProvenance', 'Data Provenance')}</span>
+                <div>{model.data_provenance}</div>
+              </div>
+            )}
             {model.provider && (
               <div>
                 <span className={textSubtle}>{t('detailPanel.author')}</span>
                 <div>{model.provider}</div>
+              </div>
+            )}
+
+            {/* Hosting / Deployment Flags */}
+            <div className="col-span-2 mt-2 pt-2 border-t border-dashed border-border/50">
+              <div className="flex gap-4 flex-wrap">
+                {model.hosting.weights_available && (
+                  <div className="flex items-center gap-1.5" title="Model weights can be downloaded">
+                    <div className="w-2 h-2 rounded-full bg-green-500" />
+                    <span>{t('detailPanel.weights', 'Weights Available')}</span>
+                  </div>
+                )}
+                {model.hosting.api_available && (
+                  <div className="flex items-center gap-1.5" title="Available via API">
+                    <div className="w-2 h-2 rounded-full bg-green-500" />
+                    <span>{t('detailPanel.api', 'API Available')}</span>
+                  </div>
+                )}
+                {model.hosting.on_premise_friendly && (
+                  <div className="flex items-center gap-1.5" title="Can be run locally/on-premise">
+                    <div className="w-2 h-2 rounded-full bg-green-500" />
+                    <span>{t('detailPanel.onPrem', 'On-Prem Friendly')}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Usage Restrictions */}
+            {model.usage_restrictions && model.usage_restrictions.length > 0 && (
+              <div className="col-span-2">
+                <span className={textSubtle}>{t('detailPanel.usageRestrictions', 'Usage Restrictions')}</span>
+                <div className="mt-1 flex flex-wrap gap-1">
+                  {model.usage_restrictions.map(r => (
+                    <span key={r} className={`px-1.5 py-0.5 rounded text-xs border border-red-500/30 bg-red-500/10 text-red-500`}>
+                      {r}
+                    </span>
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -309,8 +340,7 @@ export function DetailPanel({ model, onClose, onDelete, triggerElement, onToggle
         </section>
 
         {model.pricing?.length ? (
-          <section className={`mt-4 rounded-xl border p-4`}
-            style={{ borderColor: theme === 'dark' ? '#27272a' : '#e4e4e7' }}>
+          <section className="mt-4 rounded-xl border border-border p-4">
             <div className="mb-2 flex items-center gap-2">
               <DollarSign className="size-4" />
               <strong className="text-sm">{t('detailPanel.pricing.title')}</strong>
@@ -331,11 +361,7 @@ export function DetailPanel({ model, onClose, onDelete, triggerElement, onToggle
                         {apiPricing.map((p, i) => (
                           <div
                             key={`api-${i}`}
-                            className={`flex items-center justify-between gap-2 rounded-lg border px-3 py-2 mb-1`}
-                            style={{
-                              borderColor: theme === 'dark' ? '#7c2d12' : '#fb923c',
-                              background: theme === 'dark' ? 'rgba(249,115,22,0.12)' : 'rgba(249,115,22,0.08)'
-                            }}
+                            className="flex items-center justify-between gap-2 rounded-lg border px-3 py-2 mb-1 border-accent/20 bg-accent/10"
                           >
                             <div className="min-w-0">
                               <div className="truncate font-medium">{p.model || 'API Access'}</div>
@@ -375,11 +401,7 @@ export function DetailPanel({ model, onClose, onDelete, triggerElement, onToggle
                         {subPricing.map((p, i) => (
                           <div
                             key={`sub-${i}`}
-                            className={`flex items-center justify-between gap-2 rounded-lg border px-3 py-2 mb-1`}
-                            style={{
-                              borderColor: theme === 'dark' ? '#7c2d12' : '#fb923c',
-                              background: theme === 'dark' ? 'rgba(249,115,22,0.12)' : 'rgba(249,115,22,0.08)'
-                            }}
+                            className="flex items-center justify-between gap-2 rounded-lg border px-3 py-2 mb-1 border-accent/20 bg-accent/10"
                           >
                             <div className="min-w-0">
                               <div className="truncate font-medium">{p.model || 'Subscription'}</div>
@@ -402,11 +424,7 @@ export function DetailPanel({ model, onClose, onDelete, triggerElement, onToggle
                         {otherPricing.map((p, i) => (
                           <div
                             key={`other-${i}`}
-                            className={`flex items-center justify-between gap-2 rounded-lg border px-3 py-2 mb-1`}
-                            style={{
-                              borderColor: theme === 'dark' ? '#27272a' : '#e4e4e7',
-                              background: theme === 'dark' ? 'rgba(24,24,27,0.4)' : 'rgba(244,244,245,0.6)'
-                            }}
+                            className="flex items-center justify-between gap-2 rounded-lg border px-3 py-2 mb-1 border-border/50 bg-bg-card/50"
                           >
                             <div className="min-w-0">
                               <div className="truncate">{p.model || model.name}</div>
@@ -432,8 +450,7 @@ export function DetailPanel({ model, onClose, onDelete, triggerElement, onToggle
           </section>
         ) : null}
 
-        <section className={`mt-4 rounded-xl border p-4 text-sm`}
-          style={{ borderColor: theme === 'dark' ? '#27272a' : '#e4e4e7' }}>
+        <section className={`mt-4 rounded-xl border border-border p-4 text-sm`}>
           <div className="mb-2 flex items-center gap-2">
             <Info className="size-4" />
             <strong className="text-sm">{t('detailPanel.meta.title')}</strong>
@@ -445,16 +462,20 @@ export function DetailPanel({ model, onClose, onDelete, triggerElement, onToggle
             </div>
             <div>
               <span className={textSubtle}>{t('detailPanel.meta.released')}</span>
-              <div>{fmtDate(model.release_date)}</div>
+              <div>{formatReleaseDate(model)}</div>
             </div>
-            <div>
-              <span className={textSubtle}>{t('detailPanel.meta.parameters')}</span>
-              <div>{model.parameters || "—"}</div>
-            </div>
-            <div>
-              <span className={textSubtle}>{t('detailPanel.meta.context')}</span>
-              <div>{model.context_window || "—"}</div>
-            </div>
+            {model.parameters && (
+              <div>
+                <span className={textSubtle}>{t('detailPanel.meta.parameters')}</span>
+                <div>{model.parameters}</div>
+              </div>
+            )}
+            {model.context_window && (
+              <div>
+                <span className={textSubtle}>{t('detailPanel.meta.context')}</span>
+                <div>{model.context_window}</div>
+              </div>
+            )}
           </div>
 
           {model.benchmarks && model.benchmarks.length > 0 && (
@@ -462,7 +483,7 @@ export function DetailPanel({ model, onClose, onDelete, triggerElement, onToggle
               <div className={`text-xs font-medium mb-1 ${textSubtle}`}>{t('detailPanel.meta.benchmarks')}</div>
               <div className="space-y-1">
                 {model.benchmarks.slice(0, 6).map((b, i) => (
-                  <div key={i} className={`flex justify-between rounded-md px-2 py-1 border ${theme === 'dark' ? 'border-zinc-800' : 'border-zinc-200'}`}>
+                  <div key={i} className={`flex justify-between rounded-md px-2 py-1 border border-border`}>
                     <div className="truncate pr-2">{b.name}</div>
                     <div className="text-right text-xs opacity-80">{b.score}{b.unit ? ` ${b.unit}` : ''}{b.source ? ` • ${b.source}` : ''}</div>
                   </div>
@@ -473,71 +494,77 @@ export function DetailPanel({ model, onClose, onDelete, triggerElement, onToggle
 
           {model.analytics && Object.keys(model.analytics).length > 0 && (
             <div className="mt-3">
-              <div className={`text-xs font-medium mb-1 ${textSubtle}`}>Analytics</div>
+              <div className={`text-xs font-medium mb-1 ${textSubtle}`}>{t('detailPanel.meta.analytics')}</div>
               <div className="grid grid-cols-2 gap-2">
-                {Object.entries(model.analytics).slice(0, 6).map(([k, v]) => (
-                  <div key={k} className={`rounded-md px-2 py-1 border ${theme === 'dark' ? 'border-zinc-800' : 'border-zinc-200'}`}>
-                    <div className="text-[11px] opacity-70">{k}</div>
-                    <div className="text-sm">{String(v)}</div>
-                  </div>
-                ))}
+                {Object.entries(model.analytics)
+                  .filter(([_, v]) => v != null && v !== '')
+                  .slice(0, 6)
+                  .map(([k, v]) => (
+                    <div key={k} className={`rounded-md px-2 py-1 border ${theme === 'dark' ? 'border-zinc-800' : 'border-zinc-200'}`}>
+                      <div className="text-[11px] opacity-70">
+                        {k.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                      </div>
+                      <div className="text-sm">{String(v)}</div>
+                    </div>
+                  ))}
               </div>
             </div>
           )}
 
-          {model.tags?.length ? (
-            <div className="mt-3 max-h-28 overflow-y-auto pr-1">
-              <div className="flex flex-wrap gap-1.5">
-                {model.tags.map(t => <Badge key={t}>{t}</Badge>)}
+          {/* Credits & External References */}
+          {(() => {
+            const allLinks = model.links || [];
+
+            // If no links array but we have primary urls, we should still show them
+            const displayLinks = allLinks.length > 0
+              ? allLinks
+              : [
+                ...(model.url ? [{ label: model.source.split(',')[0].trim(), url: model.url }] : []),
+                ...(model.repo ? [{ label: 'Repository', url: model.repo }] : [])
+              ];
+
+            if (displayLinks.length === 0) return null;
+
+            return (
+              <div className="mt-6 space-y-5">
+                {/* Tags */}
+                {model.tags && model.tags.length > 0 && (
+                  <div>
+                    <div className={`text-[10px] font-bold uppercase tracking-widest mb-2.5 ${textSubtle} opacity-60`}>
+                      {t('detailPanel.tags', 'Model Tags')}
+                    </div>
+                    <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto pr-1 scrollbar-thin">
+                      {model.tags.map(t => <Badge key={t}>{t}</Badge>)}
+                    </div>
+                  </div>
+                )}
+
+                {/* Sources & External Links */}
+                <div className={`rounded-xl p-4 bg-bg-card`}>
+                  <div className={`text-[10px] font-bold uppercase tracking-widest mb-3 ${textSubtle} opacity-60`}>
+                    {t('detailPanel.links.sources', 'Credited Sources & Links')}
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {displayLinks.map((btn, i) => (
+                      <a
+                        key={i}
+                        href={btn.url}
+                        onClick={(e) => handleExternalLink(e, btn.url)}
+                        className={`
+                          inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[11px] font-semibold
+                          transition-all hover:scale-105 active:scale-95 hover:shadow-md
+                          bg-purple-600/10 text-purple-700 dark:text-purple-300 border-purple-600/20
+                          hover:bg-purple-600/20
+                        `}
+                      >
+                        {btn.label} <ExternalLink className="size-3" />
+                      </a>
+                    ))}
+                  </div>
+                </div>
               </div>
-            </div>
-          ) : null}
-
-          <div className="mt-3 flex gap-2 flex-wrap">
-            {/* Show "Use on HuggingFace" if URL is from HuggingFace */}
-            {model.url && model.url.includes('huggingface.co') && (
-              <a
-                href={model.url}
-                onClick={(e) => handleExternalLink(e, model.url!)}
-                className={`inline-flex items-center gap-1 rounded-lg ${bgInput} px-3 py-1.5 text-xs cursor-pointer hover:opacity-80 transition-opacity`}
-              >
-                HuggingFace <ExternalLink className="size-3" />
-              </a>
-            )}
-
-            {/* Show "Repo" if repo is GitHub */}
-            {model.repo && model.repo.includes('github.com') && (
-              <a
-                href={model.repo}
-                onClick={(e) => handleExternalLink(e, model.repo!)}
-                className={`inline-flex items-center gap-1 rounded-lg ${bgInput} px-3 py-1.5 text-xs cursor-pointer hover:opacity-80 transition-opacity`}
-              >
-                GitHub <ExternalLink className="size-3" />
-              </a>
-            )}
-
-            {/* Show "Artificial Analysis" if URL is from artificialanalysis.ai */}
-            {model.url && model.url.includes('artificialanalysis.ai') && (
-              <a
-                href={model.url}
-                onClick={(e) => handleExternalLink(e, model.url!)}
-                className={`inline-flex items-center gap-1 rounded-lg ${bgInput} px-3 py-1.5 text-xs cursor-pointer hover:opacity-80 transition-opacity`}
-              >
-                Artificial Analysis <ExternalLink className="size-3" />
-              </a>
-            )}
-
-            {/* Show "Model Page" if URL exists and is NOT HuggingFace, GitHub, or Artificial Analysis */}
-            {model.url && !model.url.includes('huggingface.co') && !model.url.includes('github.com') && !model.url.includes('artificialanalysis.ai') && (
-              <a
-                href={model.url}
-                onClick={(e) => handleExternalLink(e, model.url!)}
-                className={`inline-flex items-center gap-1 rounded-lg ${bgInput} px-3 py-1.5 text-xs cursor-pointer hover:opacity-80 transition-opacity`}
-              >
-                {t('detailPanel.links.modelPage')} <ExternalLink className="size-3" />
-              </a>
-            )}
-          </div>
+            );
+          })()}
         </section>
 
         {/* Image Gallery */}

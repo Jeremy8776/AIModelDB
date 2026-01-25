@@ -46,7 +46,7 @@ export function AddModelModal({ isOpen, onClose, onAddModel, domains, addConsole
 
   if (!isOpen) return null;
 
-  const bgInput = "border border-border bg-input text-text";
+  const bgInput = "border border-border bg-bg-input text-text";
 
   function handleAddModel() {
     const modelToAdd: Model = {
@@ -108,7 +108,7 @@ export function AddModelModal({ isOpen, onClose, onAddModel, domains, addConsole
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-2 sm:p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-2 sm:p-4">
       <div className="w-full max-w-3xl max-h-[85vh] overflow-y-auto rounded-2xl border p-4 border-border bg-bg text-text">
         <div className="mb-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -120,7 +120,7 @@ export function AddModelModal({ isOpen, onClose, onAddModel, domains, addConsole
 
         <div className="space-y-4">
           {/* Basic Information */}
-          <div className="rounded-xl border p-4 border-border bg-card">
+          <div className="rounded-xl border p-4 border-border bg-bg-card">
             <h4 className="mb-3 font-medium">{t('addModel.basicInfo')}</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -348,7 +348,7 @@ export function AddModelModal({ isOpen, onClose, onAddModel, domains, addConsole
                       }
                     });
                   }}
-                  className="mr-2"
+                  className="mr-2 accent-accent"
                 />
                 {t('licenses.Copyleft')}
               </label>
@@ -421,7 +421,7 @@ export function AddModelModal({ isOpen, onClose, onAddModel, domains, addConsole
                       }
                     });
                   }}
-                  className="mr-2"
+                  className="mr-2 accent-accent"
                 />
                 {t('modelDetail.onPremiseFriendly')}
               </label>
@@ -429,7 +429,7 @@ export function AddModelModal({ isOpen, onClose, onAddModel, domains, addConsole
           </div>
 
           {/* Dates & Additional Info */}
-          <div className="rounded-xl border p-4 border-border bg-card">
+          <div className="rounded-xl border p-4 border-border bg-bg-card">
             <h4 className="mb-3 font-medium">{t('addModel.additionalInfo')}</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -488,7 +488,7 @@ export function AddModelModal({ isOpen, onClose, onAddModel, domains, addConsole
             <button
               onClick={handleAddModel}
               disabled={!newModel.name}
-              className={`rounded-xl ${bgInput} px-4 py-2 text-sm ${!newModel.name ? 'opacity-50' : 'hover:bg-zinc-800'}`}
+              className={`rounded-xl ${bgInput} px-4 py-2 text-sm ${!newModel.name ? 'opacity-50' : 'hover:bg-bg-elevated'}`}
             >
               {t('addModel.addModelButton')}
             </button>
@@ -498,4 +498,3 @@ export function AddModelModal({ isOpen, onClose, onAddModel, domains, addConsole
     </div>
   );
 }
-

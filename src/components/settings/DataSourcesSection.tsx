@@ -19,8 +19,8 @@ export function DataSourcesSection({ onSync, addConsoleLog }: DataSourcesSection
   const [savedKeys, setSavedKeys] = useState<Record<string, boolean>>({});
   const [pendingKeys, setPendingKeys] = useState<Record<string, string>>({});
 
-  const bgCard = 'border-border bg-card text-text';
-  const bgInput = 'border-border bg-input text-text';
+  const bgCard = 'border-border bg-bg-card text-text';
+  const bgInput = 'border-border bg-bg-input text-text';
 
   const dataSources = [
     { key: 'huggingface', label: t('settings.dataSources.huggingface'), description: t('settings.dataSources.descriptions.huggingface') },
@@ -52,10 +52,10 @@ export function DataSourcesSection({ onSync, addConsoleLog }: DataSourcesSection
     <div className="space-y-6">
       <div>
         <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
-          <Database size={20} className="text-zinc-500" />
+          <Database size={20} className="text-text-secondary" />
           {t('settings.dataSources.title')}
         </h3>
-        <p className="text-sm text-zinc-700 dark:text-zinc-400">
+        <p className="text-sm text-text-secondary">
           {t('settings.dataSources.description')}
         </p>
       </div>
@@ -65,7 +65,7 @@ export function DataSourcesSection({ onSync, addConsoleLog }: DataSourcesSection
         <div className="flex items-center justify-between mb-4">
           <div>
             <h4 className="font-medium">{t('settings.dataSources.syncModels')}</h4>
-            <p className="text-sm text-zinc-700 dark:text-zinc-400">
+            <p className="text-sm text-text-secondary">
               {t('settings.dataSources.syncModelsDesc')}
             </p>
           </div>
@@ -118,7 +118,7 @@ export function DataSourcesSection({ onSync, addConsoleLog }: DataSourcesSection
                 key={source.key}
                 className={`p-4 rounded-lg border-2 text-left transition-all duration-200 ${isEnabled
                   ? 'border-accent bg-accent/10'
-                  : 'border-zinc-700 hover:border-zinc-500 bg-zinc-900/50'
+                  : 'border-border bg-bg-input/50'
                   }`}
               >
                 <button
@@ -132,16 +132,16 @@ export function DataSourcesSection({ onSync, addConsoleLog }: DataSourcesSection
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex-1 min-w-0">
-                      <div className={`font-semibold text-sm ${isEnabled ? 'text-white' : 'text-zinc-200'} transition-colors`}>
+                      <div className={`font-semibold text-sm ${isEnabled ? 'text-accent' : 'text-text'} transition-colors`}>
                         {source.label}
                       </div>
-                      <div className={`text-xs mt-1 ${isEnabled ? 'text-zinc-300' : 'text-zinc-500'} transition-colors`}>
+                      <div className={`text-xs mt-1 ${isEnabled ? 'text-text-secondary' : 'text-text-subtle'} transition-colors`}>
                         {source.description}
                       </div>
                     </div>
                     <div className={`ml-3 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${isEnabled
-                      ? 'bg-accent border-accent'
-                      : 'border-zinc-600 group-hover:border-zinc-500'
+                      ? 'bg-accent border-accent text-white'
+                      : 'border-border-input group-hover:border-accent'
                       }`}>
                       {isEnabled && <Check size={14} strokeWidth={3} className="text-white" />}
                     </div>
@@ -150,8 +150,8 @@ export function DataSourcesSection({ onSync, addConsoleLog }: DataSourcesSection
 
                 {/* Inline API Key Input - shown when enabled and needs API key */}
                 {isEnabled && needsApiKey && (
-                  <div className="mt-3 pt-3 border-t border-zinc-700">
-                    <label className="text-xs text-zinc-400 block mb-1">{apiKeyLabel}</label>
+                  <div className="mt-3 pt-3 border-t border-border">
+                    <label className="text-xs text-text-subtle block mb-1">{apiKeyLabel}</label>
                     <div className="flex gap-2">
                       <input
                         type="password"

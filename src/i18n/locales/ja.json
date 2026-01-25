@@ -46,7 +46,25 @@
         "redo": "やり直し",
         "runCheck": "チェックを実行",
         "runLlmCheck": "LLM NSFWチェックを実行しますか？",
-        "runLlmCheckMessage": "{{modelCount}}個のモデルをスキャンします。約{{time}}かかります。高速化のためにスキップしますか？"
+        "runLlmCheckMessage": "{{modelCount}}個のモデルをスキャンします。約{{time}}かかります。高速化のためにスキップしますか？",
+        "approve": "Approve",
+        "deny": "Deny",
+        "reject": "Reject",
+        "update": "Update",
+        "remove": "Remove",
+        "status": "Status",
+        "unknown": "Unknown",
+        "local": "Local",
+        "varies": "Varies",
+        "unnamed": "Unnamed",
+        "saveAndApprove": "Save & Approve",
+        "favorite": "Favorite",
+        "favorited": "Favorited",
+        "flag": "Flag",
+        "flagged": "Flagged",
+        "unflag": "Unflag",
+        "addToFavorites": "Add to favorites",
+        "removeFromFavorites": "Remove from favorites"
     },
     "header": {
         "searchPlaceholder": "モデルを検索...",
@@ -89,7 +107,8 @@
         "updatedAt": "更新日",
         "actions": "アクション",
         "noResults": "モデルが見つかりません",
-        "noResultsHint": "フィルターを調整するか、同期してモデルを追加してください"
+        "noResultsHint": "フィルターを調整するか、同期してモデルを追加してください",
+        "search": "Search"
     },
     "domains": {
         "All": "すべて",
@@ -336,6 +355,14 @@
                 "noModelsFound": "レスポンスにモデルが見つかりません",
                 "genericFetchError": "モデルの取得中にエラーが発生しました",
                 "apiKeyRequired": "APIキーが必要です"
+            },
+            "apiDiscovery": {
+                "title": "AI Cloud Discovery",
+                "description": "Use configured LLMs to automatically discover models from unstructured sources."
+            },
+            "localDiscovery": {
+                "title": "Local Model Discovery",
+                "description": "Automatically detect and import models installed on your machine (via Ollama)."
             }
         },
         "system": {
@@ -428,7 +455,20 @@
         "title": "モデルをインポート",
         "dropzone": "ファイルをここにドロップするか、クリックして参照",
         "supportedFormats": "サポートされているフォーマット: JSON、CSV",
-        "importButton": "インポート"
+        "importButton": "インポート",
+        "description": "Import models from multiple sources. Supports CSV, TSV, JSON, XLSX formats.",
+        "tabs": {
+            "file": "File Upload",
+            "url": "From URL",
+            "paste": "Paste"
+        },
+        "browse": "Browse Files",
+        "process": "Process File",
+        "enterUrl": "Enter URL",
+        "pasteData": "Paste Data",
+        "pastePlaceholder": "Paste JSON or CSV data here...",
+        "fetch": "Fetch from URL",
+        "preview": "Preview ({{count}} items found)"
     },
     "modelDetail": {
         "description": "説明",
@@ -446,7 +486,11 @@
         "releaseDate": "リリース日",
         "viewOnSource": "{{source}}で表示",
         "editModel": "モデルを編集",
-        "deleteModel": "モデルを削除"
+        "deleteModel": "モデルを削除",
+        "licenseAndIP": "License & IP",
+        "benchmarks": "Benchmarks",
+        "analytics": "Analytics",
+        "linksAndDates": "Links & Dates"
     },
     "onboarding": {
         "welcome": "Model Databaseへようこそ",
@@ -503,7 +547,12 @@
             "readyToSync": "同期準備完了",
             "connected": "接続完了",
             "notConnected": "未接続"
-        }
+        },
+        "completionTitle": "You're All Set!",
+        "completionDesc": "Your data sources are configured. Click \"Start Syncing\" to fetch models from your selected sources.",
+        "startSyncing": "Start Syncing",
+        "selectedSources": "Selected Sources",
+        "localAIStatus": "Local AI Status"
     },
     "flagged": {
         "title": "承認待ちのフラグ付きモデル",
@@ -545,7 +594,28 @@
         "startValidation": "{{count}}個のモデルを検証",
         "running": "実行中...",
         "eta": "残り時間",
-        "tokens": "トークン"
+        "tokens": "トークン",
+        "description": "Enrich and verify metadata using {{provider}} • {{model}}",
+        "filtersScope": "Filters & Scope",
+        "missing": "Missing",
+        "limitApplied": "Limit applied to validation candidates",
+        "ordering": {
+            "incomplete": "Most Incomplete First",
+            "recent": "Most Recent First",
+            "oldest": "Oldest First"
+        },
+        "validateModels": "Validate {{count}} Models",
+        "modelsVia": "Estimating for {{count}} models via {{provider}}",
+        "free": "Free",
+        "cancel": "Cancel",
+        "configureProvider": "Please configure a provider",
+        "successMessage": "Successfully sent {{count}} models for validation",
+        "failedMessage": "Validation request failed",
+        "batchSize": "Batch Size",
+        "pauseMs": "Pause (ms)",
+        "manualDelay": "Manual delay between batches",
+        "enabled": "Enabled",
+        "matchingFilters": "{{count}} matches"
     },
     "validationResults": {
         "title": "検証結果",
@@ -576,7 +646,27 @@
         "selectModels": "検証するモデルを選択",
         "deselectAll": "すべて選択解除",
         "selectAll": "すべて選択",
-        "incompleteWarning": "{{count}}個のモデルに不完全な情報があります"
+        "incompleteWarning": "{{count}}個のモデルに不完全な情報があります",
+        "selectIncomplete": "Select only incomplete models",
+        "modelsSelected": "{{count}} of {{total}} models selected",
+        "startIndividual": "Start Individual Validation",
+        "startDatabase": "Validate Database with AI",
+        "validatingDatabase": "Validating Database...",
+        "alerts": {
+            "unavailableTitle": "Validation Unavailable",
+            "unavailableMessage": "Database validation is not available.",
+            "providerRequiredTitle": "API Provider Required",
+            "providerRequiredMessage": "Please configure at least one API provider in the Sync settings before validating.",
+            "sourceRequiredTitle": "Validation Source Required",
+            "sourceRequiredMessage": "Please select at least one validation source.",
+            "modelsRequiredTitle": "Models Required",
+            "modelsRequiredMessage": "Please select at least one model to validate.",
+            "completeTitle": "Validation Complete",
+            "completeMessage": "Database validation completed successfully! {{count}} models were validated and updated.",
+            "failedTitle": "Validation Failed",
+            "failedMessage": "Database validation failed: {{error}}",
+            "errorTitle": "Validation Error"
+        }
     },
     "shortcutsModal": {
         "title": "キーボードショートカット",
@@ -678,8 +768,16 @@
             "benchmarks": "ベンチマーク",
             "analytics": "分析"
         },
+        "licenseIPDeployment": "ライセンス、IP、および展開",
+        "dataProvenance": "データの出所",
+        "weights": "ウェイト利用可能",
+        "api": "API利用可能",
+        "onPrem": "オンプレミス対応",
+        "usageRestrictions": "使用制限",
+        "tags": "モデルタグ",
         "links": {
-            "modelPage": "モデルページ"
+            "modelPage": "モデルページ",
+            "sources": "ソースと外部リンク"
         },
         "licenseTipDefault": "商用利用権、帰属表示、および制限については、ライセンス条項を確認してください。",
         "licenseTips": {
@@ -692,8 +790,10 @@
             "CC-BY-NC": "クリエイティブ・コモンズ 非営利。許可なしの商用利用は許可されていません。",
             "CC0": "パブリックドメインへの提供。帰属表示なしであらゆる用途に無料で使用できます。",
             "OpenRAIL": "責任あるAIライセンス。使用制限が適用される場合があります。バリアントを確認してください。",
-            "Proprietary": "ベンダー固有のライセンス。商用利用および再配布については条項を確認してください。"
-        }
+            "Proprietary": "ベンダー固有のライセンス。商用利用および再配布については条項を確認してください。",
+            "Unknown": "License information not available. Review the model page for details."
+        },
+        "gallery": "Gallery"
     },
     "modelEditor": {
         "title": "モデルを編集: {{name}}",
@@ -770,7 +870,26 @@
             "commercialUse": "商用利用",
             "attributionRequired": "帰属表示必須",
             "pricing": "価格 (入力/出力 1Mあたり)"
-        }
+        },
+        "comparing_count": "Comparing {{count}} models",
+        "tabs": {
+            "overview": "Overview",
+            "capabilities": "Capabilities",
+            "technical": "Technical Specs",
+            "pricing": "Pricing & Costs"
+        },
+        "downloads": "Downloads",
+        "license": "License",
+        "capability": "Capability",
+        "specification": "Specification",
+        "technical": {
+            "parameters": "Parameters",
+            "context": "Context Window",
+            "domain": "Domain"
+        },
+        "estimated_cost": "Estimated Cost",
+        "currency": "Currency",
+        "license_type": "License Type"
     },
     "errors": {
         "networkError": "ネットワークエラー。接続を確認してください。",
@@ -780,7 +899,13 @@
         "invalidFormat": "無効なフォーマット",
         "importFailed": "インポート失敗: {{reason}}",
         "exportFailed": "エクスポート失敗: {{reason}}",
-        "syncFailed": "同期失敗: {{reason}}"
+        "syncFailed": "同期失敗: {{reason}}",
+        "emptyUrl": "Please enter a URL",
+        "parseFile": "Failed to parse file: {{error}}",
+        "fetchError": "Failed to fetch or parse URL: {{error}}",
+        "emptyPaste": "Please paste some content",
+        "parsePaste": "Failed to parse pasted content: {{error}}",
+        "noDataToImport": "No valid data to import"
     },
     "confirmations": {
         "deleteModel": "このモデルを削除してもよろしいですか？",

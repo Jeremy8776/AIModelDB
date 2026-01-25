@@ -69,10 +69,8 @@ export function FiltersSidebar({
     ];
 
     // Styling based on theme
-    const bgCard = theme === "dark" ? "border-zinc-800 bg-black" : "border-gray-400 bg-white shadow-sm";
-    const bgInput = theme === "dark"
-        ? "border-zinc-700 bg-zinc-900/70 text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-violet-500"
-        : "border-gray-500 bg-white text-black placeholder:text-gray-700 focus:outline-none focus:ring-2 focus:ring-violet-500";
+    const bgCard = "border-border bg-bg-card";
+    const bgInput = "border-border bg-bg-input text-text placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-accent";
 
     return (
         <aside className="w-full lg:w-72 flex-shrink-0 lg:sticky lg:top-[5.5rem] lg:max-h-[calc(100vh-100px)] lg:self-start overflow-y-auto">
@@ -89,7 +87,7 @@ export function FiltersSidebar({
                             checked={favoritesOnly}
                             onChange={onFavoritesOnlyChange}
                         />
-                        <span className={`text-sm font-medium ${theme === 'dark' ? 'text-zinc-200 group-hover:text-white' : 'text-gray-700 group-hover:text-black'} transition-colors`}>
+                        <span className="text-sm font-medium text-text transition-colors">
                             {t('filters.favoritesOnly')}
                         </span>
                     </div>
@@ -105,7 +103,7 @@ export function FiltersSidebar({
                             checked={hideNSFW}
                             onChange={onHideNSFWChange}
                         />
-                        <span className={`text-sm font-medium ${theme === 'dark' ? 'text-zinc-200 group-hover:text-white' : 'text-gray-700 group-hover:text-black'} transition-colors`}>
+                        <span className="text-sm font-medium text-text transition-colors">
                             {t('filters.hideNSFW')}
                         </span>
                     </div>
@@ -113,7 +111,7 @@ export function FiltersSidebar({
 
                 {/* Domain Filter */}
                 <div className="mb-4">
-                    <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text)' }}>{t('filters.domain')}</label>
+                    <label className="block text-sm font-medium mb-2 text-text">{t('filters.domain')}</label>
                     <ThemedSelect
                         value={domainPick as any}
                         onChange={(v: any) => onDomainChange(v)}
@@ -122,7 +120,7 @@ export function FiltersSidebar({
                 </div>
                 {/* Downloads Filter */}
                 <div className="mb-4">
-                    <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text)' }}>{t('filters.minDownloads')}</label>
+                    <label className="block text-sm font-medium mb-2 text-text">{t('filters.minDownloads')}</label>
                     <input
                         type="number"
                         value={minDownloads}
@@ -135,7 +133,7 @@ export function FiltersSidebar({
 
                 {/* License Type Filter */}
                 <div className="mb-4">
-                    <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text)' }}>{t('filters.licenseType')}</label>
+                    <label className="block text-sm font-medium mb-2 text-text">{t('filters.licenseType')}</label>
                     <ThemedSelect
                         value={licenseTypes.length === 1 ? (licenseTypes[0] as string) : ""}
                         onChange={(v) => onLicenseTypesChange(v ? [v as any] : [])}
@@ -153,7 +151,7 @@ export function FiltersSidebar({
 
                 {/* Commercial Use Filter */}
                 <div className="mb-4">
-                    <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text)' }}>{t('filters.commercialUse')}</label>
+                    <label className="block text-sm font-medium mb-2 text-text">{t('filters.commercialUse')}</label>
                     <ThemedSelect
                         value={commercialAllowed === null ? "" : commercialAllowed.toString()}
                         onChange={(v) => onCommercialAllowedChange(v === "" ? null : v === "true")}
@@ -168,7 +166,7 @@ export function FiltersSidebar({
 
                 {/* Tags Filter */}
                 <div className="mb-4">
-                    <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text)' }}>{t('filters.includeTags')}</label>
+                    <label className="block text-sm font-medium mb-2 text-text">{t('filters.includeTags')}</label>
                     <input
                         value={includeTags.join(", ")}
                         onChange={e => onIncludeTagsChange(e.target.value.split(",").map(t => t.trim()).filter(Boolean))}
@@ -178,19 +176,19 @@ export function FiltersSidebar({
                 </div>
 
                 <div className="mb-4">
-                    <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text)' }}>{t('filters.excludeTags')}</label>
+                    <label className="block text-sm font-medium mb-2 text-text">{t('filters.excludeTags')}</label>
                     <input
                         value={excludeTags.join(", ")}
                         onChange={e => onExcludeTagsChange(e.target.value.split(",").map(t => t.trim()).filter(Boolean))}
                         placeholder="e.g. deprecated, beta"
-                        className={`w-full rounded-xl border ${bgInput} px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}
+                        className={`w-full rounded-xl border ${bgInput} px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent text-text`}
                     />
                 </div>
 
                 {/* Clear Filters Button */}
                 <button
                     onClick={onClearFilters}
-                    className={`w-full rounded-xl px-4 py-2 text-sm font-medium transition-colors ${bgInput} hover:bg-gray-200 dark:hover:bg-gray-700`}
+                    className={`w-full rounded-xl px-4 py-2 text-sm font-medium transition-colors ${bgInput} hover:bg-bg/10`}
                 >
                     {t('filters.clearFilters')}
                 </button>

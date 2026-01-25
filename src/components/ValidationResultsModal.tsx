@@ -125,10 +125,10 @@ export function ValidationResultsModal({
                             <div className="text-sm font-medium opacity-80 mb-2">{t('validationResults.fieldsEnhanced')}</div>
                             <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
                                 {Object.entries(summary.fieldsUpdated).map(([field, count]) => (
-                                    count > 0 && (
+                                    (count as number) > 0 && (
                                         <div key={field} className="flex justify-between items-center">
                                             <span className="capitalize opacity-70">{field.replace('_', ' ')}</span>
-                                            <span className="font-bold bg-zinc-100 dark:bg-zinc-800 px-1.5 rounded">{count}</span>
+                                            <span className="font-bold bg-zinc-100 dark:bg-zinc-800 px-1.5 rounded">{count as number}</span>
                                         </div>
                                     )
                                 ))}
@@ -161,7 +161,7 @@ export function ValidationResultsModal({
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-border/50">
-                                        {displayUpdates.map((update, idx) => (
+                                        {displayUpdates.map((update: any, idx: number) => (
                                             <tr key={idx} className="group hover:bg-zinc-50 dark:hover:bg-zinc-900/50 transition-colors">
                                                 <td className="p-3 font-medium truncate max-w-[200px]" title={update.modelName}>
                                                     {update.modelName}

@@ -12,7 +12,7 @@ import { useState } from 'react';
 /**
  * Validation state interface containing all validation-related state and setters
  */
-import { ValidationSummary } from './useModelValidation';
+import { ValidationSummary } from '../types/validation';
 
 /**
  * Validation state interface containing all validation-related state and setters

@@ -46,7 +46,25 @@
         "redo": "Rétablir",
         "runCheck": "Lancer la vérification",
         "runLlmCheck": "Lancer la vérification NSFW par IA ?",
-        "runLlmCheckMessage": "{{modelCount}} modèles trouvés à scanner. Cela prendra environ {{time}}. Passer pour une synchronisation plus rapide ?"
+        "runLlmCheckMessage": "{{modelCount}} modèles trouvés à scanner. Cela prendra environ {{time}}. Passer pour une synchronisation plus rapide ?",
+        "approve": "Approve",
+        "deny": "Deny",
+        "reject": "Reject",
+        "update": "Update",
+        "remove": "Remove",
+        "status": "Status",
+        "unknown": "Unknown",
+        "local": "Local",
+        "varies": "Varies",
+        "unnamed": "Unnamed",
+        "saveAndApprove": "Save & Approve",
+        "favorite": "Favorite",
+        "favorited": "Favorited",
+        "flag": "Flag",
+        "flagged": "Flagged",
+        "unflag": "Unflag",
+        "addToFavorites": "Add to favorites",
+        "removeFromFavorites": "Remove from favorites"
     },
     "header": {
         "searchPlaceholder": "Rechercher des modèles...",
@@ -89,7 +107,8 @@
         "updatedAt": "Mis à Jour",
         "actions": "Actions",
         "noResults": "Aucun modèle trouvé",
-        "noResultsHint": "Essayez d'ajuster les filtres ou synchronisez pour ajouter des modèles"
+        "noResultsHint": "Essayez d'ajuster les filtres ou synchronisez pour ajouter des modèles",
+        "search": "Search"
     },
     "domains": {
         "All": "Tout",
@@ -336,6 +355,14 @@
                 "noModelsFound": "Aucun modèle trouvé dans la réponse",
                 "genericFetchError": "Erreur lors de la récupération des modèles",
                 "apiKeyRequired": "Clé API requise"
+            },
+            "apiDiscovery": {
+                "title": "AI Cloud Discovery",
+                "description": "Use configured LLMs to automatically discover models from unstructured sources."
+            },
+            "localDiscovery": {
+                "title": "Local Model Discovery",
+                "description": "Automatically detect and import models installed on your machine (via Ollama)."
             }
         },
         "system": {
@@ -404,21 +431,44 @@
         "syncFailed": "Synchronisation Échouée",
         "foundModels": "{{count}} modèles trouvés",
         "addedModels": "{{count}} nouveaux modèles ajoutés",
-        "noChanges": "Aucun changement détecté"
+        "noChanges": "Aucun changement détecté",
+        "updatedModels": "Updated {{count}} models",
+        "flaggedModels": "Flagged {{count}} models"
     },
     "validation": {
         "title": "Validation",
         "validating": "Validation des modèles...",
-        "complete": "Validation terminée"
+        "complete": "Validation terminée",
+        "failed": "Validation failed",
+        "progress": "Validating {{current}} of {{total}}",
+        "estimatedTime": "Estimated time: {{time}}"
     },
     "export": {
         "title": "Exporter les Modèles",
         "format": "Format",
-        "exportButton": "Exporter"
+        "exportButton": "Exporter",
+        "scope": "Scope",
+        "entireDatabase": "Entire Database",
+        "customFilter": "Custom Filter"
     },
     "import": {
         "title": "Importer des Modèles",
-        "importButton": "Importer"
+        "importButton": "Importer",
+        "description": "Import models from multiple sources. Supports CSV, TSV, JSON, XLSX formats.",
+        "dropzone": "Drag and drop your file here, or click to browse",
+        "supportedFormats": "Supported formats: JSON, CSV, TSV, XLSX",
+        "tabs": {
+            "file": "File Upload",
+            "url": "From URL",
+            "paste": "Paste"
+        },
+        "browse": "Browse Files",
+        "process": "Process File",
+        "enterUrl": "Enter URL",
+        "pasteData": "Paste Data",
+        "pastePlaceholder": "Paste JSON or CSV data here...",
+        "fetch": "Fetch from URL",
+        "preview": "Preview ({{count}} items found)"
     },
     "onboarding": {
         "welcome": "Bienvenue dans Model Database",
@@ -475,7 +525,12 @@
             "readyToSync": "Prêt à synchroniser",
             "connected": "Connecté et prêt",
             "notConnected": "Non connecté"
-        }
+        },
+        "completionTitle": "You're All Set!",
+        "completionDesc": "Your data sources are configured. Click \"Start Syncing\" to fetch models from your selected sources.",
+        "startSyncing": "Start Syncing",
+        "selectedSources": "Selected Sources",
+        "localAIStatus": "Local AI Status"
     },
     "flagged": {
         "title": "Modèles Signalés pour Approbation",
@@ -517,7 +572,28 @@
         "startValidation": "Valider {{count}} Modèles",
         "running": "En cours...",
         "eta": "Temps Restant",
-        "tokens": "Jetons"
+        "tokens": "Jetons",
+        "description": "Enrich and verify metadata using {{provider}} • {{model}}",
+        "filtersScope": "Filters & Scope",
+        "missing": "Missing",
+        "limitApplied": "Limit applied to validation candidates",
+        "ordering": {
+            "incomplete": "Most Incomplete First",
+            "recent": "Most Recent First",
+            "oldest": "Oldest First"
+        },
+        "validateModels": "Validate {{count}} Models",
+        "modelsVia": "Estimating for {{count}} models via {{provider}}",
+        "free": "Free",
+        "cancel": "Cancel",
+        "configureProvider": "Please configure a provider",
+        "successMessage": "Successfully sent {{count}} models for validation",
+        "failedMessage": "Validation request failed",
+        "batchSize": "Batch Size",
+        "pauseMs": "Pause (ms)",
+        "manualDelay": "Manual delay between batches",
+        "enabled": "Enabled",
+        "matchingFilters": "{{count}} matches"
     },
     "validationResults": {
         "title": "Résultats de Validation",
@@ -548,7 +624,27 @@
         "selectModels": "Sélectionner les Modèles à Valider",
         "deselectAll": "Tout Désélectionner",
         "selectAll": "Tout Sélectionner",
-        "incompleteWarning": "{{count}} modèles ont des informations incomplètes"
+        "incompleteWarning": "{{count}} modèles ont des informations incomplètes",
+        "selectIncomplete": "Select only incomplete models",
+        "modelsSelected": "{{count}} of {{total}} models selected",
+        "startIndividual": "Start Individual Validation",
+        "startDatabase": "Validate Database with AI",
+        "validatingDatabase": "Validating Database...",
+        "alerts": {
+            "unavailableTitle": "Validation Unavailable",
+            "unavailableMessage": "Database validation is not available.",
+            "providerRequiredTitle": "API Provider Required",
+            "providerRequiredMessage": "Please configure at least one API provider in the Sync settings before validating.",
+            "sourceRequiredTitle": "Validation Source Required",
+            "sourceRequiredMessage": "Please select at least one validation source.",
+            "modelsRequiredTitle": "Models Required",
+            "modelsRequiredMessage": "Please select at least one model to validate.",
+            "completeTitle": "Validation Complete",
+            "completeMessage": "Database validation completed successfully! {{count}} models were validated and updated.",
+            "failedTitle": "Validation Failed",
+            "failedMessage": "Database validation failed: {{error}}",
+            "errorTitle": "Validation Error"
+        }
     },
     "shortcutsModal": {
         "title": "Raccourcis Clavier",
@@ -650,8 +746,16 @@
             "benchmarks": "Benchmarks",
             "analytics": "Analytique"
         },
+        "licenseIPDeployment": "Licence, IP et Déploiement",
+        "dataProvenance": "Provenance des données",
+        "weights": "Poids disponibles",
+        "api": "API disponible",
+        "onPrem": "Compatible On-Premise",
+        "usageRestrictions": "Restrictions d'utilisation",
+        "tags": "Tags du Modèle",
         "links": {
-            "modelPage": "Page du Modèle"
+            "modelPage": "Page du Modèle",
+            "sources": "Sources et liens externes"
         },
         "licenseTipDefault": "Consultez les termes de la licence pour les droits commerciaux, l'attribution et les restrictions.",
         "licenseTips": {
@@ -664,8 +768,10 @@
             "CC-BY-NC": "Creative Commons Non Commercial. Usage commercial non autorisé sans permission.",
             "CC0": "Dédicace au domaine public. Gratuit pour tout usage sans attribution.",
             "OpenRAIL": "Licence IA Responsable. Des restrictions d'utilisation peuvent s'appliquer ; vérifier la variante.",
-            "Proprietary": "Licence spécifique au fournisseur. Vérifiez les termes pour l'usage commercial et la redistribution."
-        }
+            "Proprietary": "Licence spécifique au fournisseur. Vérifiez les termes pour l'usage commercial et la redistribution.",
+            "Unknown": "License information not available. Review the model page for details."
+        },
+        "gallery": "Gallery"
     },
     "modelEditor": {
         "title": "Modifier le Modèle : {{name}}",
@@ -742,21 +848,89 @@
             "commercialUse": "Usage Commercial",
             "attributionRequired": "Attribution Requise",
             "pricing": "Tarification (Entrée/Sortie par 1M)"
-        }
+        },
+        "comparing_count": "Comparing {{count}} models",
+        "tabs": {
+            "overview": "Overview",
+            "capabilities": "Capabilities",
+            "technical": "Technical Specs",
+            "pricing": "Pricing & Costs"
+        },
+        "downloads": "Downloads",
+        "license": "License",
+        "capability": "Capability",
+        "specification": "Specification",
+        "technical": {
+            "parameters": "Parameters",
+            "context": "Context Window",
+            "domain": "Domain"
+        },
+        "estimated_cost": "Estimated Cost",
+        "currency": "Currency",
+        "license_type": "License Type"
     },
     "errors": {
         "networkError": "Erreur réseau.",
-        "unknownError": "Une erreur inconnue s'est produite"
+        "unknownError": "Une erreur inconnue s'est produite",
+        "apiError": "API error: {{message}}",
+        "modelNotFound": "Model not found",
+        "invalidFormat": "Invalid format",
+        "importFailed": "Import failed: {{reason}}",
+        "exportFailed": "Export failed: {{reason}}",
+        "syncFailed": "Sync failed: {{reason}}",
+        "emptyUrl": "Please enter a URL",
+        "parseFile": "Failed to parse file: {{error}}",
+        "fetchError": "Failed to fetch or parse URL: {{error}}",
+        "emptyPaste": "Please paste some content",
+        "parsePaste": "Failed to parse pasted content: {{error}}",
+        "noDataToImport": "No valid data to import"
     },
     "updates": {
         "checking": "Recherche de mises à jour...",
-        "upToDate": "Vous êtes à jour!"
+        "upToDate": "Vous êtes à jour!",
+        "available": "Update available: v{{version}}",
+        "downloading": "Downloading update...",
+        "downloaded": "Update downloaded. Restart to install.",
+        "error": "Update check failed"
     },
     "console": {
         "title": "Console",
-        "clear": "Effacer"
+        "clear": "Effacer",
+        "copy": "Copy All"
     },
     "shortcuts": {
-        "title": "Raccourcis Clavier"
+        "title": "Raccourcis Clavier",
+        "search": "Focus Search",
+        "sync": "Sync Models",
+        "settings": "Open Settings",
+        "escape": "Close Modal / Deselect"
+    },
+    "modelDetail": {
+        "description": "Description",
+        "license": "License",
+        "hosting": "Hosting",
+        "weightsAvailable": "Weights Available",
+        "apiAvailable": "API Available",
+        "onPremiseFriendly": "On-Premise Friendly",
+        "parameters": "Parameters",
+        "contextWindow": "Context Window",
+        "pricing": "Pricing",
+        "tags": "Tags",
+        "source": "Source",
+        "lastUpdated": "Last Updated",
+        "releaseDate": "Release Date",
+        "viewOnSource": "View on {{source}}",
+        "editModel": "Edit Model",
+        "deleteModel": "Delete Model",
+        "licenseAndIP": "License & IP",
+        "benchmarks": "Benchmarks",
+        "analytics": "Analytics",
+        "linksAndDates": "Links & Dates"
+    },
+    "confirmations": {
+        "deleteModel": "Are you sure you want to delete this model?",
+        "deleteSelected": "Are you sure you want to delete {{count}} selected models?",
+        "resetDatabase": "Are you sure you want to reset the database? This cannot be undone.",
+        "unsavedChanges": "You have unsaved changes. Are you sure you want to leave?"
     }
 }

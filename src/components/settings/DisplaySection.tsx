@@ -27,7 +27,7 @@ export function DisplaySection() {
   const [renameValue, setRenameValue] = useState('');
   const [uploadFeedback, setUploadFeedback] = useState<{ type: 'success' | 'warning'; message: string } | null>(null);
 
-  const bgCard = 'border-zinc-800 bg-black';
+  const bgCard = 'border-border bg-bg-card';
 
   const allPresets = useMemo(() => [...SYSTEM_PRESETS, ...savedPresets], [savedPresets]);
 
@@ -178,10 +178,10 @@ export function DisplaySection() {
     <div className="space-y-6">
       <div>
         <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
-          <Palette size={20} className="text-zinc-500" />
+          <Palette size={20} className="text-text-secondary" />
           {t('settings.display.title')}
         </h3>
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+        <p className="text-sm text-text-secondary">
           {t('settings.display.description')}
         </p>
       </div>
@@ -189,7 +189,7 @@ export function DisplaySection() {
       {/* Language Settings */}
       <div className={`rounded-xl border p-4 ${bgCard}`}>
         <h4 className="font-medium mb-4 flex items-center gap-2">
-          <Globe size={16} className="text-zinc-500" />
+          <Globe size={16} className="text-text-secondary" />
           {t('settings.display.language')}
         </h4>
         <LanguageSelector />
@@ -201,7 +201,7 @@ export function DisplaySection() {
           <h4 className="font-medium">{t('settings.display.customColors')}</h4>
           <div className="flex items-center gap-2">
             {activePresetId && !activePreset.isSystem && (
-              <span className="text-[10px] text-zinc-500 bg-zinc-900 px-2 py-1 rounded border border-zinc-800">
+              <span className="text-[10px] text-text-subtle bg-bg-input px-2 py-1 rounded border border-border">
                 {t('settings.display.autoSaving')}
               </span>
             )}
@@ -214,7 +214,7 @@ export function DisplaySection() {
                   resetColors();
                 }
               }}
-              className="text-xs flex items-center gap-1 px-3 py-1.5 rounded border border-zinc-700 text-zinc-500 hover:text-zinc-300 transition-colors"
+              className="text-xs flex items-center gap-1 px-3 py-1.5 rounded border border-border text-text-secondary hover:text-text transition-colors"
               title={`${t('common.reset')} ${activePreset?.name || 'default'}`}
             >
               <RotateCcw size={12} /> {t('common.reset')}
@@ -231,12 +231,12 @@ export function DisplaySection() {
             { label: t('settings.display.textColor'), key: 'text', desc: t('settings.display.textColorDesc') },
             { label: t('settings.display.borderColor'), key: 'border', desc: t('settings.display.borderColorDesc') }
           ].map(({ label, key, desc }) => (
-            <div key={key} className="flex items-start gap-3 p-3 rounded-lg border border-zinc-800/50 bg-zinc-900/20">
+            <div key={key} className="flex items-start gap-3 p-3 rounded-lg border border-border/50 bg-bg-input/20">
               <input
                 type="color"
                 value={customColors[key as keyof typeof customColors] || '#000000'}
                 onChange={(e) => updateColor(key as keyof typeof customColors, e.target.value)}
-                className="rounded-lg border border-zinc-700 cursor-pointer shrink-0 shadow-sm transition-transform hover:scale-105"
+                className="rounded-lg border border-border cursor-pointer shrink-0 shadow-sm transition-transform hover:scale-105"
                 style={{
                   width: '48px',
                   height: '48px',
@@ -249,14 +249,14 @@ export function DisplaySection() {
               />
               <div className="flex-1 min-w-0">
                 <label className="block text-sm font-medium mb-0.5">{label}</label>
-                <p className="text-[10px] text-zinc-500 mb-2 truncate">{desc}</p>
+                <p className="text-[10px] text-text-subtle mb-2 truncate">{desc}</p>
                 <div className="flex items-center gap-2">
-                  <span className="text-zinc-500 text-xs font-mono select-none">#</span>
+                  <span className="text-text-subtle text-xs font-mono select-none">#</span>
                   <input
                     type="text"
                     value={(customColors[key as keyof typeof customColors] || '#000000').replace('#', '')}
                     onChange={(e) => updateColor(key as keyof typeof customColors, `#${e.target.value.replace('#', '')} `)}
-                    className="flex-1 bg-transparent text-xs font-mono text-zinc-300 focus:ring-0 focus:outline-none"
+                    className="flex-1 bg-transparent text-xs font-mono text-text-secondary focus:ring-0 focus:outline-none"
                     spellCheck={false}
                   />
                 </div>
@@ -279,16 +279,16 @@ export function DisplaySection() {
                     type="text"
                     value={renameValue}
                     onChange={(e) => setRenameValue(e.target.value)}
-                    className="bg-zinc-900 border border-zinc-700 px-2 py-1 rounded text-xs"
+                    className="bg-bg-input border border-border px-2 py-1 rounded text-xs"
                     autoFocus
                     onKeyDown={(e) => e.key === 'Enter' && handleRename()}
                   />
                   <button onClick={handleRename} className="p-1 hover:text-green-400"><Save size={14} /></button>
                 </div>
               ) : (
-                <button onClick={startRename} className="p-1 text-zinc-500 hover:text-zinc-300" title="Rename Preset"><Edit2 size={14} /></button>
+                <button onClick={startRename} className="p-1 text-text-subtle hover:text-text" title="Rename Preset"><Edit2 size={14} /></button>
               )}
-              <button onClick={() => deletePreset(activePreset.id)} className="p-1 text-zinc-500 hover:text-red-400" title="Delete Preset"><Trash2 size={14} /></button>
+              <button onClick={() => deletePreset(activePreset.id)} className="p-1 text-text-subtle hover:text-red-500" title="Delete Preset"><Trash2 size={14} /></button>
             </div>
           )}
         </div>
@@ -305,21 +305,21 @@ export function DisplaySection() {
               }))}
               ariaLabel={t('settings.display.stylePreset')}
             />
-            <p className="text-xs text-zinc-500 mt-2">
+            <p className="text-xs text-text-subtle mt-2">
               {t('settings.display.stylePresetHint')}
             </p>
           </div>
 
-          <div className="pt-2 border-t border-zinc-800/50">
+          <div className="pt-2 border-t border-border/50">
             <div className="flex items-center justify-between">
               <div>
                 <h5 className="text-sm font-medium mb-1">{t('settings.display.uploadNewStyle')}</h5>
-                <p className="text-xs text-zinc-500">{t('settings.display.uploadNewStyleHint')}</p>
+                <p className="text-xs text-text-subtle">{t('settings.display.uploadNewStyleHint')}</p>
               </div>
               <div className="flex items-center gap-2">
                 <button
                   onClick={handleDownloadTemplate}
-                  className="text-xs flex items-center gap-2 text-zinc-400 hover:text-zinc-200 px-3 py-2 rounded-lg transition-all hover:bg-zinc-800"
+                  className="text-xs flex items-center gap-2 text-text-secondary hover:text-text px-3 py-2 rounded-lg transition-all hover:bg-bg-input"
                   title="Download formatting template"
                 >
                   <Download size={14} />
@@ -334,7 +334,7 @@ export function DisplaySection() {
                 />
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="text-xs flex items-center gap-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 hover:border-zinc-600 px-3 py-2 rounded-lg transition-all"
+                  className="text-xs flex items-center gap-2 bg-bg-input hover:bg-accent/10 border border-border px-3 py-2 rounded-lg transition-all"
                 >
                   <Upload size={14} />
                   {t('settings.display.uploadCSS')}
@@ -408,7 +408,7 @@ export function DisplaySection() {
                 <div className="font-medium text-sm">
                   {option.label}
                 </div>
-                <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
+                <p className="text-xs text-text-secondary mt-1">
                   {option.description}
                 </p>
               </div>

@@ -136,7 +136,7 @@ function AIModelDBContent() {
           hasUpdate={updateState.updateAvailable}
         />
 
-        <div className="w-full px-4 py-3 pb-6 sticky top-8 z-30 bg-black">
+        <div className="w-full px-4 py-3 pb-6 sticky top-8 z-30 bg-bg">
           <Toolbar
             isSyncing={syncState.isSyncing}
             syncProgress={syncState.syncProgress}
