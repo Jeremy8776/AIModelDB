@@ -2,7 +2,7 @@
   "name": "ai-model-db",
   "productName": "AI Model DB",
   "private": true,
-  "version": "0.4.8",
+  "version": "0.4.9",
   "description": "A comprehensive database for tracking and managing AI models across multiple providers",
   "author": "AI Model DB",
   "license": "MIT",

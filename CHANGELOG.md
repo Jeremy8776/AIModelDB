@@ -2,7 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.4.7] - 2026-01-25
+
+## [0.4.9] - 2026-01-25
+
+### Added
+- **Global Ignore List**: Implemented `ignoredModels` setting to prevent deleted models from reappearing during subsequent syncs.
+
+### Fixed
+- **Undo Logic**: Fixed erratic behavior in the "Undo Delete" toast timer when other UI updates occurred.
+- **UI Polish**: Resolved duplicate "Checking for updates..." status indicators appearing simultaneously in settings and global notifications.
+
 
 ### Fixed
 - **Linux Build**: Fixed build failure on Linux environments caused by case-sensitivity mismatch in imports (`./ui` vs `./UI`).
