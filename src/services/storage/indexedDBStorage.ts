@@ -17,14 +17,25 @@ import { loggers } from '../../utils/logger';
 const logger = loggers.storage;
 
 const DB_NAME = 'aiModelDB';
-const DB_VERSION = 1;
+const DB_VERSION = 2; // Incremented for history support
 const MODELS_STORE = 'models';
 const METADATA_STORE = 'metadata';
+const HISTORY_STORE = 'history';
 
 interface StorageMetadata {
     key: string;
     value: string;
     updatedAt: string;
+}
+
+export interface HistoryEntry {
+    id: string;
+    timestamp: number;
+    dateStr: string;
+    modelCount: number;
+    description: string;
+    sizeBytes: number;
+    models: Model[]; // Stored directly in the entry
 }
 
 let dbInstance: IDBDatabase | null = null;
@@ -71,6 +82,13 @@ async function openDatabase(): Promise<IDBDatabase> {
             if (!db.objectStoreNames.contains(METADATA_STORE)) {
                 db.createObjectStore(METADATA_STORE, { keyPath: 'key' });
                 logger.debug('Metadata store created');
+            }
+
+            // Create history store for snapshots
+            if (!db.objectStoreNames.contains(HISTORY_STORE)) {
+                const historyStore = db.createObjectStore(HISTORY_STORE, { keyPath: 'id' });
+                historyStore.createIndex('timestamp', 'timestamp', { unique: false });
+                logger.debug('History store created');
             }
         };
     });
@@ -370,6 +388,96 @@ export async function deleteDatabase(): Promise<void> {
 
         request.onsuccess = () => {
             logger.info('Database deleted successfully');
+            resolve();
+        };
+    });
+}
+
+/**
+ * Save a snapshot to history
+ */
+export async function saveSnapshot(item: HistoryEntry): Promise<void> {
+    const db = await openDatabase();
+
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction([HISTORY_STORE], 'readwrite');
+        const store = transaction.objectStore(HISTORY_STORE);
+        const request = store.put(item);
+
+        request.onerror = () => {
+            reject(request.error);
+        };
+
+        request.onsuccess = () => {
+            resolve();
+        };
+    });
+}
+
+/**
+ * Get all history snapshots
+ */
+export async function getSnapshots(): Promise<HistoryEntry[]> {
+    const db = await openDatabase();
+
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction([HISTORY_STORE], 'readonly');
+        const store = transaction.objectStore(HISTORY_STORE);
+        const request = store.getAll();
+
+        request.onerror = () => {
+            reject(request.error);
+        };
+
+        request.onsuccess = () => {
+            const results = request.result as HistoryEntry[];
+            if (results) {
+                results.sort((a, b) => b.timestamp - a.timestamp);
+                resolve(results);
+            } else {
+                resolve([]);
+            }
+        };
+    });
+}
+
+/**
+ * Delete a snapshot
+ */
+export async function deleteSnapshot(id: string): Promise<void> {
+    const db = await openDatabase();
+
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction([HISTORY_STORE], 'readwrite');
+        const store = transaction.objectStore(HISTORY_STORE);
+        const request = store.delete(id);
+
+        request.onerror = () => {
+            reject(request.error);
+        };
+
+        request.onsuccess = () => {
+            resolve();
+        };
+    });
+}
+
+/**
+ * Clear all snapshots
+ */
+export async function clearSnapshots(): Promise<void> {
+    const db = await openDatabase();
+
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction([HISTORY_STORE], 'readwrite');
+        const store = transaction.objectStore(HISTORY_STORE);
+        const request = store.clear();
+
+        request.onerror = () => {
+            reject(request.error);
+        };
+
+        request.onsuccess = () => {
             resolve();
         };
     });

@@ -98,6 +98,7 @@ export function useDashboardController() {
         closeValidationModal,
         validateEntireDatabase,
         isLoading,
+        isSaving,
         loadingProgress,
         validationProgress,
         setLastMergeStats
@@ -412,6 +413,7 @@ export function useDashboardController() {
         closeValidationModal,
         validateEntireDatabase,
         isLoading,
+        isSaving,
         loadingProgress,
         validationProgress,
 

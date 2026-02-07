@@ -1,94 +1,106 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Model } from '../types';
+import {
+    saveSnapshot as saveToIDB,
+    getSnapshots as getFromIDB,
+    deleteSnapshot as deleteFromIDB,
+    clearSnapshots as clearFromIDB,
+    HistoryEntry
+} from '../services/storage/indexedDBStorage';
 
-export interface HistoryItem {
-    id: string;
-    timestamp: number;
-    dateStr: string;
-    modelCount: number;
-    description: string;
-    sizeBytes: number;
-}
+// Re-export for components
+export type { HistoryEntry as HistoryItem };
 
-const HISTORY_KEY_PREFIX = 'aiModelDB_history_';
-const INDEX_KEY = 'aiModelDB_history_index';
 const MAX_SNAPSHOTS = 5;
 
 export function useSyncHistory() {
-    const [history, setHistory] = useState<HistoryItem[]>([]);
+    const [history, setHistory] = useState<HistoryEntry[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
-    useEffect(() => {
-        loadIndex();
+    const loadHistory = useCallback(async () => {
+        try {
+            const items = await getFromIDB();
+            // We map to ensure we have the right shape, though currently they are the same
+            setHistory(items);
+        } catch (e) {
+            console.error("Failed to load history", e);
+        } finally {
+            setIsLoading(false);
+        }
     }, []);
 
-    const loadIndex = () => {
-        try {
-            const raw = localStorage.getItem(INDEX_KEY);
-            if (raw) {
-                setHistory(JSON.parse(raw));
-            }
-        } catch (e) {
-            console.error("Failed to load history index", e);
-        }
-    };
+    useEffect(() => {
+        loadHistory();
+    }, [loadHistory]);
 
-    const saveSnapshot = (models: Model[], description: string) => {
+    const saveSnapshot = useCallback(async (models: Model[], description: string) => {
         try {
             const timestamp = Date.now();
             const id = crypto.randomUUID();
-            const item: HistoryItem = {
+            const item: HistoryEntry = {
                 id,
                 timestamp,
                 dateStr: new Date(timestamp).toLocaleString(),
                 modelCount: models.length,
                 description,
-                sizeBytes: new Blob([JSON.stringify(models)]).size
+                sizeBytes: new Blob([JSON.stringify(models)]).size,
+                models: models
             };
 
-            // Save actual data
-            localStorage.setItem(`${HISTORY_KEY_PREFIX}${id}`, JSON.stringify(models));
+            await saveToIDB(item);
 
-            // Update index
-            const all = [item, ...history];
-            const kept = all.slice(0, MAX_SNAPSHOTS);
-            const dropped = all.slice(MAX_SNAPSHOTS);
+            // Maintain max limit
+            const current = await getFromIDB();
+            if (current.length > MAX_SNAPSHOTS) {
+                // Remove oldest (last in list because getFromIDB sorts desc)
+                const toRemove = current.slice(MAX_SNAPSHOTS);
+                for (const old of toRemove) {
+                    await deleteFromIDB(old.id);
+                }
+            }
 
-            dropped.forEach(d => localStorage.removeItem(`${HISTORY_KEY_PREFIX}${d.id}`));
-
-            localStorage.setItem(INDEX_KEY, JSON.stringify(kept));
-            setHistory(kept);
-
+            await loadHistory();
         } catch (e) {
-            console.error("Failed to save snapshot. LocalStorage properly full.", e);
+            console.error("Failed to save snapshot", e);
         }
-    };
+    }, [loadHistory]);
 
-    const restoreSnapshot = (id: string): Model[] | null => {
+    const restoreSnapshot = useCallback(async (id: string): Promise<Model[] | null> => {
         try {
-            const raw = localStorage.getItem(`${HISTORY_KEY_PREFIX}${id}`);
-            if (raw) return JSON.parse(raw);
+            // Since we loaded everything into state/IDB, we might already have it in history state
+            // But to be safe/consistent with async nature, we can grab it from state or DB.
+            // Since getAll returns full objects including models, 'history' state has them.
+            const found = history.find(h => h.id === id);
+            if (found) return found.models;
+
+            // Fallback reload
+            const all = await getFromIDB();
+            const fresh = all.find(h => h.id === id);
+            return fresh ? fresh.models : null;
         } catch (e) {
             console.error("Failed to restore", e);
+            return null;
         }
-        return null;
-    };
+    }, [history]);
 
-    const clearHistory = () => {
-        history.forEach(h => localStorage.removeItem(`${HISTORY_KEY_PREFIX}${h.id}`));
-        localStorage.removeItem(INDEX_KEY);
-        setHistory([]);
-    };
+    const clearHistory = useCallback(async () => {
+        try {
+            await clearFromIDB();
+            setHistory([]);
+        } catch (e) {
+            console.error("Failed to clear history", e);
+        }
+    }, []);
 
-    const deleteSnapshot = (id: string) => {
-        const target = history.find(h => h.id === id);
-        if (!target) return;
+    const deleteSnapshot = useCallback(async (id: string) => {
+        try {
+            await deleteFromIDB(id);
+            await loadHistory();
+        } catch (e) {
+            console.error("Failed to delete snapshot", e);
+        }
+    }, [loadHistory]);
 
-        localStorage.removeItem(`${HISTORY_KEY_PREFIX}${id}`);
-        const newHistory = history.filter(h => h.id !== id);
-        localStorage.setItem(INDEX_KEY, JSON.stringify(newHistory));
-        setHistory(newHistory);
-    };
-
-    return { history, saveSnapshot, restoreSnapshot, clearHistory, deleteSnapshot };
+    return { history, isLoading, saveSnapshot, restoreSnapshot, clearHistory, deleteSnapshot };
 }

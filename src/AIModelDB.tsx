@@ -96,6 +96,7 @@ function AIModelDBContent() {
     handleToggleFavorite,
     handleToggleNSFWFlag,
     handleToggleImageNSFW,
+    isSaving,
   } = controller;
 
   // Loading screen
@@ -127,7 +128,7 @@ function AIModelDBContent() {
           query={uiState.query}
           onQueryChange={uiState.setQuery}
           searchRef={searchRef}
-          isSyncing={syncState.isSyncing}
+          isSyncing={syncState.isSyncing || isSaving}
           onSync={handleSyncWithApiCheck}
           onAddModel={() => modalState.setShowAddModel(true)}
           onImport={() => modalState.setShowImport(true)}
@@ -138,7 +139,7 @@ function AIModelDBContent() {
 
         <div className="w-full px-4 py-3 pb-6 sticky top-8 z-30 bg-bg">
           <Toolbar
-            isSyncing={syncState.isSyncing}
+            isSyncing={syncState.isSyncing || isSaving}
             syncProgress={syncState.syncProgress}
             lastSync={syncState.lastSync}
             pageItems={pageItems}

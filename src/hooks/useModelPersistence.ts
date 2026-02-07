@@ -25,9 +25,12 @@ export function useModelPersistence() {
     const [models, setModels] = useState<Model[]>([]);
     const [lastSync, setLastSync] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [isSaving, setIsSaving] = useState(false);
     const [loadingProgress, setLoadingProgress] = useState<{ current: number; total: number } | null>(null);
     const [apiConfig, setApiConfig] = useState<ApiDir>(DEFAULT_API_DIR);
     const [storageType, setStorageType] = useState<'indexeddb' | 'localstorage'>('indexeddb');
+
+    const lastSavedModels = useRef<Model[]>([]);
 
     const initialized = useRef(false);
     const pendingSave = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -165,9 +168,55 @@ export function useModelPersistence() {
         loadModels();
     }, [loadFromIndexedDB, loadFromLocalStorage]);
 
+    // Internal save function to centralize logic
+    const saveModelsInternal = useCallback(async (modelsToSave: Model[]) => {
+        if (!initialized.current) return;
+
+        setIsSaving(true);
+        try {
+            if (storageType === 'indexeddb') {
+                await saveModelsToIDB(modelsToSave);
+                console.log(`[Persistence] Saved ${modelsToSave.length} models to IndexedDB`);
+            } else {
+                // Fall back to localStorage (will fail if data is too large)
+                try {
+                    localStorage.setItem('aiModelDB_models', JSON.stringify(modelsToSave));
+                } catch (quotaError) {
+                    console.error('[Persistence] localStorage quota exceeded, attempting IndexedDB migration');
+                    // Try to upgrade to IndexedDB
+                    const idbAvailable = await isIndexedDBAvailable();
+                    if (idbAvailable) {
+                        await saveModelsToIDB(modelsToSave);
+                        setStorageType('indexeddb');
+                        console.log('[Persistence] Migrated to IndexedDB after localStorage quota exceeded');
+                    } else {
+                        throw quotaError;
+                    }
+                }
+            }
+            lastSavedModels.current = modelsToSave;
+        } catch (error) {
+            console.error('Error saving models:', error);
+        } finally {
+            setIsSaving(false);
+        }
+    }, [storageType]);
+
+    // Public manual save function to bypass debounce
+    const saveModelsNow = useCallback(async (modelsOverride?: Model[]) => {
+        if (pendingSave.current) {
+            clearTimeout(pendingSave.current);
+            pendingSave.current = null;
+        }
+        await saveModelsInternal(modelsOverride || models);
+    }, [models, saveModelsInternal]);
+
     // Save models whenever they change (debounced)
     useEffect(() => {
         if (!initialized.current) return;
+
+        // Skip if nothing changed (reference check) or if we just saved this exact data
+        if (models === lastSavedModels.current) return;
 
         // Clear any pending save
         if (pendingSave.current) {
@@ -175,31 +224,8 @@ export function useModelPersistence() {
         }
 
         // Debounce saves to avoid excessive writes
-        pendingSave.current = setTimeout(async () => {
-            try {
-                if (storageType === 'indexeddb') {
-                    await saveModelsToIDB(models);
-                    console.log(`[Persistence] Saved ${models.length} models to IndexedDB`);
-                } else {
-                    // Fall back to localStorage (will fail if data is too large)
-                    try {
-                        localStorage.setItem('aiModelDB_models', JSON.stringify(models));
-                    } catch (quotaError) {
-                        console.error('[Persistence] localStorage quota exceeded, attempting IndexedDB migration');
-                        // Try to upgrade to IndexedDB
-                        const idbAvailable = await isIndexedDBAvailable();
-                        if (idbAvailable) {
-                            await saveModelsToIDB(models);
-                            setStorageType('indexeddb');
-                            console.log('[Persistence] Migrated to IndexedDB after localStorage quota exceeded');
-                        } else {
-                            throw quotaError;
-                        }
-                    }
-                }
-            } catch (error) {
-                console.error('Error saving models:', error);
-            }
+        pendingSave.current = setTimeout(() => {
+            saveModelsInternal(models);
         }, 500);
 
         return () => {
@@ -207,7 +233,7 @@ export function useModelPersistence() {
                 clearTimeout(pendingSave.current);
             }
         };
-    }, [models, storageType]);
+    }, [models, saveModelsInternal]);
 
     // Save lastSync when it changes
     useEffect(() => {
@@ -305,12 +331,14 @@ export function useModelPersistence() {
         lastSync,
         setLastSync,
         isLoading,
+        isSaving,
         loadingProgress,
         apiConfig,
         setApiConfig,
         clearAllModels,
         resetToDefault,
         hardResetDatabase,
-        storageType // Expose for debugging/UI display
+        storageType,
+        saveModelsNow
     };
 }

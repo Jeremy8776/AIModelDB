@@ -7,7 +7,8 @@ import { performMergeBatch } from '../utils/mergeLogic';
 
 export function useModelMerge(
     models: Model[],
-    setModels: React.Dispatch<React.SetStateAction<Model[]>>
+    setModels: React.Dispatch<React.SetStateAction<Model[]>>,
+    onSaveModelsNow?: (models: Model[]) => Promise<void>
 ) {
     const { settings } = useSettings();
     const [lastMergeStats, setLastMergeStats] = useState<{ added: number; updated: number; duplicates?: number } | null>(null);
@@ -24,6 +25,7 @@ export function useModelMerge(
                 if (type === 'MERGE_COMPLETE') {
                     const { models: newModels, added, updated, duplicates } = payload;
                     setModels(newModels);
+                    if (onSaveModelsNow) onSaveModelsNow(newModels);
                     setLastMergeStats({ added, updated, duplicates });
                 } else if (type === 'ERROR') {
                     console.error('Worker error:', error);
@@ -37,7 +39,7 @@ export function useModelMerge(
         } catch (error) {
             console.error("Failed to initialize model processor worker:", error);
         }
-    }, [setModels]);
+    }, [setModels, onSaveModelsNow]);
 
     const modelsRef = useRef(models);
     useEffect(() => {
@@ -65,6 +67,7 @@ export function useModelMerge(
                     settings.autoMergeDuplicates ?? false
                 );
                 setModels(result.models);
+                if (onSaveModelsNow) onSaveModelsNow(result.models);
                 setLastMergeStats({
                     added: result.added,
                     updated: result.updated,
@@ -100,6 +103,7 @@ export function useModelMerge(
                     settings.autoMergeDuplicates ?? false
                 );
                 setModels(result.models);
+                if (onSaveModelsNow) onSaveModelsNow(result.models);
                 setLastMergeStats({
                     added: result.added,
                     updated: result.updated,

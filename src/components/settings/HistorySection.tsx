@@ -21,9 +21,9 @@ export function HistorySection({ currentModels, onRestore, addConsoleLog }: Hist
         addConsoleLog(t('settings.history.createdManual'));
     };
 
-    const handleRestore = (item: HistoryItem) => {
+    const handleRestore = async (item: HistoryItem) => {
         if (window.confirm(t('settings.history.confirmRestore', { date: item.dateStr }))) {
-            const models = restoreSnapshot(item.id);
+            const models = await restoreSnapshot(item.id);
             if (models) {
                 onRestore(models);
                 addConsoleLog(t('settings.history.restored', { desc: item.description }));

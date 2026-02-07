@@ -24,7 +24,11 @@ export function useModels() {
   // Compose hooks
   const persistence = useModelPersistence();
   const crud = useModelCRUD(persistence.setModels);
-  const merge = useModelMerge(persistence.models, persistence.setModels);
+  const merge = useModelMerge(
+    persistence.models,
+    persistence.setModels,
+    persistence.saveModelsNow
+  );
   const validation = useModelValidation(
     persistence.models,
     persistence.setModels,
@@ -44,6 +48,8 @@ export function useModels() {
     setModels: persistence.setModels,
     lastSync: persistence.lastSync,
     setLastSync: persistence.setLastSync,
+    isSaving: persistence.isSaving,
+    saveModelsNow: persistence.saveModelsNow,
     isLoading: persistence.isLoading,
     loadingProgress: persistence.loadingProgress,
     apiConfig: persistence.apiConfig,
