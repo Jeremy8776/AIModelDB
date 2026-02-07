@@ -3,6 +3,20 @@
 All notable changes to this project will be documented in this file.
 
 
+## [0.5.0] - 2026-02-07
+
+### Fixed
+- **Data Persistence**: Fixed critical issue where synced data or manual snapshots would revert on app restart if the app was closed too quickly after syncing.
+  - Implemented immediate persistence (`saveModelsNow`) that bypasses the debounced save, ensuring data is written to IndexedDB before the app can close.
+  - Merge operations (sync, import) now trigger immediate saves upon completion.
+- **Snapshot Storage**: Migrated snapshot history from `localStorage` to `IndexedDB` for reliable persistence of larger datasets that exceeded localStorage limits.
+
+### Changed
+- **Database Schema**: Upgraded IndexedDB schema to version 2, adding a dedicated `history` store for snapshots.
+- **UI Feedback**: The sync indicator now remains active while data is being written to the database, providing visual confirmation that it's safe to close the app.
+
+---
+
 ## [0.4.9] - 2026-01-25
 
 ### Added
