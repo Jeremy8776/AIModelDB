@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 
 
+## [0.5.1] - 2026-02-08
+
+### Fixed
+- **Critical Persistence Bug**: Fixed issue where synced models would not persist after closing and reopening the app.
+  - Fixed race condition in `useModelMerge` where the Web Worker was being recreated on every model change due to callback dependencies, causing save operations to silently fail.
+  - Improved IndexedDB `saveModels` to use `put()` instead of `add()` and properly track write errors.
+  - Added save-on-unmount behavior to ensure pending debounced saves complete when the app closes.
+  - Added `beforeunload` safety handler with localStorage backup for critical data.
+
+---
+
 ## [0.5.0] - 2026-02-07
 
 ### Fixed
