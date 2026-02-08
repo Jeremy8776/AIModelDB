@@ -134,14 +134,29 @@ export async function saveModels(models: Model[]): Promise<void> {
         // Clear existing data and add all models
         const clearRequest = store.clear();
 
+        clearRequest.onerror = () => {
+            logger.error('Failed to clear models store:', clearRequest.error);
+        };
+
         clearRequest.onsuccess = () => {
             // Add all models in the same transaction
+            // Use put() instead of add() to handle any duplicate IDs gracefully
+            let addErrors = 0;
             for (const model of models) {
                 try {
-                    store.add(model);
+                    const putRequest = store.put(model);
+                    putRequest.onerror = () => {
+                        addErrors++;
+                        logger.warn('Failed to add model:', model.id, putRequest.error);
+                    };
                 } catch (err) {
+                    addErrors++;
                     logger.warn('Failed to add model:', model.id, err);
                 }
+            }
+            // Transaction oncomplete will fire after all operations are done
+            if (addErrors > 0) {
+                logger.warn(`${addErrors} models failed to save`);
             }
         };
     });

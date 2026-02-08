@@ -211,6 +211,12 @@ export function useModelPersistence() {
         await saveModelsInternal(modelsOverride || models);
     }, [models, saveModelsInternal]);
 
+    // Track the current models for cleanup to ensure we save on unmount
+    const modelsForCleanupRef = useRef(models);
+    useEffect(() => {
+        modelsForCleanupRef.current = models;
+    }, [models]);
+
     // Save models whenever they change (debounced)
     useEffect(() => {
         if (!initialized.current) return;
@@ -231,6 +237,13 @@ export function useModelPersistence() {
         return () => {
             if (pendingSave.current) {
                 clearTimeout(pendingSave.current);
+                pendingSave.current = null;
+                // CRITICAL: Don't just cancel - save the data immediately!
+                // This ensures data isn't lost when the app closes
+                if (modelsForCleanupRef.current !== lastSavedModels.current) {
+                    // Fire and forget - we're unmounting so can't await
+                    saveModelsInternal(modelsForCleanupRef.current);
+                }
             }
         };
     }, [models, saveModelsInternal]);
@@ -324,6 +337,40 @@ export function useModelPersistence() {
             window.removeEventListener('hard-reset', onHardReset as EventListener);
         };
     }, [hardResetDatabase]);
+
+    // CRITICAL: Save any pending data before the window closes
+    useEffect(() => {
+        const handleBeforeUnload = () => {
+            // If there's a pending save, execute it immediately
+            if (pendingSave.current) {
+                clearTimeout(pendingSave.current);
+                pendingSave.current = null;
+            }
+            // Always save the current state on unload
+            if (initialized.current && modelsForCleanupRef.current !== lastSavedModels.current) {
+                // Use synchronous localStorage as a backup since async operations may not complete
+                try {
+                    // Primary: Fire the async save (may or may not complete)
+                    saveModelsInternal(modelsForCleanupRef.current);
+
+                    // Backup: Also save to localStorage synchronously for critical data
+                    // This ensures at least some persistence if the async operation doesn't complete
+                    const modelsJson = JSON.stringify(modelsForCleanupRef.current.slice(0, 100)); // First 100 models
+                    if (modelsJson.length < 4 * 1024 * 1024) { // Only if under 4MB
+                        localStorage.setItem('aiModelDB_models_backup', modelsJson);
+                        localStorage.setItem('aiModelDB_models_backup_timestamp', Date.now().toString());
+                    }
+                } catch (e) {
+                    console.error('[Persistence] Failed to save on beforeunload:', e);
+                }
+            }
+        };
+
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => {
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+        };
+    }, [saveModelsInternal]);
 
     return {
         models,

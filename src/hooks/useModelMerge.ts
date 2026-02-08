@@ -14,9 +14,21 @@ export function useModelMerge(
     const [lastMergeStats, setLastMergeStats] = useState<{ added: number; updated: number; duplicates?: number } | null>(null);
     const workerRef = useRef<Worker | null>(null);
 
+    // Use ref to track the save callback so we don't recreate the worker when it changes
+    const saveCallbackRef = useRef(onSaveModelsNow);
+    useEffect(() => {
+        saveCallbackRef.current = onSaveModelsNow;
+    }, [onSaveModelsNow]);
+
+    // Use ref to track setModels to avoid recreating worker
+    const setModelsRef = useRef(setModels);
+    useEffect(() => {
+        setModelsRef.current = setModels;
+    }, [setModels]);
+
     useEffect(() => {
         try {
-            // Initialize the worker
+            // Initialize the worker ONCE - don't depend on callbacks that change frequently
             workerRef.current = new Worker(new URL('../workers/modelProcessor.worker.ts', import.meta.url), { type: 'module' });
 
             // Set up listener for worker responses
@@ -24,8 +36,11 @@ export function useModelMerge(
                 const { type, payload, error } = event.data;
                 if (type === 'MERGE_COMPLETE') {
                     const { models: newModels, added, updated, duplicates } = payload;
-                    setModels(newModels);
-                    if (onSaveModelsNow) onSaveModelsNow(newModels);
+                    setModelsRef.current(newModels);
+                    // Use the ref to get the current callback
+                    if (saveCallbackRef.current) {
+                        saveCallbackRef.current(newModels);
+                    }
                     setLastMergeStats({ added, updated, duplicates });
                 } else if (type === 'ERROR') {
                     console.error('Worker error:', error);
@@ -39,7 +54,7 @@ export function useModelMerge(
         } catch (error) {
             console.error("Failed to initialize model processor worker:", error);
         }
-    }, [setModels, onSaveModelsNow]);
+    }, []); // Empty deps - worker is created once and uses refs for callbacks
 
     const modelsRef = useRef(models);
     useEffect(() => {
