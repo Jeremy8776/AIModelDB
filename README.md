@@ -67,24 +67,56 @@
 
 ## Screenshots
 
-<!-- Add your screenshots here -->
-<p align="center">
-  <img src="docs/screenshots/main-view.png" alt="Main View" width="800">
-  <br>
-  <em>Main database view with model cards</em>
-</p>
-
-<p align="center">
-  <img src="docs/screenshots/settings.png" alt="Settings" width="800">
-  <br>
-  <em>Settings panel with API configuration</em>
-</p>
-
-<p align="center">
-  <img src="docs/screenshots/sync.png" alt="Sync Progress" width="800">
-  <br>
-  <em>Real-time sync from multiple sources</em>
-</p>
+<table width="100%">
+  <tr>
+    <td width="50%" align="center">
+      <img src="docs/screenshots/main-view.png" alt="Main View" width="100%">
+      <br>
+      <em>Main database view</em>
+    </td>
+    <td width="50%" align="center">
+      <img src="docs/screenshots/Details-panel.png" alt="Model Details" width="100%">
+      <br>
+      <em>Detailed model panel</em>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="docs/screenshots/Validate-Models.png" alt="Model Validation" width="100%">
+      <br>
+      <em>AI model validation</em>
+    </td>
+    <td align="center">
+      <img src="docs/screenshots/sync.png" alt="Sync Progress" width="100%">
+      <br>
+      <em>Multi-source sync</em>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="docs/screenshots/Details-image-prev.png" alt="Image Preview" width="100%">
+      <br>
+      <em>Image generation preview</em>
+    </td>
+    <td align="center">
+      <img src="docs/screenshots/Add-manual.png" alt="Add Model" width="100%">
+      <br>
+      <em>Manual model entry</em>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="docs/screenshots/Import.png" alt="Import Models" width="100%">
+      <br>
+      <em>Bulk import tools</em>
+    </td>
+    <td align="center">
+      <img src="docs/screenshots/settings.png" alt="Settings" width="100%">
+      <br>
+      <em>Global settings & APIs</em>
+    </td>
+  </tr>
+</table>
 
 ---
 
