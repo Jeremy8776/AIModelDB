@@ -96,7 +96,7 @@
     <td align="center">
       <img src="docs/screenshots/Details-image-prev.png" alt="Image Preview" width="100%">
       <br>
-      <em>Image generation preview</em>
+      <em>Image Model Preview</em>
     </td>
     <td align="center">
       <img src="docs/screenshots/Add-manual.png" alt="Add Model" width="100%">
