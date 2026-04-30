@@ -5,7 +5,7 @@
 <h1 align="center">AI Model DB</h1>
 
 <p align="center">
-  <strong>The ultimate desktop app for tracking, managing, and validating AI models</strong>
+  <strong>The registry and directory for AI models, providers, capabilities, and ecosystem metadata</strong>
 </p>
 
 <p align="center">
@@ -25,6 +25,22 @@
     <img src="https://img.shields.io/badge/License-MIT-3b82f6?style=for-the-badge" alt="License">
   </a>
 </p>
+
+---
+
+## Part of the DataCert AI Ecosystem
+
+AI Model DB is the registry layer in a three-repo local AI stack:
+
+| System | Role |
+|--------|------|
+| **AI Model DB** | Registry and directory for models, providers, capabilities, MCP servers, skills, and install metadata |
+| **Context Engine** | Context control plane for memory, rules, skills, modes, generated manifests, and cross-tool deployment |
+| **DRAM** | Runtime orchestration layer for API daemons, local models, hosted model calls, routing, logs, queues, and process health |
+
+> AI Model DB knows what exists. Context Engine decides what context is active. DRAM runs and routes the systems that execute it.
+
+See [docs/ECOSYSTEM.md](docs/ECOSYSTEM.md) for the system boundaries.
 
 ---
 
