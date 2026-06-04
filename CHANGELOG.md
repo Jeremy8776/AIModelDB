@@ -3,6 +3,32 @@
 All notable changes to this project will be documented in this file.
 
 
+## [Unreleased]
+
+### Added
+- **User-Edit Protection in Sync**: Manual edits in the model editor are now preserved when syncing fresh data from upstream sources.
+  - New `Model.editedFields` array tracks which top-level fields the user manually modified. Listed fields are bypassed during merge.
+  - `ModelEditor` records every field the user touches and unions it into `editedFields` on save. Nested paths like `license.name` protect the whole `license` object.
+  - Existing models without `editedFields` continue to merge under the new V3 strategy (no migration required).
+- **CI Lint + Unit Test gates**: `npm run lint` and `npm test` now run on every push/PR alongside the existing TypeScript and build checks.
+
+### Changed
+- **Merge Strategy (V3)**: Rewrote `mergeRecords` to favor fresh incoming data instead of the previous "earliest release date wins" heuristic.
+  - Dynamic fields (`parameters`, `context_window`, `description`, `license`, etc.) now take the incoming value unless protected by `editedFields`.
+  - Identity fields (`id`, `name`, `provider`) still anchor to the existing record.
+  - Descriptions now prefer non-CJK over CJK regardless of direction — surfaces English content to users when both languages are available.
+- **`performMergeBatch` counter**: Simplified — any matched record counts as `updated`. The previous gate required both `description` and `parameters` to be filled post-merge, silently undercounting real updates.
+
+### Fixed
+- **Pricing accumulation in merge**: `mergeRecords` now actually merges `pricing[]` from both records (with composite-key dedupe). Previous code silently dropped incoming pricing entries.
+- **Seven failing unit tests**: All format normalization and merge-logic test failures resolved. Test suite now 229/229 passing.
+
+### Internal
+- Untracked `lint-results.json`, `sync-lint.json`, `tsconfig.tsbuildinfo` (now gitignored).
+- Renamed `eslint.config.js` → `eslint.config.mjs` to silence Node's `MODULE_TYPELESS_PACKAGE_JSON` reparse warning on every lint run.
+
+---
+
 ## [0.5.1] - 2026-02-08
 
 ### Fixed

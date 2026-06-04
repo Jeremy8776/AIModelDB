@@ -51,5 +51,8 @@ lint-results.json
 sync-lint.json
 tsconfig.tsbuildinfo
 
+# Claude Code local state
+.claude/
+
 # Agent files
 

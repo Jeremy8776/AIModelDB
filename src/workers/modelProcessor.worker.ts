@@ -1,7 +1,6 @@
 import { performMergeBatch } from '../utils/mergeLogic';
 import { Model } from '../types';
 
-/* eslint-disable no-restricted-globals */
 const ctx: Worker = self as any;
 
 type WorkerMessage =

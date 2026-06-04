@@ -25,9 +25,9 @@ const adjustColor = (color: string, amount: number) => {
   const clamp = (val: number) => Math.min(Math.max(val, 0), 255);
   const removeHash = color.replace('#', '');
   const num = parseInt(removeHash, 16);
-  let r = (num >> 16) + amount;
-  let g = ((num >> 8) & 0x00FF) + amount;
-  let b = (num & 0x0000FF) + amount;
+  const r = (num >> 16) + amount;
+  const g = ((num >> 8) & 0x00FF) + amount;
+  const b = (num & 0x0000FF) + amount;
   return `#${(1 << 24 | clamp(r) << 16 | clamp(g) << 8 | clamp(b)).toString(16).slice(1)}`;
 };
 

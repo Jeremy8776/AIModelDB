@@ -248,7 +248,7 @@ export function APIConfigSection() {
       // Ensure no trailing slash for consistent appending
       if (baseUrl.endsWith('/')) baseUrl = baseUrl.slice(0, -1);
 
-      let headers: Record<string, string> = {
+      const headers: Record<string, string> = {
         'Content-Type': 'application/json',
         ...(config.headers || {})
       };

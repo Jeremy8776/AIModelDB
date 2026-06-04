@@ -133,7 +133,7 @@ export async function translateChineseModels(
                     // Fall through to LLM
                 }
 
-                let translated: any = null;
+                const translated: any = null;
                 // 2. Fallback to LLM - REMOVED per user request
                 // We now strictly use Google Translate -> Fallback (Original Name)
 

@@ -105,7 +105,7 @@ const NSFW_PROVIDERS = [
 function normalizeText(text: string): string {
   if (!text) return '';
 
-  let normalized = text
+  const normalized = text
     // Insert space before uppercase letters (CamelCase -> Camel Case)
     .replace(/([a-z])([A-Z])/g, '$1 $2')
     // Insert space between letter and number transitions

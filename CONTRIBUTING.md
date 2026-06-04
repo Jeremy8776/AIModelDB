@@ -61,6 +61,15 @@ src/
 └── i18n/           # Translations
 ```
 
+### Intentionally Disabled Integrations
+
+The following data sources are intentionally stubbed out — please do not re-enable them without product sign-off:
+
+- **ModelScope** ([`src/services/api/fetchers/registries/modelscope.ts`](src/services/api/fetchers/registries/modelscope.ts)) — disabled per product scope. The fetcher is a stub returning `[]` so the build doesn't break.
+- **RunComfy** ([`src/context/SettingsContext.tsx`](src/context/SettingsContext.tsx) — `runcomfy: false` in default `dataSources`) — explicitly disabled per request.
+
+If you have a reason to revive either, open an issue first so the rationale is recorded.
+
 ## Making Changes
 
 ### Branch Naming

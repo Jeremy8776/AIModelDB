@@ -1,7 +1,7 @@
 # AI Model DB - Technical Reference
 
-> **Version**: 0.4.3  
-> **Last Updated**: January 17, 2026  
+> **Version**: 0.5.1  
+> **Last Updated**: June 4, 2026  
 > **License**: MIT
 
 A comprehensive desktop application for tracking, managing, and validating AI models across multiple providers.

@@ -125,7 +125,7 @@ export function SimpleValidationModal({
 
   // Step 2: Apply Limit and Ordering
   const targetModels = useMemo(() => {
-    let result = [...filteredCandidates];
+    const result = [...filteredCandidates];
 
     // Apply Sorting when limiting to ensure we get the "top" N according to criteria
     // (If scope is 'all', order doesn't strictly matter for the batch content, but 'incomplete' first is good practice)
