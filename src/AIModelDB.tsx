@@ -17,6 +17,7 @@ import { EntityTabs } from "./components/layout/EntityTabs";
 import { MCPView } from "./components/views/MCPView";
 import { MCPFiltersSidebar, MCPTransportFilter, MCPRegistryFilter, MCPVerifiedFilter } from "./components/views/MCPFiltersSidebar";
 import { MCPDetailPanel } from "./components/views/MCPDetailPanel";
+import { MCPSortKey } from "./components/views/MCPTableHeader";
 import { SkillsView } from "./components/views/SkillsView";
 import { TitleBar } from "./components/TitleBar";
 import { UpdateProgress } from "./components/UpdateProgress";
@@ -50,6 +51,9 @@ function AIModelDBContent() {
   const [mcpHasPackagesOnly, setMcpHasPackagesOnly] = useState(false);
   const [mcpHasRemotesOnly, setMcpHasRemotesOnly] = useState(false);
   const [mcpSelected, setMcpSelected] = useState<MCPServer | null>(null);
+  const [mcpSortKey, setMcpSortKey] = useState<MCPSortKey>('updatedAt');
+  const [mcpSortDirection, setMcpSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [mcpSelectedIds, setMcpSelectedIds] = useState<Set<string>>(new Set());
 
   const {
     t,
@@ -300,12 +304,36 @@ function AIModelDBContent() {
       <ErrorBoundary name="MCP Table">
         <MCPView
           servers={mcpFiltered}
+          totalCount={mcp.servers.length}
           isSyncing={mcp.isSyncing}
           syncProgress={mcp.syncProgress}
           lastError={mcp.meta.lastError}
-          activeId={mcpSelected?.id ?? null}
+          sortKey={mcpSortKey}
+          sortDirection={mcpSortDirection}
+          onSortChange={(key, dir) => {
+            setMcpSortKey(key);
+            setMcpSortDirection(dir);
+          }}
+          activeServerId={mcpSelected?.id ?? null}
           onOpen={(server) => setMcpSelected(prev => (prev?.id === server.id ? null : server))}
           onToggleFavorite={mcp.toggleFavorite}
+          selectedIds={mcpSelectedIds}
+          onSelect={(server, selected) => {
+            setMcpSelectedIds(prev => {
+              const next = new Set(prev);
+              if (selected) next.add(server.id);
+              else next.delete(server.id);
+              return next;
+            });
+          }}
+          onSelectAll={(selected) => {
+            if (selected) {
+              setMcpSelectedIds(new Set(mcpFiltered.map(s => s.id)));
+            } else {
+              setMcpSelectedIds(new Set());
+            }
+          }}
+          theme={theme}
         />
       </ErrorBoundary>
     );
@@ -313,15 +341,15 @@ function AIModelDBContent() {
     innerContent = <SkillsView />;
   }
 
-  // Wrap content with the EntityTabs at the top of the column.
-  // Tabs sit flush against the content card, sharing its background so the
-  // active tab visually merges with the workspace beneath it.
+  // Tabs sit directly above the content's own card; the active tab's bottom
+  // edge overlaps (and effectively paints over) the table's top border so it
+  // appears merged with the workspace beneath. No outer wrapper card — that
+  // would produce double borders since ModelTable / MCPTable each already
+  // render their own card chrome.
   const contentNode = (
-    <div className="space-y-0">
+    <div>
       <EntityTabs />
-      <div className="rounded-b-2xl rounded-tr-2xl border border-t-0 border-border bg-bg-card p-4 -mt-px">
-        {innerContent}
-      </div>
+      {innerContent}
     </div>
   );
 

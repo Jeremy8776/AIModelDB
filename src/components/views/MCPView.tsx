@@ -1,76 +1,120 @@
-import React, { useMemo } from 'react';
-import { Plug, Star, ShieldCheck, AlertTriangle } from 'lucide-react';
+import React from 'react';
+import { Plug, AlertTriangle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { MCPServer } from '../../types';
+import { MCPTable } from './MCPTable';
+import { MCPSortKey } from './MCPTableHeader';
 
 /**
- * MCP table — renders inside MainLayout's content slot, same visual
- * treatment as ModelTable. Filters live in the sidebar; detail panel
- * lives in the right column. This component is just the list.
+ * MCP tab content. Slots into MainLayout's content area exactly where
+ * ModelTable goes for the Models tab — same outer dimensions, same border
+ * treatment via MCPTable (which mirrors ModelTable). Empty/error states
+ * sit above the table just like Models' EmptyState pattern.
  */
 
 export interface MCPViewProps {
     servers: MCPServer[];
+    totalCount: number;
     isSyncing: boolean;
     syncProgress: { fetched: number; page: number; source: string } | null;
     lastError?: string | null;
-    activeId: string | null;
+    sortKey: MCPSortKey;
+    sortDirection: 'asc' | 'desc';
+    onSortChange: (key: MCPSortKey, direction: 'asc' | 'desc') => void;
+    activeServerId: string | null;
     onOpen: (server: MCPServer) => void;
     onToggleFavorite: (id: string) => void;
+    selectedIds?: Set<string>;
+    onSelect?: (server: MCPServer, selected: boolean) => void;
+    onSelectAll?: (selected: boolean) => void;
+    theme: 'light' | 'dark';
 }
 
 export function MCPView({
     servers,
+    totalCount,
     isSyncing,
     syncProgress,
     lastError,
-    activeId,
+    sortKey,
+    sortDirection,
+    onSortChange,
+    activeServerId,
     onOpen,
     onToggleFavorite,
+    selectedIds,
+    onSelect,
+    onSelectAll,
+    theme,
 }: MCPViewProps) {
     const { t } = useTranslation();
 
-    const sorted = useMemo(() => {
-        return [...servers].sort((a, b) => {
-            // Favorites first, then by updatedAt desc
-            const favDelta = (b.isFavorite ? 1 : 0) - (a.isFavorite ? 1 : 0);
-            if (favDelta !== 0) return favDelta;
-            const aTime = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
-            const bTime = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
-            return bTime - aTime;
-        });
-    }, [servers]);
+    if (lastError) {
+        return (
+            <div className="space-y-2">
+                <ErrorBanner message={lastError} />
+                {servers.length > 0 && (
+                    <MCPTable
+                        servers={servers}
+                        sortKey={sortKey}
+                        sortDirection={sortDirection}
+                        onSortChange={onSortChange}
+                        onOpen={(s) => onOpen(s)}
+                        theme={theme}
+                        selectedIds={selectedIds}
+                        onSelect={onSelect}
+                        onSelectAll={onSelectAll}
+                        activeServerId={activeServerId}
+                        onToggleFavorite={onToggleFavorite}
+                    />
+                )}
+            </div>
+        );
+    }
+
+    if (totalCount === 0 && !isSyncing) {
+        return <EmptyState />;
+    }
+
+    if (servers.length === 0 && totalCount > 0 && !isSyncing) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[30vh] p-8 text-center">
+                <p className="text-sm text-text-secondary">
+                    {t('mcp.empty.noMatches', { defaultValue: 'No MCP servers match the current filters.' })}
+                </p>
+            </div>
+        );
+    }
 
     return (
-        <div id="entity-panel-mcp" role="tabpanel" className="space-y-2">
-            {lastError && (
-                <div className="flex items-center gap-2 p-3 rounded-lg border border-red-500/30 bg-red-500/10 text-red-700 text-sm">
-                    <AlertTriangle size={16} />
-                    <span>{lastError}</span>
-                </div>
-            )}
-
+        <div className="space-y-2">
             {syncProgress && (
                 <div className="text-xs text-text-secondary px-1">
-                    {syncProgress.source} — page {syncProgress.page}, {syncProgress.fetched} fetched
+                    {syncProgress.source} — page {syncProgress.page}, {syncProgress.fetched.toLocaleString()} fetched
                 </div>
             )}
+            <MCPTable
+                servers={servers}
+                sortKey={sortKey}
+                sortDirection={sortDirection}
+                onSortChange={onSortChange}
+                onOpen={(s) => onOpen(s)}
+                theme={theme}
+                selectedIds={selectedIds}
+                onSelect={onSelect}
+                onSelectAll={onSelectAll}
+                activeServerId={activeServerId}
+                onToggleFavorite={onToggleFavorite}
+            />
+        </div>
+    );
+}
 
-            {servers.length === 0 && !isSyncing ? (
-                <EmptyState />
-            ) : (
-                <div className="space-y-2">
-                    {sorted.map(server => (
-                        <MCPRow
-                            key={server.id}
-                            server={server}
-                            isActive={activeId === server.id}
-                            onClick={() => onOpen(server)}
-                            onToggleFavorite={() => onToggleFavorite(server.id)}
-                        />
-                    ))}
-                </div>
-            )}
+function ErrorBanner({ message }: { message: string }) {
+    return (
+        <div className="flex items-center gap-2 p-3 rounded-lg border border-red-500/30 bg-red-500/10 text-red-700 text-sm">
+            <AlertTriangle size={16} />
+            <span>{message}</span>
         </div>
     );
 }
@@ -91,72 +135,6 @@ function EmptyState() {
                         defaultValue: 'Hit Sync in the toolbar above to pull ~9,650 servers from the official Model Context Protocol registry. No API key required.',
                     })}
                 </p>
-            </div>
-        </div>
-    );
-}
-
-interface MCPRowProps {
-    server: MCPServer;
-    isActive: boolean;
-    onClick: () => void;
-    onToggleFavorite: () => void;
-}
-
-function MCPRow({ server, isActive, onClick, onToggleFavorite }: MCPRowProps) {
-    const transports = useMemo(
-        () => Array.from(new Set((server.remotes || []).map(r => r.type))),
-        [server.remotes]
-    );
-    const primaryPackage = server.packages?.[0];
-
-    return (
-        <div
-            className={`rounded-xl border bg-bg-card cursor-pointer transition-colors ${
-                isActive ? 'border-accent' : 'border-border hover:border-accent/40'
-            }`}
-            onClick={onClick}
-        >
-            <div className="flex items-start gap-3 p-3">
-                <button
-                    onClick={e => { e.stopPropagation(); onToggleFavorite(); }}
-                    className="mt-0.5 text-text-secondary hover:text-amber-500 transition-colors"
-                    title="Toggle favorite"
-                >
-                    <Star size={16} className={server.isFavorite ? 'fill-amber-500 text-amber-500' : ''} />
-                </button>
-
-                <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-medium truncate">{server.name}</span>
-                        {server.namespaceVerified && (
-                            <span title="Namespace verified" className="text-emerald-600">
-                                <ShieldCheck size={14} />
-                            </span>
-                        )}
-                        {server.version && (
-                            <span className="text-xs text-text-secondary">v{server.version}</span>
-                        )}
-                        {transports.map(t => (
-                            <span key={t} className="text-[10px] px-1.5 py-0.5 rounded bg-bg-input text-text-secondary font-mono">
-                                {t}
-                            </span>
-                        ))}
-                        {primaryPackage && (
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-bg-input text-text-secondary font-mono">
-                                {primaryPackage.registryType}:{primaryPackage.identifier}
-                            </span>
-                        )}
-                    </div>
-                    <div className="text-xs text-text-secondary mt-0.5 line-clamp-1">
-                        {server.id}
-                    </div>
-                    {server.description && (
-                        <div className="text-sm text-text mt-1 line-clamp-2">
-                            {server.description}
-                        </div>
-                    )}
-                </div>
             </div>
         </div>
     );

@@ -38,7 +38,7 @@ export function EntityTabs() {
 
     return (
         <div
-            className="flex items-end gap-0.5 border-b border-border"
+            className="flex items-end gap-0.5 -mb-px relative z-10"
             role="tablist"
             aria-label="Entity type"
         >
@@ -55,21 +55,15 @@ export function EntityTabs() {
                         className={`
                             relative px-5 py-2 text-sm font-medium
                             rounded-t-lg border-t border-l border-r
-                            transition-colors -mb-px
+                            transition-colors
                             ${isActive
-                                ? 'bg-bg-card border-border text-text z-10'
-                                : 'bg-bg-card/40 border-transparent text-text-secondary hover:bg-bg-card/70 hover:text-text'
+                                ? 'bg-bg border-border text-text'
+                                : 'bg-bg-card border-border text-text-secondary hover:text-text -mb-px'
                             }
                         `}
+                        style={{ marginBottom: isActive ? '-1px' : undefined }}
                     >
                         {tab.label}
-                        {/* Active-tab "merge" with content below: paint over the parent border-b at this tab's footprint */}
-                        {isActive && (
-                            <span
-                                aria-hidden
-                                className="absolute left-0 right-0 -bottom-px h-px bg-bg-card"
-                            />
-                        )}
                     </button>
                 );
             })}
