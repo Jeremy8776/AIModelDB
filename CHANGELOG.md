@@ -3,6 +3,25 @@
 All notable changes to this project will be documented in this file.
 
 
+## [0.6.1] - 2026-06-04
+
+### Added
+- **Entity tab infrastructure** — top-level tabs for Models / MCP Servers / Skills. Each tab is a self-contained workspace with its own filters, table, detail panel, and sync flow (Models is the only one wired in this release; MCP and Skills land in v0.7.0 and v0.8.0).
+- **`MCPServer` type** mirroring the official MCP Registry `server.json` schema (registry.modelcontextprotocol.io). Includes canonical fields: packages (npm/pypi/oci/nuget), remotes (stdio/sse/streamable-http/websocket), capabilities, separate verification flags (namespace/image/directory).
+- **`Skill` type** based on the AgentSkills spec (agentskills.io, Dec 2025) and Anthropic's claude-plugins-official `marketplace.json`. Covers skills, plugins, rules, prompts, recipes, and apps with explicit `redistributable` field to track source-available content.
+- **`EntityTypeContext`** persists the active tab to localStorage so users return where they left off.
+
+### Internal
+- Type-contract tests for `EntityType`, `MCPServer`, and `Skill` (9 new tests). All 238 tests pass.
+- Empty-state stub views for MCP and Skills tabs with attribution to upcoming sync sources.
+
+### Polish (carried from 0.6.0 post-release)
+- All 9 non-English locales now have **exact key parity** with `en.json` (zero missing, zero extras). Removed 25 orphan keys per locale; 31 from ru.json.
+- Lint warnings down from 47 → 25 — added intentional `/* swallow */` comments to 13 deliberate empty-catch blocks across consoleService, format, useModelPersistence, ImportModal, TerminalConsole, and github-utils.
+- README updated with two new feature cards (edit-protection in sync, CJK auto-translation).
+
+---
+
 ## [0.6.0] - 2026-06-04
 
 ### Added

@@ -2,6 +2,7 @@ import { ThemeProvider } from "./context/ThemeContext";
 import { SettingsProvider } from "./context/SettingsContext";
 import { UpdateProvider } from "./context/UpdateContext";
 import { ModalProvider } from "./context/ModalContext";
+import { EntityTypeProvider, useEntityType } from "./context/EntityTypeContext";
 import { useDashboardController } from "./hooks/useDashboardController";
 import { ModalManager } from "./components/ModalManager";
 import { LoadingScreen } from "./components/LoadingScreen";
@@ -10,6 +11,9 @@ import { Toolbar } from "./components/layout/Toolbar";
 import { MainLayout } from "./components/layout/MainLayout";
 import { FiltersSidebar } from "./components/layout/FiltersSidebar";
 import { FloatingToolbar } from "./components/layout/FloatingToolbar";
+import { EntityTabs } from "./components/layout/EntityTabs";
+import { MCPView } from "./components/views/MCPView";
+import { SkillsView } from "./components/views/SkillsView";
 import { TitleBar } from "./components/TitleBar";
 import { UpdateProgress } from "./components/UpdateProgress";
 import { ModelTable } from "./components/table/ModelTable";
@@ -23,6 +27,7 @@ import { EmptyState } from "./components/EmptyState";
  * Uses useDashboardController for all business logic and state management.
  */
 function AIModelDBContent() {
+  const { activeEntity } = useEntityType();
   const controller = useDashboardController();
   const {
     t,
@@ -137,6 +142,13 @@ function AIModelDBContent() {
           hasUpdate={updateState.updateAvailable}
         />
 
+        <EntityTabs />
+
+        {activeEntity === 'mcp' && <MCPView />}
+        {activeEntity === 'skills' && <SkillsView />}
+
+        {activeEntity === 'models' && (
+        <>
         <div className="w-full px-4 py-3 pb-6 sticky top-8 z-30 bg-bg">
           <Toolbar
             isSyncing={syncState.isSyncing || isSaving}
@@ -289,6 +301,8 @@ function AIModelDBContent() {
             )
           }
         />
+        </>
+        )}
 
         <ModalManager
           models={models}
@@ -342,7 +356,9 @@ export default function AIModelDB() {
       <SettingsProvider>
         <UpdateProvider>
           <ModalProvider>
-            <AIModelDBContent />
+            <EntityTypeProvider>
+              <AIModelDBContent />
+            </EntityTypeProvider>
           </ModalProvider>
         </UpdateProvider>
       </SettingsProvider>
