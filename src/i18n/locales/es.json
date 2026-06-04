@@ -533,7 +533,11 @@
             "desc": "Añade una clave API de LLM para habilitar la validación impulsada por IA. Esto es opcional y experimental.",
             "enableDiscovery": "Habilitar Descubrimiento de Modelos con LLM",
             "enableDiscoveryDesc": "Usa IA para descubrir y clasificar modelos automáticamente desde fuentes no estructuradas. Requiere una clave API a continuación.",
-            "skip": "Puedes omitir este paso y añadir claves API más tarde en Configuración."
+            "skip": "Puedes omitir este paso y añadir claves API más tarde en Configuración.",
+            "apiTitle": "AI Cloud Discovery",
+            "apiDesc": "Discover new models using AI providers.",
+            "localTitle": "Local Discovery",
+            "localDesc": "Find models installed on your machine."
         },
         "apiKeys": {
             "noneNeeded": "Ninguna de tus fuentes seleccionadas necesita claves API. Haz clic en Siguiente para continuar.",
@@ -575,7 +579,12 @@
         "estimatedCost": "Costo Estimado",
         "livePricing": "Precios en Vivo",
         "filterCandidates": "Filtrar Candidatos",
-        "missingFields": "Campos Faltantes",
+        "missingFields": {
+            "parameters": "Parámetros",
+            "license": "Licencia",
+            "date": "Fecha",
+            "description": "Desc."
+        },
         "missingParams": "Parámetros",
         "missingLicense": "Licencia",
         "missingDate": "Fecha",
@@ -849,7 +858,11 @@
         "done": "Hecho",
         "basicInfo": "Información Básica",
         "technicalSpecs": "Especificaciones Técnicas",
-        "capabilities": "Capacidades",
+        "capabilities": {
+            "weights": "Model Weights",
+            "api": "API Access",
+            "on_prem": "On-Premise Friendly"
+        },
         "licensing": "Licenciamiento",
         "pricing": "Precios",
         "tags": "Etiquetas",

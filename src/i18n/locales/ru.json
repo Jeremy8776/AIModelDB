@@ -517,7 +517,11 @@
             "desc": "Добавьте ключ API LLM, чтобы включить проверку на основе ИИ. Это опционально и экспериментально.",
             "enableDiscovery": "Включить обнаружение моделей с помощью LLM",
             "enableDiscoveryDesc": "Используйте ИИ для автоматического обнаружения и классификации моделей из неструктурированных источников. Требуется API ключ ниже.",
-            "skip": "Вы можете пропустить этот шаг и добавить API ключи позже в Настройках."
+            "skip": "Вы можете пропустить этот шаг и добавить API ключи позже в Настройках.",
+            "apiTitle": "AI Cloud Discovery",
+            "apiDesc": "Discover new models using AI providers.",
+            "localTitle": "Local Discovery",
+            "localDesc": "Find models installed on your machine."
         },
         "apiKeys": {
             "noneNeeded": "Ни один из выбранных вами источников не требует API ключей. Нажмите Далее, чтобы продолжить.",
@@ -559,7 +563,12 @@
         "estimatedCost": "Оценочная стоимость",
         "livePricing": "Цены в реальном времени",
         "filterCandidates": "Фильтрация кандидатов",
-        "missingFields": "Отсутствующие поля",
+        "missingFields": {
+            "parameters": "Параметры",
+            "license": "Лицензия",
+            "date": "Дата",
+            "description": "Опис."
+        },
         "missingParams": "Параметры",
         "missingLicense": "Лицензия",
         "missingDate": "Дата",
@@ -833,7 +842,11 @@
         "done": "Готово",
         "basicInfo": "Основная информация",
         "technicalSpecs": "Технические характеристики",
-        "capabilities": "Возможности",
+        "capabilities": {
+            "weights": "Model Weights",
+            "api": "API Access",
+            "on_prem": "On-Premise Friendly"
+        },
         "licensing": "Лицензирование",
         "pricing": "Цены",
         "tags": "Теги",

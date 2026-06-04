@@ -19,26 +19,26 @@ export async function runTranslation(
 
         const beforeCount = resultModels.filter(m => m.tags?.includes('translated')).length;
 
-        if (options.apiConfig) {
+        // Translation runs unconditionally now — it uses Google Translate via
+        // Electron IPC (no API key required). apiConfig is forwarded for
+        // future LLM fallback compatibility but isn't required.
+        if (onProgress) {
+            onProgress({
+                current: completedSources,
+                total: totalSources,
+                source: 'Translating models...'
+            });
+        }
+
+        resultModels = await translateChineseModels(resultModels, options.apiConfig, (msg) => {
             if (onProgress) {
                 onProgress({
                     current: completedSources,
                     total: totalSources,
-                    source: 'Translating models...'
+                    source: msg
                 });
             }
-
-            resultModels = await translateChineseModels(resultModels, options.apiConfig, (msg) => {
-                // Update callback with detailed progress
-                if (onProgress) {
-                    onProgress({
-                        current: completedSources,
-                        total: totalSources,
-                        source: msg
-                    });
-                }
-            });
-        }
+        });
 
         const afterCount = resultModels.filter(m => m.tags?.includes('translated')).length;
         const translatedCount = afterCount - beforeCount;

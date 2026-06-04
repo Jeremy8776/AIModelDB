@@ -26,6 +26,8 @@ All notable changes to this project will be documented in this file.
 ### Internal
 - Untracked `lint-results.json`, `sync-lint.json`, `tsconfig.tsbuildinfo` (now gitignored).
 - Renamed `eslint.config.js` → `eslint.config.mjs` to silence Node's `MODULE_TYPELESS_PACKAGE_JSON` reparse warning on every lint run.
+- **CJK translation gating removed** — `TranslationService` no longer requires `apiConfig` to run. The translator switched off LLM fallback months ago and now relies on Google Translate via Electron IPC (no API key needed), but the gate was never removed, silently skipping translation for users without LLM configs. Translation now runs unconditionally during sync.
+- **i18n key coverage** — added the 11 keys present in `en.json` but missing from non-English locale files (`simpleValidation.missingFields.*`, `onboarding.discovery.*`, `comparison.capabilities.*`). Reused existing orphan translations where available (e.g. `simpleValidation.missingParams` → `simpleValidation.missingFields.parameters`); seeded the rest with English fallback values for manual translation later.
 
 ---
 

@@ -533,7 +533,11 @@
             "desc": "LLM API 키를 추가하여 AI 기반 검증을 활성화하세요. 이는 선택 사항이며 실험적입니다.",
             "enableDiscovery": "LLM 기반 모델 발견 활성화",
             "enableDiscoveryDesc": "AI를 사용하여 비정형 소스에서 모델을 자동으로 발견하고 분류합니다. 아래에 API 키가 필요합니다.",
-            "skip": "이 단계를 건너뛰고 나중에 설정에서 API 키를 추가할 수 있습니다."
+            "skip": "이 단계를 건너뛰고 나중에 설정에서 API 키를 추가할 수 있습니다.",
+            "apiTitle": "AI Cloud Discovery",
+            "apiDesc": "Discover new models using AI providers.",
+            "localTitle": "Local Discovery",
+            "localDesc": "Find models installed on your machine."
         },
         "apiKeys": {
             "noneNeeded": "선택한 소스 중 API 키가 필요한 소스가 없습니다. 계속하려면 다음을 클릭하세요.",
@@ -575,7 +579,12 @@
         "estimatedCost": "예상 비용",
         "livePricing": "실시간 가격",
         "filterCandidates": "후보 필터링",
-        "missingFields": "누락된 필드",
+        "missingFields": {
+            "parameters": "파라미터",
+            "license": "라이센스",
+            "date": "날짜",
+            "description": "설명"
+        },
         "missingParams": "파라미터",
         "missingLicense": "라이센스",
         "missingDate": "날짜",
@@ -849,7 +858,11 @@
         "done": "완료",
         "basicInfo": "기본 정보",
         "technicalSpecs": "기술 사양",
-        "capabilities": "기능",
+        "capabilities": {
+            "weights": "Model Weights",
+            "api": "API Access",
+            "on_prem": "On-Premise Friendly"
+        },
         "licensing": "라이센싱",
         "pricing": "가격",
         "tags": "태그",

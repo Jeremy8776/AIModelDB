@@ -511,7 +511,11 @@
             "desc": "Fügen Sie einen LLM-API-Schlüssel hinzu, um die KI-gestützte Validierung zu aktivieren. Dies ist optional und experimentell.",
             "enableDiscovery": "LLM-gestützte Modellentdeckung aktivieren",
             "enableDiscoveryDesc": "Nutzen Sie KI, um Modelle aus unstrukturierten Quellen automatisch zu entdecken und zu klassifizieren. Ein API-Schlüssel ist unten erforderlich.",
-            "skip": "Sie können diesen Schritt überspringen und API-Schlüssel später in den Einstellungen hinzufügen."
+            "skip": "Sie können diesen Schritt überspringen und API-Schlüssel später in den Einstellungen hinzufügen.",
+            "apiTitle": "AI Cloud Discovery",
+            "apiDesc": "Discover new models using AI providers.",
+            "localTitle": "Local Discovery",
+            "localDesc": "Find models installed on your machine."
         },
         "apiKeys": {
             "noneNeeded": "Keine Ihrer ausgewählten Quellen benötigt API-Schlüssel. Klicken Sie auf Weiter, um fortzufahren.",
@@ -553,7 +557,12 @@
         "estimatedCost": "Geschätzte Kosten",
         "livePricing": "Live-Preise",
         "filterCandidates": "Kandidaten filtern",
-        "missingFields": "Fehlende Felder",
+        "missingFields": {
+            "parameters": "Parameter",
+            "license": "Lizenz",
+            "date": "Datum",
+            "description": "Beschr."
+        },
         "missingParams": "Parameter",
         "missingLicense": "Lizenz",
         "missingDate": "Datum",
@@ -827,7 +836,11 @@
         "done": "Fertig",
         "basicInfo": "Basisinformationen",
         "technicalSpecs": "Technische Daten",
-        "capabilities": "Fähigkeiten",
+        "capabilities": {
+            "weights": "Model Weights",
+            "api": "API Access",
+            "on_prem": "On-Premise Friendly"
+        },
         "licensing": "Lizenzierung",
         "pricing": "Preise",
         "tags": "Tags",

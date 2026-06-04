@@ -1,44 +1,38 @@
 /**
  * Translation Module
  *
- * Handles translation of Chinese, Japanese, and Korean text to English
- * for AI model names and descriptions. Uses LLM providers for translation
- * with fallback strategies for when translation APIs are unavailable.
+ * Translates CJK (Chinese, Japanese, Korean) text in model names and
+ * descriptions to English using Electron IPC -> Google Translate. Falls
+ * back to "Keep Original Name" when the IPC bridge or Google Translate
+ * is unavailable (e.g. running in the dev web shell).
  */
 
-import { Model, ApiDir, ProviderKey, ProviderCfg } from '../../../types';
+import { Model, ApiDir } from '../../../types';
 import { containsChinese, containsOtherAsianLanguages } from './language-detection';
-import { callProviderText } from '../providers/provider-calls';
-import { safeJsonFromText } from '../../../utils/format';
 
 /**
  * Translates Chinese, Japanese, and Korean text in model names and descriptions to English.
  *
  * @param models - Array of models to translate
- * @param apiConfig - API configuration directory containing provider settings
+ * @param _apiConfig - Reserved for future LLM fallback; unused while we run on Google Translate alone
  * @returns Promise resolving to array of models with translated text
  *
  * @remarks
  * This function:
  * - Identifies models with Chinese/CJK text in name or description
- * - Uses the first enabled LLM provider with an API key for translation
- * - Processes models in batches of 25 for better API success rate
- * - Falls back to ASCII extraction and contextual English labels if translation fails
+ * - Uses Electron IPC -> Google Translate API (no API key required)
+ * - Processes models in batches of 25 for rate-limit friendliness
+ * - Falls back to "Keep Original Name" if translation is unavailable
+ *   (e.g. running outside Electron, or Google Translate is unreachable)
  * - Adds 'translated' tag to successfully translated models
- * - Preserves original models if no translation is needed or possible
  */
 
 export async function translateChineseModels(
     models: Model[],
-    apiConfig: ApiDir,
+    _apiConfig?: ApiDir,
     onProgress?: (progress: string) => void
 ): Promise<Model[]> {
     try {
-        // LLM Translation removed per user request. 
-        // We now rely solely on Google Translate with "Keep Original Name" fallback.
-        const providerKey = null;
-        const providerCfg = null;
-
         // Find models that need translation (Chinese, Japanese, or Korean)
         const toTranslate = models.filter(m =>
             containsChinese(m.name) ||
@@ -52,6 +46,17 @@ export async function translateChineseModels(
             return models;
         }
 
+        // Translation depends on Electron's IPC to Google Translate. In web/dev
+        // mode the bridge is absent — fall back to "keep original" so callers
+        // still get a consistent shape rather than a thrown error mid-sync.
+        const electronAPI = (window as any).electronAPI;
+        if (!electronAPI?.translateText) {
+            console.warn('[Translation] electronAPI.translateText unavailable — skipping CJK translation (likely running outside Electron).');
+            const fallbackModels = [...models];
+            applyFallbackTranslation(fallbackModels);
+            return fallbackModels;
+        }
+
         console.log(`[Translation] Found ${toTranslate.length} models with Chinese/CJK text to translate`);
 
         // Process in smaller batches for better API success rate
@@ -59,11 +64,6 @@ export async function translateChineseModels(
         const translatedModels = [...models];
         let fallbackBatchCount = 0;
         let fallbackReason: string | null = null;
-
-        // Check upfront if we have a provider
-        if (!providerKey || !providerCfg) {
-            fallbackReason = 'No LLM provider configured';
-        }
 
         for (let i = 0; i < toTranslate.length; i += batchSize) {
             const batch = toTranslate.slice(i, i + batchSize).map(m => ({
@@ -76,109 +76,53 @@ export async function translateChineseModels(
             // Prompts removed as LLM is disabled
 
             try {
-                let googleTranslated = false;
-
-                // 1. Try Google Translate first (Faster, Free)
-                try {
-                    // Process in parallel with limit to avoid rate limits
-                    const googleResults = await Promise.all(batch.map(async (item) => {
-                        try {
-                            // Translate name
-                            let nameEn = item.name;
-                            if (containsChinese(item.name) || containsOtherAsianLanguages(item.name)) {
-                                const res = await (window as any).electronAPI.translateText(item.name);
-                                if (res.error) throw new Error(res.error);
-                                nameEn = res.text;
-                            }
-
-                            // Translate description
-                            let descEn = item.description;
-                            if (item.description && (containsChinese(item.description) || containsOtherAsianLanguages(item.description))) {
-                                // Truncate very long descriptions to avoid 5000 char limit
-                                const textToTranslate = item.description.slice(0, 4500);
-                                const res = await (window as any).electronAPI.translateText(textToTranslate);
-                                if (res.error) throw new Error(res.error);
-                                descEn = res.text;
-                            }
-
-                            return { ...item, name_en: nameEn, description_en: descEn };
-                        } catch (e) {
-                            return null; // Should fall back to LLM for this item or batch
+                // Run Google Translate per-item in parallel (rate-limit guarded by per-batch sleep below)
+                const googleResults = await Promise.all(batch.map(async (item) => {
+                    try {
+                        let nameEn = item.name;
+                        if (containsChinese(item.name) || containsOtherAsianLanguages(item.name)) {
+                            const res = await electronAPI.translateText(item.name);
+                            if (res.error) throw new Error(res.error);
+                            nameEn = res.text;
                         }
-                    }));
 
-                    // Check if we got valid results
-                    if (googleResults.every(r => r !== null)) {
-                        // Apply Google Translations
-                        for (let j = 0; j < translatedModels.length; j++) {
-                            const t = googleResults.find(r => r && r.id === translatedModels[j].id);
-                            if (t) {
-                                translatedModels[j] = {
-                                    ...translatedModels[j],
-                                    name: t.name_en || translatedModels[j].name,
-                                    description: t.description_en || translatedModels[j].description,
-                                    tags: [...new Set([...(translatedModels[j].tags || []), 'translated'])]
-                                };
-                            }
+                        let descEn = item.description;
+                        if (item.description && (containsChinese(item.description) || containsOtherAsianLanguages(item.description))) {
+                            // Google Translate hard limit is 5000 chars per call
+                            const textToTranslate = item.description.slice(0, 4500);
+                            const res = await electronAPI.translateText(textToTranslate);
+                            if (res.error) throw new Error(res.error);
+                            descEn = res.text;
                         }
-                        googleTranslated = true;
-                        console.log(`[Translation] Batch ${Math.floor(i / batchSize) + 1
-                            } translated via Google Translate`);
-                        // Keep delay for rate limiting
-                        if (i + batchSize < toTranslate.length) await new Promise(r => setTimeout(r, 1000));
-                        continue; // Skip LLM logic
+
+                        return { ...item, name_en: nameEn, description_en: descEn };
+                    } catch (e) {
+                        return null;
                     }
-                } catch (googleError) {
-                    console.warn('[Translation] Google Translate failed, falling back to LLM:', googleError);
-                    // Fall through to LLM
-                }
+                }));
 
-                const translated: any = null;
-                // 2. Fallback to LLM - REMOVED per user request
-                // We now strictly use Google Translate -> Fallback (Original Name)
-
-                if (Array.isArray(translated)) {
-                    const byId = new Map<string, { name_en?: string; description_en?: string }>();
-                    translated.forEach((r: any) => {
-                        if (r && r.id) {
-                            byId.set(String(r.id), {
-                                name_en: r.name_en,
-                                description_en: r.description_en
-                            });
-                        }
-                    });
-
-                    // Apply translations to the models
+                if (googleResults.every(r => r !== null)) {
                     for (let j = 0; j < translatedModels.length; j++) {
-                        const t = byId.get(translatedModels[j].id);
+                        const t = googleResults.find(r => r && r.id === translatedModels[j].id);
                         if (t) {
-                            const originalName = translatedModels[j].name;
-                            const originalDesc = translatedModels[j].description;
-
                             translatedModels[j] = {
                                 ...translatedModels[j],
-                                name: t.name_en && t.name_en.trim() ? t.name_en : translatedModels[j].name,
-                                description: t.description_en && t.description_en.trim() ? t.description_en : translatedModels[j].description,
+                                name: t.name_en || translatedModels[j].name,
+                                description: t.description_en || translatedModels[j].description,
                                 tags: [...new Set([...(translatedModels[j].tags || []), 'translated'])]
                             };
-
-                            if (originalName !== translatedModels[j].name || originalDesc !== translatedModels[j].description) {
-                                console.log(`[Translation] Translated: "${originalName}" → "${translatedModels[j].name}"`);
-                            }
                         }
                     }
-
-                    console.log(`[Translation] Successfully processed batch ${Math.floor(i / batchSize) + 1} /${Math.ceil(toTranslate.length / batchSize)
-                        }`);
+                    console.log(`[Translation] Batch ${Math.floor(i / batchSize) + 1} translated via Google Translate`);
                     if (onProgress) {
                         onProgress(`Translating... (${i + batch.length}/${toTranslate.length})`);
                     }
+                    // Rate-limit pause between batches
+                    if (i + batchSize < toTranslate.length) await new Promise(r => setTimeout(r, 1000));
                 } else {
-                    // Track fallback usage with reason
+                    // At least one item failed — apply "keep original" fallback for this batch
                     fallbackBatchCount++;
-                    if (!fallbackReason) {
-                        fallbackReason = 'LLM returned invalid JSON (not an array)';
-                    }
+                    if (!fallbackReason) fallbackReason = 'Google Translate failed for one or more items in batch';
                     applyFallbackTranslation(translatedModels);
                 }
             } catch (error: any) {

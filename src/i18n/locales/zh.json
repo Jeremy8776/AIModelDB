@@ -464,7 +464,12 @@
         "estimatedCost": "预计成本",
         "livePricing": "实时定价",
         "filterCandidates": "筛选候选",
-        "missingFields": "缺失字段",
+        "missingFields": {
+            "parameters": "参数",
+            "license": "许可证",
+            "date": "日期",
+            "description": "描述"
+        },
         "missingParams": "参数",
         "missingLicense": "许可证",
         "missingDate": "日期",
@@ -895,7 +900,11 @@
         "done": "完成",
         "basicInfo": "基本信息",
         "technicalSpecs": "技术规格",
-        "capabilities": "功能",
+        "capabilities": {
+            "weights": "Model Weights",
+            "api": "API Access",
+            "on_prem": "On-Premise Friendly"
+        },
         "licensing": "许可",
         "pricing": "定价",
         "tags": "标签",

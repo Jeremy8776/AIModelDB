@@ -511,7 +511,11 @@
             "desc": "أضف مفتاح API لنموذج لغوي كبير لتفعيل التحقق المدعوم بالذكاء الاصطناعي. هذا اختياري وتجريبي.",
             "enableDiscovery": "تفعيل اكتشاف النماذج بواسطة LLM",
             "enableDiscoveryDesc": "استخدم الذكاء الاصطناعي لاكتشاف وتصنيف النماذج تلقائياً من مصادر غير منظمة. مطلوب مفتاح API أدناه.",
-            "skip": "يمكنك تخطي هذه الخطوة وإضافة مفاتيح API لاحقاً في الإعدادات."
+            "skip": "يمكنك تخطي هذه الخطوة وإضافة مفاتيح API لاحقاً في الإعدادات.",
+            "apiTitle": "AI Cloud Discovery",
+            "apiDesc": "Discover new models using AI providers.",
+            "localTitle": "Local Discovery",
+            "localDesc": "Find models installed on your machine."
         },
         "apiKeys": {
             "noneNeeded": "لا تتطلب أي من مصادرك المختارة مفاتيح API. انقر فوق التالي للمتابعة.",
@@ -553,7 +557,12 @@
         "estimatedCost": "التكلفة التقديرية",
         "livePricing": "التسعير المباشر",
         "filterCandidates": "تصفية المرشحين",
-        "missingFields": "الحقول المفقودة",
+        "missingFields": {
+            "parameters": "المعلمات",
+            "license": "الترخيص",
+            "date": "التاريخ",
+            "description": "الوصف"
+        },
         "missingParams": "المعلمات",
         "missingLicense": "الترخيص",
         "missingDate": "التاريخ",
@@ -827,7 +836,11 @@
         "done": "تم",
         "basicInfo": "المعلومات الأساسية",
         "technicalSpecs": "المواصفات الفنية",
-        "capabilities": "القدرات",
+        "capabilities": {
+            "weights": "Model Weights",
+            "api": "API Access",
+            "on_prem": "On-Premise Friendly"
+        },
         "licensing": "الترخيص",
         "pricing": "التسعير",
         "tags": "العلامات",

@@ -533,7 +533,11 @@
             "desc": "LLM APIキーを追加して、AI駆動の検証を有効にします。これはオプションで実験的な機能です。",
             "enableDiscovery": "LLMによるモデル発見を有効化",
             "enableDiscoveryDesc": "AIを使用して、非構造化ソースからモデルを自動的に発見・分類します。以下にAPIキーが必要です。",
-            "skip": "このステップをスキップして、後で設定でAPIキーを追加できます。"
+            "skip": "このステップをスキップして、後で設定でAPIキーを追加できます。",
+            "apiTitle": "AI Cloud Discovery",
+            "apiDesc": "Discover new models using AI providers.",
+            "localTitle": "Local Discovery",
+            "localDesc": "Find models installed on your machine."
         },
         "apiKeys": {
             "noneNeeded": "選択したソースにはAPIキーは不要です。「次へ」をクリックして続行してください。",
@@ -575,7 +579,12 @@
         "estimatedCost": "推定コスト",
         "livePricing": "ライブ価格",
         "filterCandidates": "候補をフィルタリング",
-        "missingFields": "不足しているフィールド",
+        "missingFields": {
+            "parameters": "パラメータ",
+            "license": "ライセンス",
+            "date": "日付",
+            "description": "説明"
+        },
         "missingParams": "パラメータ",
         "missingLicense": "ライセンス",
         "missingDate": "日付",
@@ -849,7 +858,11 @@
         "done": "完了",
         "basicInfo": "基本情報",
         "technicalSpecs": "技術仕様",
-        "capabilities": "機能",
+        "capabilities": {
+            "weights": "Model Weights",
+            "api": "API Access",
+            "on_prem": "On-Premise Friendly"
+        },
         "licensing": "ライセンス",
         "pricing": "価格",
         "tags": "タグ",
