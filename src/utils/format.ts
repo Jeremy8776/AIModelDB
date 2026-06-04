@@ -258,20 +258,20 @@ export function normalizeRows(rows: any[], sheetName?: string) {
 export function safeJsonFromText(s: string) {
   try {
     return JSON.parse(s);
-  } catch { }
+  } catch { /* swallow — fall through to next parse strategy */ }
 
   const a = s.indexOf('{'), b = s.lastIndexOf('}');
   if (a !== -1 && b !== -1 && b > a) {
     try {
       return JSON.parse(s.slice(a, b + 1));
-    } catch { }
+    } catch { /* swallow — fall through to next parse strategy */ }
   }
 
   const aa = s.indexOf('['), bb = s.lastIndexOf(']');
   if (aa !== -1 && bb !== -1 && bb > aa) {
     try {
       return JSON.parse(s.slice(aa, bb + 1));
-    } catch { }
+    } catch { /* swallow — fall through to next parse strategy */ }
   }
 
   return null;

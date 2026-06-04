@@ -125,28 +125,28 @@ export function createConsoleInterceptor(
         console.log = (...args: any[]) => {
             try {
                 onLog(toLine('LOG', args));
-            } catch { }
+            } catch { /* swallow — never break the console pipe */ }
             originalConsole!.log(...args);
         };
 
         console.info = (...args: any[]) => {
             try {
                 onLog(toLine('INFO', args));
-            } catch { }
+            } catch { /* swallow — never break the console pipe */ }
             originalConsole!.info(...args);
         };
 
         console.warn = (...args: any[]) => {
             try {
                 onLog(toLine('WARN', args));
-            } catch { }
+            } catch { /* swallow — never break the console pipe */ }
             originalConsole!.warn(...args);
         };
 
         console.error = (...args: any[]) => {
             try {
                 onLog(toLine('ERROR', args));
-            } catch { }
+            } catch { /* swallow — never break the console pipe */ }
             originalConsole!.error(...args);
         };
     };

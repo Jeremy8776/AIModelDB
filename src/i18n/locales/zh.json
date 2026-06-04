@@ -291,10 +291,6 @@
             "title": "API 配置",
             "subtitle": "配置 LLM API 密钥以进行 AI 驱动的验证和丰富。",
             "alpha": "Alpha",
-            "discovery": {
-                "title": "AI 模型发现",
-                "description": "使用配置的 LLM 从非结构化来源自动发现、验证和分类新模型。"
-            },
             "preferredProvider": {
                 "title": "首选模型提供商",
                 "description": "选择用于自动验证的提供商。"
@@ -458,8 +454,6 @@
     },
     "simpleValidation": {
         "title": "验证模型数据",
-        "subtitle": "使用 {{provider}} • {{model}} 丰富并验证元数据",
-        "filtersAndScope": "筛选与范围",
         "execution": "执行",
         "estimatedCost": "预计成本",
         "livePricing": "实时定价",
@@ -470,22 +464,14 @@
             "date": "日期",
             "description": "描述"
         },
-        "missingParams": "参数",
-        "missingLicense": "许可证",
-        "missingDate": "日期",
-        "missingDesc": "描述",
         "validationScope": "验证范围",
         "allMatches": "所有匹配项",
         "limitCount": "限制数量",
         "prioritizeBy": "优先排序",
-        "mostIncomplete": "缺失最多优先",
-        "mostRecent": "最近优先",
-        "oldestFirst": "最早优先",
         "manualConfig": "手动配置",
         "defaultSettings": "默认设置",
         "advanced": "高级",
         "autoOptimization": "自动优化已激活",
-        "startValidation": "验证 {{count}} 个模型",
         "running": "运行中...",
         "eta": "预计剩余时间",
         "tokens": "词元",
@@ -889,28 +875,15 @@
     },
     "comparison": {
         "title": "比较模型",
-        "subtitle": "正在比较 {{count}} 个模型",
-        "highlightDifferences": "高亮差异",
-        "attribute": "属性",
-        "pin": "固定为参考",
-        "unpin": "取消固定参考",
         "free": "免费",
         "tokens": "词元",
         "best": "最佳",
         "done": "完成",
-        "basicInfo": "基本信息",
-        "technicalSpecs": "技术规格",
         "capabilities": {
             "weights": "Model Weights",
             "api": "API Access",
             "on_prem": "On-Premise Friendly"
         },
-        "licensing": "许可",
-        "pricing": "定价",
-        "tags": "标签",
-        "moreTags": "+{{count}} 更多",
-        "legendDifferences": "高亮行显示差异",
-        "legendBest": "最佳值 (如适用)",
         "attributes": {
             "provider": "提供商",
             "domain": "领域",

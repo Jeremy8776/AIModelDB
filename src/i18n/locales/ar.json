@@ -291,10 +291,6 @@
             "title": "تكوين API",
             "subtitle": "تكوين مفاتيح LLM API للتحقق والإثراء المدعوم بالذكاء الاصطناعي.",
             "alpha": "ألفا",
-            "discovery": {
-                "title": "اكتشاف نماذج الذكاء الاصطناعي",
-                "description": "استخدم LLMs المكونة لاكتشاف والتحقق وتصنيف النماذج الجديدة تلقائياً من مصادر غير منظمة."
-            },
             "preferredProvider": {
                 "title": "مزود النماذج المفضل",
                 "description": "اختر المزود الذي سيتم استخدامه للتحقق الآلي."
@@ -551,8 +547,6 @@
     },
     "simpleValidation": {
         "title": "التحقق من بيانات النموذج",
-        "subtitle": "إثراء والتحقق من البيانات الوصفية باستخدام {{provider}} • {{model}}",
-        "filtersAndScope": "الفلاتر والنطاق",
         "execution": "التنفيذ",
         "estimatedCost": "التكلفة التقديرية",
         "livePricing": "التسعير المباشر",
@@ -563,22 +557,14 @@
             "date": "التاريخ",
             "description": "الوصف"
         },
-        "missingParams": "المعلمات",
-        "missingLicense": "الترخيص",
-        "missingDate": "التاريخ",
-        "missingDesc": "الوصف",
         "validationScope": "نطاق التحقق",
         "allMatches": "جميع المطابقات",
         "limitCount": "تحديد العدد",
         "prioritizeBy": "تحديد الأولوية حسب",
-        "mostIncomplete": "الأكثر نقصاً أولاً",
-        "mostRecent": "الأحدث أولاً",
-        "oldestFirst": "الأقدم أولاً",
         "manualConfig": "تكوين يدوي",
         "defaultSettings": "الإعدادات الافتراضية",
         "advanced": "متقدم",
         "autoOptimization": "التحسين التلقائي نشط",
-        "startValidation": "التحقق من {{count}} نماذج",
         "running": "جاري التنفيذ...",
         "eta": "الوقت المتبقي",
         "tokens": "الرموز (Tokens)",
@@ -825,28 +811,15 @@
     },
     "comparison": {
         "title": "مقارنة النماذج",
-        "subtitle": "مقارنة {{count}} نماذج",
-        "highlightDifferences": "تظليل الاختلافات",
-        "attribute": "السمة",
-        "pin": "تثبيت كمرجع",
-        "unpin": "إلغاء التثبيت",
         "free": "مجاني",
         "tokens": "رموز",
         "best": "الأفضل",
         "done": "تم",
-        "basicInfo": "المعلومات الأساسية",
-        "technicalSpecs": "المواصفات الفنية",
         "capabilities": {
             "weights": "Model Weights",
             "api": "API Access",
             "on_prem": "On-Premise Friendly"
         },
-        "licensing": "الترخيص",
-        "pricing": "التسعير",
-        "tags": "العلامات",
-        "moreTags": "+{{count}} المزيد",
-        "legendDifferences": "الصفوف المظللة تظهر الاختلافات",
-        "legendBest": "أفضل قيمة (حيثما ينطبق)",
         "attributes": {
             "provider": "المزود",
             "domain": "المجال",

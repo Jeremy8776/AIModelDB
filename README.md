@@ -77,6 +77,16 @@ See [docs/ECOSYSTEM.md](docs/ECOSYSTEM.md) for the system boundaries.
       <p>All API keys are encrypted locally. Your credentials never leave your machine.</p>
     </td>
   </tr>
+  <tr>
+    <td>
+      <h3>Edits Survive Sync</h3>
+      <p>Manual edits in the model editor are tracked and preserved when you re-sync. Fresh data fills in unchanged fields; your curated values stay yours.</p>
+    </td>
+    <td>
+      <h3>Automatic CJK → English</h3>
+      <p>Models from Chinese, Japanese, and Korean sources are auto-translated to English at sync time via Google Translate. No API key required.</p>
+    </td>
+  </tr>
 </table>
 
 ---

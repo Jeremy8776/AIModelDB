@@ -199,10 +199,6 @@
             "title": "Конфигурация API",
             "subtitle": "Настройте ключи API LLM для валидации и обогащения с помощью ИИ.",
             "alpha": "Альфа",
-            "discovery": {
-                "title": "Обнаружение моделей ИИ",
-                "description": "Используйте настроенные LLM для автоматического обнаружения, валидации и классификации новых моделей из неструктурированных источников."
-            },
             "preferredProvider": {
                 "title": "Предпочтительный провайдер моделей",
                 "description": "Выберите провайдера для автоматической валидации."
@@ -297,13 +293,8 @@
                 "retro": "Ретро"
             },
             "customSuffix": " (Пользовательский)",
-            "uploadNew": "Загрузить новый стиль",
-            "uploadHint": "Загрузите файл .css для создания новой темы. Используйте селекторы переменных CSS.",
             "template": "Скачать шаблон",
-            "uploadCss": "Загрузить CSS",
-            "currencyHeading": "Валюта и расходы",
             "defaultCurrency": "Валюта по умолчанию",
-            "showCost": "Показать валидацию и оценку стоимости",
             "interfaceOptions": "Опции интерфейса",
             "pagination": "Пагинация",
             "defaultPageSize": "Размер страницы по умолчанию",
@@ -346,7 +337,6 @@
         },
         "system": {
             "title": "Система и диагностика",
-            "description": "Проверка здоровья системы и обслуживание.",
             "version": "Версия",
             "checkForUpdates": "Проверить обновления",
             "resetDatabase": "Сбросить базу данных",
@@ -557,8 +547,6 @@
     },
     "simpleValidation": {
         "title": "Проверка данных модели",
-        "subtitle": "Обогащение и проверка метаданных с помощью {{provider}} • {{model}}",
-        "filtersAndScope": "Фильтры и область",
         "execution": "Выполнение",
         "estimatedCost": "Оценочная стоимость",
         "livePricing": "Цены в реальном времени",
@@ -569,22 +557,14 @@
             "date": "Дата",
             "description": "Опис."
         },
-        "missingParams": "Параметры",
-        "missingLicense": "Лицензия",
-        "missingDate": "Дата",
-        "missingDesc": "Опис.",
         "validationScope": "Область проверки",
         "allMatches": "Все совпадения",
         "limitCount": "Ограничить количество",
         "prioritizeBy": "Приоритет по",
-        "mostIncomplete": "Сначала самые неполные",
-        "mostRecent": "Сначала новые",
-        "oldestFirst": "Сначала старые",
         "manualConfig": "Ручная настройка",
         "defaultSettings": "Настройки по умолчанию",
         "advanced": "Дополнительно",
         "autoOptimization": "Авто-оптимизация активна",
-        "startValidation": "Проверить {{count}} моделей",
         "running": "Выполнение...",
         "eta": "Время",
         "tokens": "Токены",
@@ -831,28 +811,15 @@
     },
     "comparison": {
         "title": "Сравнить модели",
-        "subtitle": "Сравнение {{count}} моделей",
-        "highlightDifferences": "Выделить различия",
-        "attribute": "Атрибут",
-        "pin": "Закрепить как эталон",
-        "unpin": "Открепить эталон",
         "free": "Бесплатно",
         "tokens": "токенов",
         "best": "Лучшее",
         "done": "Готово",
-        "basicInfo": "Основная информация",
-        "technicalSpecs": "Технические характеристики",
         "capabilities": {
             "weights": "Model Weights",
             "api": "API Access",
             "on_prem": "On-Premise Friendly"
         },
-        "licensing": "Лицензирование",
-        "pricing": "Цены",
-        "tags": "Теги",
-        "moreTags": "+{{count}} еще",
-        "legendDifferences": "Выделенные строки показывают различия",
-        "legendBest": "Лучшее значение (где применимо)",
         "attributes": {
             "provider": "Провайдер",
             "domain": "Домен",

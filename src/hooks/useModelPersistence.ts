@@ -41,7 +41,7 @@ export function useModelPersistence() {
             if (settings?.apiConfig) {
                 setApiConfig(settings.apiConfig);
             }
-        } catch { }
+        } catch { /* best-effort cleanup — ignore failures */ }
     }, [settings?.apiConfig]);
 
     // Load API config from localStorage
@@ -299,7 +299,7 @@ export function useModelPersistence() {
         try {
             // Clear IndexedDB
             await deleteDatabase();
-        } catch { }
+        } catch { /* best-effort cleanup — ignore failures */ }
 
         try {
             // Clear localStorage (except settings)
@@ -312,7 +312,7 @@ export function useModelPersistence() {
                 }
             }
             toRemove.forEach(k => localStorage.removeItem(k));
-        } catch { }
+        } catch { /* best-effort cleanup — ignore failures */ }
 
         try {
             // Clear caches
@@ -320,7 +320,7 @@ export function useModelPersistence() {
                 const keys = await caches.keys();
                 await Promise.all(keys.map(k => caches.delete(k)));
             }
-        } catch { }
+        } catch { /* best-effort cleanup — ignore failures */ }
 
         setModels([]);
         setLastSync(null);

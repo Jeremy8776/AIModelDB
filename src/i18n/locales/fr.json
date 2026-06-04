@@ -291,10 +291,6 @@
             "title": "Configuration API",
             "subtitle": "Configurer les clés API LLM pour la validation et l'enrichissement par IA.",
             "alpha": "Alpha",
-            "discovery": {
-                "title": "Découverte de Modèles IA",
-                "description": "Utiliser les LLM configurés pour découvrir, valider et classer automatiquement de nouveaux modèles à partir de sources non structurées."
-            },
             "preferredProvider": {
                 "title": "Fournisseur de Modèles Préféré",
                 "description": "Sélectionnez quel fournisseur utiliser pour la validation automatisée."
@@ -551,8 +547,6 @@
     },
     "simpleValidation": {
         "title": "Valider les Données du Modèle",
-        "subtitle": "Enrichir et vérifier les métadonnées avec {{provider}} • {{model}}",
-        "filtersAndScope": "Filtres et Portée",
         "execution": "Exécution",
         "estimatedCost": "Coût Estimé",
         "livePricing": "Tarification en Direct",
@@ -563,22 +557,14 @@
             "date": "Date",
             "description": "Desc."
         },
-        "missingParams": "Paramètres",
-        "missingLicense": "Licence",
-        "missingDate": "Date",
-        "missingDesc": "Desc.",
         "validationScope": "Portée de Validation",
         "allMatches": "Toutes les Correspondances",
         "limitCount": "Limiter le Nombre",
         "prioritizeBy": "Prioriser Par",
-        "mostIncomplete": "Plus Incomplets en Premier",
-        "mostRecent": "Plus Récents en Premier",
-        "oldestFirst": "Plus Anciens en Premier",
         "manualConfig": "Configuration Manuelle",
         "defaultSettings": "Paramètres par Défaut",
         "advanced": "Avancé",
         "autoOptimization": "Optimisation Auto Active",
-        "startValidation": "Valider {{count}} Modèles",
         "running": "En cours...",
         "eta": "Temps Restant",
         "tokens": "Jetons",
@@ -825,28 +811,15 @@
     },
     "comparison": {
         "title": "Comparer les Modèles",
-        "subtitle": "Comparaison de {{count}} modèles",
-        "highlightDifferences": "Surligner les Différences",
-        "attribute": "Attribut",
-        "pin": "Épingler comme référence",
-        "unpin": "Détacher la référence",
         "free": "Gratuit",
         "tokens": "jetons",
         "best": "Meilleur",
         "done": "Terminé",
-        "basicInfo": "Informations de Base",
-        "technicalSpecs": "Spécifications Techniques",
         "capabilities": {
             "weights": "Model Weights",
             "api": "API Access",
             "on_prem": "On-Premise Friendly"
         },
-        "licensing": "Licences",
-        "pricing": "Tarification",
-        "tags": "Tags",
-        "moreTags": "+{{count}} plus",
-        "legendDifferences": "Les lignes surlignées montrent les différences",
-        "legendBest": "Meilleure valeur (si applicable)",
         "attributes": {
             "provider": "Fournisseur",
             "domain": "Domaine",

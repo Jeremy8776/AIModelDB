@@ -291,10 +291,6 @@
             "title": "API-Konfiguration",
             "subtitle": "Konfigurieren Sie LLM-API-Schlüssel für KI-gestützte Validierung und Anreicherung.",
             "alpha": "Alpha",
-            "discovery": {
-                "title": "KI-Modellentdeckung",
-                "description": "Verwenden Sie konfigurierte LLMs, um neue Modelle aus unstrukturierten Quellen automatisch zu entdecken, zu validieren und zu klassifizieren."
-            },
             "preferredProvider": {
                 "title": "Bevorzugter Modellanbieter",
                 "description": "Wählen Sie, welcher Anbieter für die automatisierte Validierung verwendet werden soll."
@@ -551,8 +547,6 @@
     },
     "simpleValidation": {
         "title": "Modelldaten validieren",
-        "subtitle": "Metadaten anreichern und verifizieren mit {{provider}} • {{model}}",
-        "filtersAndScope": "Filter & Umfang",
         "execution": "Ausführung",
         "estimatedCost": "Geschätzte Kosten",
         "livePricing": "Live-Preise",
@@ -563,22 +557,14 @@
             "date": "Datum",
             "description": "Beschr."
         },
-        "missingParams": "Parameter",
-        "missingLicense": "Lizenz",
-        "missingDate": "Datum",
-        "missingDesc": "Beschr.",
         "validationScope": "Validierungsumfang",
         "allMatches": "Alle Übereinstimmungen",
         "limitCount": "Anzahl begrenzen",
         "prioritizeBy": "Priorisieren nach",
-        "mostIncomplete": "Am unvollständigsten zuerst",
-        "mostRecent": "Neueste zuerst",
-        "oldestFirst": "Älteste zuerst",
         "manualConfig": "Manuelle Konfiguration",
         "defaultSettings": "Standardeinstellungen",
         "advanced": "Erweitert",
         "autoOptimization": "Auto-Optimierung aktiv",
-        "startValidation": "{{count}} Modelle validieren",
         "running": "Läuft...",
         "eta": "ETA",
         "tokens": "Token",
@@ -825,28 +811,15 @@
     },
     "comparison": {
         "title": "Modelle vergleichen",
-        "subtitle": "Vergleiche {{count}} Modelle",
-        "highlightDifferences": "Unterschiede hervorheben",
-        "attribute": "Attribut",
-        "pin": "Als Referenz anheften",
-        "unpin": "Referenz lösen",
         "free": "Kostenlos",
         "tokens": "Token",
         "best": "Beste",
         "done": "Fertig",
-        "basicInfo": "Basisinformationen",
-        "technicalSpecs": "Technische Daten",
         "capabilities": {
             "weights": "Model Weights",
             "api": "API Access",
             "on_prem": "On-Premise Friendly"
         },
-        "licensing": "Lizenzierung",
-        "pricing": "Preise",
-        "tags": "Tags",
-        "moreTags": "+{{count}} mehr",
-        "legendDifferences": "Hervorgehobene Zeilen zeigen Unterschiede",
-        "legendBest": "Bester Wert (wo zutreffend)",
         "attributes": {
             "provider": "Anbieter",
             "domain": "Domäne",

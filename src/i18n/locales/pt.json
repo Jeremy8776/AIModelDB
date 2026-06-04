@@ -291,10 +291,6 @@
             "title": "Configuração da API",
             "subtitle": "Configure chaves de API LLM para validação e enriquecimento impulsionados por IA.",
             "alpha": "Alpha",
-            "discovery": {
-                "title": "Descoberta de Modelos IA",
-                "description": "Use LLMs configurados para descobrir, validar e classificar automaticamente novos modelos de fontes não estruturadas."
-            },
             "preferredProvider": {
                 "title": "Provedor de Modelos Preferido",
                 "description": "Selecione qual provedor usar para validação automatizada."
@@ -551,8 +547,6 @@
     },
     "simpleValidation": {
         "title": "Validar Dados do Modelo",
-        "subtitle": "Enriquecer e verificar metadados com {{provider}} • {{model}}",
-        "filtersAndScope": "Filtros e Escopo",
         "execution": "Execução",
         "estimatedCost": "Custo Estimado",
         "livePricing": "Preços em Tempo Real",
@@ -563,22 +557,14 @@
             "date": "Data",
             "description": "Desc."
         },
-        "missingParams": "Parâmetros",
-        "missingLicense": "Licença",
-        "missingDate": "Data",
-        "missingDesc": "Desc.",
         "validationScope": "Escopo de Validação",
         "allMatches": "Todas as Correspondências",
         "limitCount": "Limitar Contagem",
         "prioritizeBy": "Priorizar Por",
-        "mostIncomplete": "Mais Incompletos Primeiro",
-        "mostRecent": "Mais Recentes Primeiro",
-        "oldestFirst": "Mais Antigos Primeiro",
         "manualConfig": "Configuração Manual",
         "defaultSettings": "Configurações Padrão",
         "advanced": "Avançado",
         "autoOptimization": "Otimização Auto Ativa",
-        "startValidation": "Validar {{count}} Modelos",
         "running": "Executando...",
         "eta": "ETA",
         "tokens": "Tokens",
@@ -825,28 +811,15 @@
     },
     "comparison": {
         "title": "Comparar Modelos",
-        "subtitle": "Comparando {{count}} modelos",
-        "highlightDifferences": "Destacar Diferenças",
-        "attribute": "Atributo",
-        "pin": "Fixar como referência",
-        "unpin": "Desafixar referência",
         "free": "Grátis",
         "tokens": "tokens",
         "best": "Melhor",
         "done": "Concluído",
-        "basicInfo": "Informações Básicas",
-        "technicalSpecs": "Especificações Técnicas",
         "capabilities": {
             "weights": "Model Weights",
             "api": "API Access",
             "on_prem": "On-Premise Friendly"
         },
-        "licensing": "Licenciamento",
-        "pricing": "Preços",
-        "tags": "Tags",
-        "moreTags": "+{{count}} mais",
-        "legendDifferences": "Linhas destacadas mostram diferenças",
-        "legendBest": "Melhor valor (se aplicável)",
         "attributes": {
             "provider": "Provedor",
             "domain": "Domínio",

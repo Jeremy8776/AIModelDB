@@ -12,7 +12,7 @@ export function parseGitHubRepo(url?: string | null): { owner: string; name: str
         if (u.hostname !== 'github.com') return null;
         const [owner, name] = u.pathname.replace(/^\//, '').split('/');
         if (owner && name) return { owner, name };
-    } catch { }
+    } catch { /* invalid URL — return null below */ }
     return null;
 }
 

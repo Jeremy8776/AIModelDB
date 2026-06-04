@@ -291,10 +291,6 @@
             "title": "API構成",
             "subtitle": "AIによる検証と強化のためにLLM APIキーを構成します。",
             "alpha": "アルファ",
-            "discovery": {
-                "title": "AIモデル発見",
-                "description": "構成されたLLMを使用して、非構造化ソースから新しいモデルを自動的に発見、検証、分類します。"
-            },
             "preferredProvider": {
                 "title": "優先モデルプロバイダー",
                 "description": "自動検証に使用するプロバイダーを選択します。"
@@ -573,8 +569,6 @@
     },
     "simpleValidation": {
         "title": "モデルデータを検証",
-        "subtitle": "{{provider}} • {{model}} を使用してメタデータを強化および検証",
-        "filtersAndScope": "フィルターと範囲",
         "execution": "実行",
         "estimatedCost": "推定コスト",
         "livePricing": "ライブ価格",
@@ -585,22 +579,14 @@
             "date": "日付",
             "description": "説明"
         },
-        "missingParams": "パラメータ",
-        "missingLicense": "ライセンス",
-        "missingDate": "日付",
-        "missingDesc": "説明",
         "validationScope": "検証範囲",
         "allMatches": "すべての一致",
         "limitCount": "数を制限",
         "prioritizeBy": "優先順位",
-        "mostIncomplete": "不完全なものから",
-        "mostRecent": "最新のものから",
-        "oldestFirst": "古いものから",
         "manualConfig": "手動設定",
         "defaultSettings": "デフォルト設定",
         "advanced": "詳細",
         "autoOptimization": "自動最適化が有効",
-        "startValidation": "{{count}}個のモデルを検証",
         "running": "実行中...",
         "eta": "残り時間",
         "tokens": "トークン",
@@ -847,28 +833,15 @@
     },
     "comparison": {
         "title": "モデル比較",
-        "subtitle": "{{count}}個のモデルを比較中",
-        "highlightDifferences": "違いを強調表示",
-        "attribute": "属性",
-        "pin": "参照として固定",
-        "unpin": "参照を解除",
         "free": "無料",
         "tokens": "トークン",
         "best": "ベスト",
         "done": "完了",
-        "basicInfo": "基本情報",
-        "technicalSpecs": "技術仕様",
         "capabilities": {
             "weights": "Model Weights",
             "api": "API Access",
             "on_prem": "On-Premise Friendly"
         },
-        "licensing": "ライセンス",
-        "pricing": "価格",
-        "tags": "タグ",
-        "moreTags": "+他{{count}}個",
-        "legendDifferences": "強調表示された行は違いを示します",
-        "legendBest": "ベストバリュー（該当する場合）",
         "attributes": {
             "provider": "プロバイダー",
             "domain": "ドメイン",

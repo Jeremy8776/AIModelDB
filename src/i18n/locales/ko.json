@@ -291,10 +291,6 @@
             "title": "API 구성",
             "subtitle": "AI 기반 검증 및 강화를 위한 LLM API 키 구성.",
             "alpha": "알파",
-            "discovery": {
-                "title": "AI 모델 발견",
-                "description": "구성된 LLM을 사용하여 비정형 소스에서 새 모델을 자동으로 발견, 검증 및 분류합니다."
-            },
             "preferredProvider": {
                 "title": "선호 모델 제공자",
                 "description": "자동 검증에 사용할 제공자를 선택합니다."
@@ -573,8 +569,6 @@
     },
     "simpleValidation": {
         "title": "모델 데이터 검증",
-        "subtitle": "{{provider}} • {{model}}을(를) 사용하여 메타데이터 강화 및 검증",
-        "filtersAndScope": "필터 및 범위",
         "execution": "실행",
         "estimatedCost": "예상 비용",
         "livePricing": "실시간 가격",
@@ -585,22 +579,14 @@
             "date": "날짜",
             "description": "설명"
         },
-        "missingParams": "파라미터",
-        "missingLicense": "라이센스",
-        "missingDate": "날짜",
-        "missingDesc": "설명",
         "validationScope": "검증 범위",
         "allMatches": "모든 일치 항목",
         "limitCount": "수량 제한",
         "prioritizeBy": "우선 순위",
-        "mostIncomplete": "가장 불완전한 순",
-        "mostRecent": "최신 순",
-        "oldestFirst": "오래된 순",
         "manualConfig": "수동 구성",
         "defaultSettings": "기본 설정",
         "advanced": "고급",
         "autoOptimization": "자동 최적화 활성",
-        "startValidation": "{{count}} 모델 검증",
         "running": "실행 중...",
         "eta": "도착 예정 시간",
         "tokens": "토큰",
@@ -847,28 +833,15 @@
     },
     "comparison": {
         "title": "모델 비교",
-        "subtitle": "{{count}} 모델 비교 중",
-        "highlightDifferences": "차이점 강조",
-        "attribute": "속성",
-        "pin": "참조로 고정",
-        "unpin": "참조 고정 해제",
         "free": "무료",
         "tokens": "토큰",
         "best": "최고",
         "done": "완료",
-        "basicInfo": "기본 정보",
-        "technicalSpecs": "기술 사양",
         "capabilities": {
             "weights": "Model Weights",
             "api": "API Access",
             "on_prem": "On-Premise Friendly"
         },
-        "licensing": "라이센싱",
-        "pricing": "가격",
-        "tags": "태그",
-        "moreTags": "+{{count}} 더 보기",
-        "legendDifferences": "강조 표시된 행은 차이점을 나타냄",
-        "legendBest": "최고 가치 (해당되는 경우)",
         "attributes": {
             "provider": "제공자",
             "domain": "도메인",

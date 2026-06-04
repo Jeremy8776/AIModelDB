@@ -99,7 +99,7 @@ export function ImportModal({ isOpen, onClose, onImport, addConsoleLog }: Import
             effectiveUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=xlsx`;
           }
         }
-      } catch { }
+      } catch { /* swallow — fall through to direct URL fetch */ }
 
       if (/\.(xlsx|ods)$/i.test(effectiveUrl) || effectiveUrl.includes('/export?format=xlsx')) {
         const resp = await fetch(effectiveUrl);

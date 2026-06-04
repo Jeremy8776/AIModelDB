@@ -32,7 +32,7 @@ function parseLogLine(line: string): ParsedEntry {
     const headersRaw = headersIdx >= 0 ? line.slice(headersIdx + 8, bodyIdx >= 0 ? bodyIdx : undefined).trim() : undefined;
     const bodyRaw = bodyIdx >= 0 ? line.slice(bodyIdx + 5).trim() : undefined;
     let headers: any = undefined;
-    try { headers = headersRaw ? JSON.parse(headersRaw) : undefined; } catch { }
+    try { headers = headersRaw ? JSON.parse(headersRaw) : undefined; } catch { /* malformed headers — keep undefined */ }
     return {
       id,
       kind: 'REQ',
