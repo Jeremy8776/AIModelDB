@@ -37,8 +37,11 @@ export function EntityTabs() {
     ];
 
     return (
+        // z-30 sits ABOVE the table's sticky header (z-20) so the active tab's
+        // bottom edge paints over the table's top border, merging the two.
+        // -mb-px pulls the table up by 1px so that overlap lands exactly on the border line.
         <div
-            className="flex items-end gap-0.5 -mb-px relative z-10"
+            className="flex items-end gap-1 -mb-px relative z-30 px-1"
             role="tablist"
             aria-label="Entity type"
         >
@@ -53,15 +56,17 @@ export function EntityTabs() {
                         title={tab.description}
                         onClick={() => setActiveEntity(tab.id)}
                         className={`
-                            relative px-5 py-2 text-sm font-medium
-                            rounded-t-lg border-t border-l border-r
+                            relative px-5 pt-2 pb-2.5 text-sm font-medium
+                            rounded-t-lg border border-b-0
                             transition-colors
                             ${isActive
+                                // Active: same bg as the table header, full top/side border;
+                                // its bottom (border-b-0) overlaps the table's top border to merge.
                                 ? 'bg-bg border-border text-text'
-                                : 'bg-bg-card border-border text-text-secondary hover:text-text -mb-px'
+                                // Inactive: recessed — softer bg, muted border, sits just under the line.
+                                : 'bg-bg-card/50 border-border/40 text-text-secondary hover:bg-bg-card hover:text-text'
                             }
                         `}
-                        style={{ marginBottom: isActive ? '-1px' : undefined }}
                     >
                         {tab.label}
                     </button>

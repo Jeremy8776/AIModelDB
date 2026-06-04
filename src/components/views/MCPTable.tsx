@@ -186,8 +186,9 @@ export function MCPTable({
 
     return (
         <div className="w-full">
-            {/* Table Header - Sticky (same offset as ModelTable for visual parity) */}
-            <div className={`sticky top-[6.2rem] z-20 ${bgColor} ${borderColor} border-t border-x rounded-t-2xl`}>
+            {/* Table Header - Sticky (same offset as ModelTable for visual parity).
+                rounded-t-lg matches the entity tab radius for a clean merge. */}
+            <div className={`sticky top-[6.2rem] z-20 ${bgColor} ${borderColor} border-t border-x rounded-t-lg`}>
                 <MCPTableHeader
                     sortKey={sortKey}
                     sortDirection={sortDirection}

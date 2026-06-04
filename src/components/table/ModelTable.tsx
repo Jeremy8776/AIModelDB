@@ -181,8 +181,9 @@ export function ModelTable({
 
     return (
         <div className="w-full">
-            {/* Table Header - Sticky */}
-            <div className={`sticky top-[6.2rem] z-20 ${bgColor} ${borderColor} border-t border-x rounded-t-2xl`}>
+            {/* Table Header - Sticky. rounded-t-lg matches the entity tab radius so
+                the active tab merges cleanly into the table's top edge. */}
+            <div className={`sticky top-[6.2rem] z-20 ${bgColor} ${borderColor} border-t border-x rounded-t-lg`}>
                 <TableHeader
                     sortKey={sortKey}
                     sortDirection={sortDirection}
