@@ -186,9 +186,9 @@ export function MCPTable({
 
     return (
         <div className="w-full">
-            {/* Table Header - Sticky (same offset as ModelTable for visual parity).
-                Flat top edge so the active entity tab merges seamlessly. */}
-            <div className={`sticky top-[6.2rem] z-20 ${bgColor} ${borderColor} border-t border-x`}>
+            {/* Table Header - Sticky. top-[6rem] butts against the fixed toolbar
+                (parity with ModelTable). Flat top merges with the active tab. */}
+            <div className={`sticky top-[6rem] z-20 ${bgColor} ${borderColor} border-t border-x`}>
                 <MCPTableHeader
                     sortKey={sortKey}
                     sortDirection={sortDirection}

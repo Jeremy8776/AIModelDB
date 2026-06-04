@@ -181,10 +181,10 @@ export function ModelTable({
 
     return (
         <div className="w-full">
-            {/* Table Header - Sticky. Flat top edge (no top rounding) so the active
-                entity tab merges seamlessly — a rounded top-left would peek out below
-                the tab's flat bottom. The tabs provide the only top rounding. */}
-            <div className={`sticky top-[6.2rem] z-20 ${bgColor} ${borderColor} border-t border-x`}>
+            {/* Table Header - Sticky. top-[6rem] (96px) butts exactly against the
+                fixed 64px toolbar that sticks at top-8 (32px), so no gap lets rows
+                bleed through. Flat top edge merges with the active entity tab. */}
+            <div className={`sticky top-[6rem] z-20 ${bgColor} ${borderColor} border-t border-x`}>
                 <TableHeader
                     sortKey={sortKey}
                     sortDirection={sortDirection}

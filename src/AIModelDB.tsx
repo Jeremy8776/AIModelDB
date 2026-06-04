@@ -557,7 +557,10 @@ function AIModelDBContent() {
 
         {/* Toolbar — pagination/actions are Models-specific; on other tabs we
             still want the row's vertical rhythm but with neutral content. */}
-        <div className="w-full px-4 py-3 pb-6 sticky top-8 z-30 bg-bg">
+        {/* Fixed-height toolbar (sticks at top-8 = 32px, height 64px -> bottom at
+            96px). The table headers below stick at top-[6rem] (96px) so they butt
+            against the toolbar exactly with no gap for rows to bleed through. */}
+        <div className="w-full px-4 sticky top-8 z-40 bg-bg grid items-center py-3 lg:py-0 lg:h-16">
           {activeEntity === 'models' ? (
             <Toolbar
               isSyncing={syncState.isSyncing || isSaving}

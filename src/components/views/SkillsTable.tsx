@@ -149,7 +149,9 @@ export function SkillsTable({
 
     return (
         <div className="w-full">
-            <div className={`sticky top-[6.2rem] z-20 ${bgColor} ${borderColor} border-t border-x`}>
+            {/* Sticky header butts against the fixed toolbar at top-[6rem] (parity
+                with Models/MCP). Flat top merges with the active entity tab. */}
+            <div className={`sticky top-[6rem] z-20 ${bgColor} ${borderColor} border-t border-x`}>
                 <SkillsTableHeader
                     sortKey={sortKey}
                     sortDirection={sortDirection}
