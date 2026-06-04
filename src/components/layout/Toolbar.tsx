@@ -12,7 +12,6 @@ import { RefreshCw, ChevronLeft, ChevronRight, Download as DownloadIcon, Trash2,
 import { useTranslation } from 'react-i18next';
 import { ThemedSelect } from "../ThemedSelect";
 import { Model } from "../../types";
-import { EntityTabs } from "./EntityTabs";
 
 /**
  * Props for the Toolbar component
@@ -92,9 +91,9 @@ export function Toolbar({
                 </div>
             </div>
 
-            {/* Middle Zone - Entity tabs, centered above the table body */}
-            <div className={`flex-1 flex items-center justify-center transition-all duration-300 ${hasDetailOpen ? 'lg:w-3/5' : 'w-full'}`}>
-                <EntityTabs />
+            {/* Middle Zone - Spacer (above table); entity tabs render inside MainLayout content */}
+            <div className={`flex-1 transition-all duration-300 ${hasDetailOpen ? 'lg:w-3/5' : 'w-full'}`}>
+                {/* Intentionally empty - tabs sit flush atop the content card below */}
             </div>
 
             {/* Right Zone - Pagination + Action buttons */}

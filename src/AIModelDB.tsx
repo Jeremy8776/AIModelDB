@@ -1,9 +1,11 @@
+import { useMemo, useState } from "react";
 import { ThemeProvider } from "./context/ThemeContext";
 import { SettingsProvider } from "./context/SettingsContext";
 import { UpdateProvider } from "./context/UpdateContext";
 import { ModalProvider } from "./context/ModalContext";
 import { EntityTypeProvider, useEntityType } from "./context/EntityTypeContext";
 import { useDashboardController } from "./hooks/useDashboardController";
+import { useMCPServers } from "./hooks/useMCPServers";
 import { ModalManager } from "./components/ModalManager";
 import { LoadingScreen } from "./components/LoadingScreen";
 import { Header } from "./components/layout/Header";
@@ -11,7 +13,10 @@ import { Toolbar } from "./components/layout/Toolbar";
 import { MainLayout } from "./components/layout/MainLayout";
 import { FiltersSidebar } from "./components/layout/FiltersSidebar";
 import { FloatingToolbar } from "./components/layout/FloatingToolbar";
+import { EntityTabs } from "./components/layout/EntityTabs";
 import { MCPView } from "./components/views/MCPView";
+import { MCPFiltersSidebar, MCPTransportFilter, MCPRegistryFilter, MCPVerifiedFilter } from "./components/views/MCPFiltersSidebar";
+import { MCPDetailPanel } from "./components/views/MCPDetailPanel";
 import { SkillsView } from "./components/views/SkillsView";
 import { TitleBar } from "./components/TitleBar";
 import { UpdateProgress } from "./components/UpdateProgress";
@@ -20,14 +25,32 @@ import { DetailPanel } from "./components/DetailPanel";
 import { SkeletonRow } from "./components/ModelRow";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { EmptyState } from "./components/EmptyState";
+import { MCPServer } from "./types";
 
 /**
  * Main content component for the AI Model Database application.
- * Uses useDashboardController for all business logic and state management.
+ *
+ * Single unified layout — Header + Toolbar + MainLayout(sidebar/content/detail).
+ * The active entity tab (Models | MCP | Skills) swaps the contents of each
+ * slot but never the layout itself. Tabs sit at the top of the content
+ * column, styled as Chrome-style tabs that visually merge with the card below.
  */
 function AIModelDBContent() {
   const { activeEntity } = useEntityType();
   const controller = useDashboardController();
+  const mcp = useMCPServers();
+
+  // MCP-specific filter state (lives here so the MainLayout sidebar slot is
+  // entity-agnostic; both the FiltersSidebar and MCPFiltersSidebar pull from
+  // local state that matches their shape).
+  const [mcpTransport, setMcpTransport] = useState<MCPTransportFilter>('all');
+  const [mcpRegistry, setMcpRegistry] = useState<MCPRegistryFilter>('all');
+  const [mcpVerified, setMcpVerified] = useState<MCPVerifiedFilter>('all');
+  const [mcpFavoritesOnly, setMcpFavoritesOnly] = useState(false);
+  const [mcpHasPackagesOnly, setMcpHasPackagesOnly] = useState(false);
+  const [mcpHasRemotesOnly, setMcpHasRemotesOnly] = useState(false);
+  const [mcpSelected, setMcpSelected] = useState<MCPServer | null>(null);
+
   const {
     t,
     theme,
@@ -103,6 +126,30 @@ function AIModelDBContent() {
     isSaving,
   } = controller;
 
+  // ─── Filtered MCP list — applies sidebar filters + the global search query ───
+  // Declared above the loading early-return so hook order stays stable.
+  const mcpFiltered = useMemo(() => {
+    const q = uiState.query.trim().toLowerCase();
+    return mcp.servers.filter(s => {
+      if (mcpFavoritesOnly && !s.isFavorite) return false;
+      if (mcpHasPackagesOnly && !(s.packages && s.packages.length)) return false;
+      if (mcpHasRemotesOnly && !(s.remotes && s.remotes.length)) return false;
+      if (mcpTransport !== 'all') {
+        const types = (s.remotes || []).map(r => r.type);
+        if (!types.includes(mcpTransport)) return false;
+      }
+      if (mcpRegistry !== 'all') {
+        const types = (s.packages || []).map(p => p.registryType);
+        if (!types.includes(mcpRegistry as typeof types[number])) return false;
+      }
+      if (mcpVerified === 'namespace' && !s.namespaceVerified) return false;
+      if (mcpVerified === 'image' && !s.imageVerified) return false;
+      if (mcpVerified === 'directory' && !s.directoryVerified) return false;
+      if (q && !`${s.name} ${s.description ?? ''} ${s.id}`.toLowerCase().includes(q)) return false;
+      return true;
+    });
+  }, [mcp.servers, mcpTransport, mcpRegistry, mcpVerified, mcpFavoritesOnly, mcpHasPackagesOnly, mcpHasRemotesOnly, uiState.query]);
+
   // Loading screen
   if (isLoading) {
     return (
@@ -113,11 +160,228 @@ function AIModelDBContent() {
     );
   }
 
+  // ─── Entity-aware sync dispatcher (Header Sync button) ───
+  const handleSync = () => {
+    if (activeEntity === 'mcp') {
+      mcp.syncOfficialRegistry();
+    } else if (activeEntity === 'models') {
+      handleSyncWithApiCheck();
+    }
+    // Skills sync arrives later
+  };
+
+  // ─── Build the slot contents per entity ───
+
+  // Sidebar
+  let sidebarNode: React.ReactNode = null;
+  if (activeEntity === 'models') {
+    sidebarNode = (
+      <ErrorBoundary name="Filters">
+        <FiltersSidebar
+          domainPick={uiState.domainPick}
+          onDomainChange={uiState.setDomainPick}
+          minDownloads={uiState.minDownloads}
+          onMinDownloadsChange={uiState.setMinDownloads}
+          licenseTypes={uiState.licenseTypes}
+          onLicenseTypesChange={uiState.setLicenseTypes}
+          commercialAllowed={uiState.commercialAllowed}
+          onCommercialAllowedChange={uiState.setCommercialAllowed}
+          includeTags={uiState.includeTags}
+          onIncludeTagsChange={uiState.setIncludeTags}
+          excludeTags={uiState.excludeTags}
+          onExcludeTagsChange={uiState.setExcludeTags}
+          favoritesOnly={uiState.favoritesOnly}
+          onFavoritesOnlyChange={uiState.setFavoritesOnly}
+          hideNSFW={uiState.hideNSFW}
+          onHideNSFWChange={uiState.setHideNSFW}
+          onClearFilters={() => {
+            uiState.setLicenseTypes([]);
+            uiState.setCommercialAllowed(null);
+            uiState.setIncludeTags([]);
+            uiState.setExcludeTags([]);
+            uiState.setMinDownloads(0);
+            uiState.setDomainPick('All');
+            uiState.setFavoritesOnly(false);
+            uiState.setHideNSFW(false);
+          }}
+          theme={theme}
+        />
+      </ErrorBoundary>
+    );
+  } else if (activeEntity === 'mcp') {
+    sidebarNode = (
+      <ErrorBoundary name="MCP Filters">
+        <MCPFiltersSidebar
+          transport={mcpTransport}
+          onTransportChange={setMcpTransport}
+          registry={mcpRegistry}
+          onRegistryChange={setMcpRegistry}
+          verified={mcpVerified}
+          onVerifiedChange={setMcpVerified}
+          favoritesOnly={mcpFavoritesOnly}
+          onFavoritesOnlyChange={setMcpFavoritesOnly}
+          hasPackagesOnly={mcpHasPackagesOnly}
+          onHasPackagesOnlyChange={setMcpHasPackagesOnly}
+          hasRemotesOnly={mcpHasRemotesOnly}
+          onHasRemotesOnlyChange={setMcpHasRemotesOnly}
+          onClearFilters={() => {
+            setMcpTransport('all');
+            setMcpRegistry('all');
+            setMcpVerified('all');
+            setMcpFavoritesOnly(false);
+            setMcpHasPackagesOnly(false);
+            setMcpHasRemotesOnly(false);
+          }}
+        />
+      </ErrorBoundary>
+    );
+  } else {
+    // Skills sidebar — empty card matching the shell visual rhythm until Phase 3 lands
+    sidebarNode = (
+      <aside className="w-full lg:w-72 flex-shrink-0">
+        <div className="rounded-2xl border border-border bg-bg-card p-4 text-center">
+          <div className="text-sm text-text-secondary">
+            {t('skills.sidebar.placeholder', { defaultValue: 'Filters arrive with v0.8.0 Skills sync.' })}
+          </div>
+        </div>
+      </aside>
+    );
+  }
+
+  // Inner content (without the EntityTabs wrapper — wrapped below)
+  let innerContent: React.ReactNode;
+  if (activeEntity === 'models') {
+    innerContent = (
+      <ErrorBoundary name="Model Table">
+        {syncState.isSyncing && filtered.length === 0 ? (
+          <div className="space-y-2">
+            {Array.from({ length: 8 }).map((_, i) => <SkeletonRow key={i} />)}
+          </div>
+        ) : filtered.length === 0 ? (
+          <EmptyState
+            onSetupSources={() => modalState.setShowOnboarding(true)}
+            onImport={() => modalState.setShowImport(true)}
+          />
+        ) : (
+          <ModelTable
+            models={visibleItems}
+            sortKey={uiState.sortKey}
+            sortDirection={uiState.sortDirection}
+            onSortChange={(key, direction) => {
+              uiState.setSortKey(key);
+              uiState.setSortDirection(direction);
+            }}
+            onModelOpen={(model, element) => {
+              if (uiState.open && uiState.open.id === model.id) {
+                uiState.setOpen(null);
+                uiState.setTriggerElement(null);
+              } else {
+                uiState.setOpen(model);
+                uiState.setTriggerElement(element || null);
+              }
+            }}
+            hasMore={hasMore && uiState.pageSize === null}
+            sentinelRef={sentinelRef}
+            displayCount={displayCount}
+            totalCount={totalCount}
+            theme={theme}
+            selectedIds={selectedIds}
+            onSelect={handleSelect}
+            onSelectAll={handleSelectAll}
+            activeModelId={uiState.open?.id}
+            onToggleFavorite={handleToggleFavorite}
+            onToggleNSFWFlag={handleToggleNSFWFlag}
+          />
+        )}
+      </ErrorBoundary>
+    );
+  } else if (activeEntity === 'mcp') {
+    innerContent = (
+      <ErrorBoundary name="MCP Table">
+        <MCPView
+          servers={mcpFiltered}
+          isSyncing={mcp.isSyncing}
+          syncProgress={mcp.syncProgress}
+          lastError={mcp.meta.lastError}
+          activeId={mcpSelected?.id ?? null}
+          onOpen={(server) => setMcpSelected(prev => (prev?.id === server.id ? null : server))}
+          onToggleFavorite={mcp.toggleFavorite}
+        />
+      </ErrorBoundary>
+    );
+  } else {
+    innerContent = <SkillsView />;
+  }
+
+  // Wrap content with the EntityTabs at the top of the column.
+  // Tabs sit flush against the content card, sharing its background so the
+  // active tab visually merges with the workspace beneath it.
+  const contentNode = (
+    <div className="space-y-0">
+      <EntityTabs />
+      <div className="rounded-b-2xl rounded-tr-2xl border border-t-0 border-border bg-bg-card p-4 -mt-px">
+        {innerContent}
+      </div>
+    </div>
+  );
+
+  // Detail panel
+  let detailPanelNode: React.ReactNode = null;
+  if (activeEntity === 'models' && uiState.open) {
+    detailPanelNode = (
+      <ErrorBoundary name="Detail Panel" onReset={() => {
+        uiState.setOpen(null);
+        uiState.setTriggerElement(null);
+      }}>
+        <DetailPanel
+          model={visibleItems.find(m => m.id === uiState.open?.id) || uiState.open}
+          onClose={() => {
+            uiState.setOpen(null);
+            uiState.setTriggerElement(null);
+          }}
+          onDelete={(id) => {
+            const m = models.find(m => m.id === id);
+            if (m) handleUndoableDelete([m]);
+          }}
+          triggerElement={uiState.triggerElement}
+          hideNSFW={uiState.hideNSFW}
+          className="lg:max-h-[calc(100vh-100px)]"
+          onToggleFavorite={handleToggleFavorite}
+          onToggleNSFWFlag={handleToggleNSFWFlag}
+          onToggleImageNSFW={handleToggleImageNSFW}
+        />
+      </ErrorBoundary>
+    );
+  } else if (activeEntity === 'mcp' && mcpSelected) {
+    detailPanelNode = (
+      <ErrorBoundary name="MCP Detail Panel" onReset={() => setMcpSelected(null)}>
+        <MCPDetailPanel
+          server={mcpSelected}
+          onClose={() => setMcpSelected(null)}
+          onToggleFavorite={mcp.toggleFavorite}
+          onDelete={mcp.deleteServer}
+          className="lg:max-h-[calc(100vh-100px)]"
+        />
+      </ErrorBoundary>
+    );
+  }
+
+  // Floating bulk-action toolbar is Models-specific (multi-select). Only render on Models.
+  const floatingToolbarNode = activeEntity === 'models' && filtered.length > 0 ? (
+    <FloatingToolbar
+      selectedIds={selectedIds}
+      models={visibleItems}
+      theme={theme}
+      onBulkDelete={handleBulkDelete}
+      onBulkExport={handleBulkExport}
+      onSelectAll={handleSelectAll}
+    />
+  ) : undefined;
+
   return (
     <>
       <TitleBar />
       <div className={`min-h-screen ${bgRoot}`}>
-        {/* Update Progress Toast */}
         <UpdateProgress
           show={showUpdateProgress}
           onDismiss={() => setShowUpdateProgress(false)}
@@ -132,8 +396,10 @@ function AIModelDBContent() {
           query={uiState.query}
           onQueryChange={uiState.setQuery}
           searchRef={searchRef}
-          isSyncing={syncState.isSyncing || isSaving}
-          onSync={handleSyncWithApiCheck}
+          isSyncing={
+            (activeEntity === 'mcp' ? mcp.isSyncing : syncState.isSyncing) || isSaving
+          }
+          onSync={handleSync}
           onAddModel={() => modalState.setShowAddModel(true)}
           onImport={() => modalState.setShowImport(true)}
           onSettings={() => modalState.setShowSync(true)}
@@ -141,165 +407,60 @@ function AIModelDBContent() {
           hasUpdate={updateState.updateAvailable}
         />
 
-        {activeEntity === 'mcp' && <MCPView />}
-        {activeEntity === 'skills' && <SkillsView />}
-
-        {activeEntity === 'models' && (
-        <>
+        {/* Toolbar — pagination/actions are Models-specific; on other tabs we
+            still want the row's vertical rhythm but with neutral content. */}
         <div className="w-full px-4 py-3 pb-6 sticky top-8 z-30 bg-bg">
-          <Toolbar
-            isSyncing={syncState.isSyncing || isSaving}
-            syncProgress={syncState.syncProgress}
-            lastSync={syncState.lastSync}
-            pageItems={pageItems}
-            total={total}
-            minDownloads={uiState.minDownloads}
-            pageSize={uiState.pageSize}
-            onPageSizeChange={(size) => {
-              uiState.setPageSize(size);
-              setPage(1);
-            }}
-            page={page}
-            totalPages={totalPages}
-            onPageChange={setPage}
-            totalModels={models.length}
-            onExport={() => modalState.setShowExportModal(true)}
-            onDeleteDatabase={() => {
-              modalState.setConfirmationToast({
-                title: t('settings.system.maintenance.deleteDbConfirmTitle'),
-                message: t('settings.system.maintenance.deleteDbConfirmMessage'),
-                type: 'error',
-                confirmText: t('settings.system.maintenance.deleteDbConfirmButton'),
-                onConfirm: () => {
-                  window.dispatchEvent(new CustomEvent('hard-reset'));
-                }
-              });
-            }}
-            onValidateModels={validateModels}
-            theme={theme}
-            hasDetailOpen={!!uiState.open}
-          />
+          {activeEntity === 'models' ? (
+            <Toolbar
+              isSyncing={syncState.isSyncing || isSaving}
+              syncProgress={syncState.syncProgress}
+              lastSync={syncState.lastSync}
+              pageItems={pageItems}
+              total={total}
+              minDownloads={uiState.minDownloads}
+              pageSize={uiState.pageSize}
+              onPageSizeChange={(size) => {
+                uiState.setPageSize(size);
+                setPage(1);
+              }}
+              page={page}
+              totalPages={totalPages}
+              onPageChange={setPage}
+              totalModels={models.length}
+              onExport={() => modalState.setShowExportModal(true)}
+              onDeleteDatabase={() => {
+                modalState.setConfirmationToast({
+                  title: t('settings.system.maintenance.deleteDbConfirmTitle'),
+                  message: t('settings.system.maintenance.deleteDbConfirmMessage'),
+                  type: 'error',
+                  confirmText: t('settings.system.maintenance.deleteDbConfirmButton'),
+                  onConfirm: () => {
+                    window.dispatchEvent(new CustomEvent('hard-reset'));
+                  }
+                });
+              }}
+              onValidateModels={validateModels}
+              theme={theme}
+              hasDetailOpen={!!uiState.open}
+            />
+          ) : (
+            <EntityStatusBar
+              entity={activeEntity}
+              mcpCount={mcp.servers.length}
+              mcpVisible={mcpFiltered.length}
+              mcpIsSyncing={mcp.isSyncing}
+              mcpLastSync={mcp.meta.lastSync}
+              hasDetailOpen={!!mcpSelected}
+            />
+          )}
         </div>
 
         <MainLayout
-          sidebar={
-            <ErrorBoundary name="Filters">
-              <FiltersSidebar
-                domainPick={uiState.domainPick}
-                onDomainChange={uiState.setDomainPick}
-                minDownloads={uiState.minDownloads}
-                onMinDownloadsChange={uiState.setMinDownloads}
-                licenseTypes={uiState.licenseTypes}
-                onLicenseTypesChange={uiState.setLicenseTypes}
-                commercialAllowed={uiState.commercialAllowed}
-                onCommercialAllowedChange={uiState.setCommercialAllowed}
-                includeTags={uiState.includeTags}
-                onIncludeTagsChange={uiState.setIncludeTags}
-                excludeTags={uiState.excludeTags}
-                onExcludeTagsChange={uiState.setExcludeTags}
-                favoritesOnly={uiState.favoritesOnly}
-                onFavoritesOnlyChange={uiState.setFavoritesOnly}
-                hideNSFW={uiState.hideNSFW}
-                onHideNSFWChange={uiState.setHideNSFW}
-                onClearFilters={() => {
-                  uiState.setLicenseTypes([]);
-                  uiState.setCommercialAllowed(null);
-                  uiState.setIncludeTags([]);
-                  uiState.setExcludeTags([]);
-                  uiState.setMinDownloads(0);
-                  uiState.setDomainPick('All');
-                  uiState.setFavoritesOnly(false);
-                  uiState.setHideNSFW(false);
-                }}
-                theme={theme}
-              />
-            </ErrorBoundary>
-          }
-          content={
-            <ErrorBoundary name="Model Table">
-              {syncState.isSyncing && filtered.length === 0 ? (
-                <div className="space-y-2">
-                  {Array.from({ length: 8 }).map((_, i) => <SkeletonRow key={i} />)}
-                </div>
-              ) : filtered.length === 0 ? (
-                <EmptyState
-                  onSetupSources={() => modalState.setShowOnboarding(true)}
-                  onImport={() => modalState.setShowImport(true)}
-                />
-              ) : (
-                <ModelTable
-                  models={visibleItems}
-                  sortKey={uiState.sortKey}
-                  sortDirection={uiState.sortDirection}
-                  onSortChange={(key, direction) => {
-                    uiState.setSortKey(key);
-                    uiState.setSortDirection(direction);
-                  }}
-                  onModelOpen={(model, element) => {
-                    if (uiState.open && uiState.open.id === model.id) {
-                      uiState.setOpen(null);
-                      uiState.setTriggerElement(null);
-                    } else {
-                      uiState.setOpen(model);
-                      uiState.setTriggerElement(element || null);
-                    }
-                  }}
-                  hasMore={hasMore && uiState.pageSize === null}
-                  sentinelRef={sentinelRef}
-                  displayCount={displayCount}
-                  totalCount={totalCount}
-                  theme={theme}
-                  selectedIds={selectedIds}
-                  onSelect={handleSelect}
-                  onSelectAll={handleSelectAll}
-                  activeModelId={uiState.open?.id}
-                  onToggleFavorite={handleToggleFavorite}
-                  onToggleNSFWFlag={handleToggleNSFWFlag}
-                />
-              )}
-            </ErrorBoundary>
-          }
-          detailPanel={
-            uiState.open ? (
-              <ErrorBoundary name="Detail Panel" onReset={() => {
-                uiState.setOpen(null);
-                uiState.setTriggerElement(null);
-              }}>
-                <DetailPanel
-                  model={visibleItems.find(m => m.id === uiState.open?.id) || uiState.open}
-                  onClose={() => {
-                    uiState.setOpen(null);
-                    uiState.setTriggerElement(null);
-                  }}
-                  onDelete={(id) => {
-                    const m = models.find(m => m.id === id);
-                    if (m) handleUndoableDelete([m]);
-                  }}
-                  triggerElement={uiState.triggerElement}
-                  hideNSFW={uiState.hideNSFW}
-                  className="lg:max-h-[calc(100vh-100px)]"
-                  onToggleFavorite={handleToggleFavorite}
-                  onToggleNSFWFlag={handleToggleNSFWFlag}
-                  onToggleImageNSFW={handleToggleImageNSFW}
-                />
-              </ErrorBoundary>
-            ) : null
-          }
-          toolbar={
-            filtered.length > 0 && (
-              <FloatingToolbar
-                selectedIds={selectedIds}
-                models={visibleItems}
-                theme={theme}
-                onBulkDelete={handleBulkDelete}
-                onBulkExport={handleBulkExport}
-                onSelectAll={handleSelectAll}
-              />
-            )
-          }
+          sidebar={sidebarNode}
+          content={contentNode}
+          detailPanel={detailPanelNode}
+          toolbar={floatingToolbarNode}
         />
-        </>
-        )}
 
         <ModalManager
           models={models}
@@ -344,6 +505,70 @@ function AIModelDBContent() {
         />
       </div>
     </>
+  );
+}
+
+/**
+ * Lightweight status row used on MCP/Skills tabs in place of the Models
+ * Toolbar. Same vertical footprint and 3-zone layout so the rest of the
+ * page doesn't shift between tabs.
+ */
+function EntityStatusBar({
+  entity,
+  mcpCount,
+  mcpVisible,
+  mcpIsSyncing,
+  mcpLastSync,
+  hasDetailOpen,
+}: {
+  entity: 'mcp' | 'skills';
+  mcpCount: number;
+  mcpVisible: number;
+  mcpIsSyncing: boolean;
+  mcpLastSync: string | null;
+  hasDetailOpen: boolean;
+}) {
+  return (
+    <div className="flex flex-col lg:flex-row gap-4 lg:gap-8">
+      {/* Left zone */}
+      <div className="w-full lg:w-48 flex-shrink-0">
+        <div className="text-xs text-text-secondary space-y-0.5">
+          {entity === 'mcp' && mcpIsSyncing ? (
+            <div className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+              <span>Syncing</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+              <span>Idle</span>
+              {entity === 'mcp' && (
+                <span className="opacity-70">• {mcpCount.toLocaleString()} servers</span>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Middle zone — spacer above content card */}
+      <div className={`flex-1 transition-all duration-300 ${hasDetailOpen ? 'lg:w-3/5' : 'w-full'}`} />
+
+      {/* Right zone — entity-specific status */}
+      <div className={`flex items-center justify-end gap-2 text-xs text-text-secondary ${hasDetailOpen ? 'lg:w-2/5' : ''}`}>
+        {entity === 'mcp' && (
+          <>
+            <span>{mcpVisible.toLocaleString()} / {mcpCount.toLocaleString()} visible</span>
+            {mcpLastSync && (
+              <>
+                <span className="mx-1">•</span>
+                <span>Last sync {new Date(mcpLastSync).toLocaleString()}</span>
+              </>
+            )}
+          </>
+        )}
+        {entity === 'skills' && <span>Skills sync arrives in v0.8.0</span>}
+      </div>
+    </div>
   );
 }
 
