@@ -106,6 +106,9 @@ export type Model = {
   isFavorite?: boolean;
   isNSFWFlagged?: boolean;
   flaggedImageUrls?: string[];
+  // Top-level field names the user has manually edited.
+  // Listed fields are preserved across sync/merge — see mergeRecords (V3 strategy).
+  editedFields?: string[];
   images?: string[];
   links?: { label: string; url: string }[];
   source_stats?: Record<string, { downloads?: number; updated_at?: string }>;

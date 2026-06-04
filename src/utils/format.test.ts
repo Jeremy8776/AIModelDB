@@ -79,14 +79,17 @@ describe('dedupe', () => {
 });
 
 describe('normalizeNameForMatch', () => {
-    it('should lowercase and remove special characters', () => {
-        expect(normalizeNameForMatch('GPT-4')).toBe('gpt 4');
-        expect(normalizeNameForMatch('Claude 3.5 Sonnet')).toBe('claude 3 5 sonnet');
+    // Note: this normalizer is deliberately aggressive — it strips ALL
+    // non-alphanumerics so that "GPT-4", "gpt 4", "gpt4", and "GPT.4" all
+    // collapse to the same key for fuzzy dedupe in matchExistingIndex.
+    it('should lowercase and collapse special characters', () => {
+        expect(normalizeNameForMatch('GPT-4')).toBe('gpt4');
+        expect(normalizeNameForMatch('Claude 3.5 Sonnet')).toBe('claude35sonnet');
     });
 
-    it('should unwrap bracket qualifiers', () => {
-        expect(normalizeNameForMatch('FLUX.1 [pro]')).toBe('flux 1 pro');
-        expect(normalizeNameForMatch('Model [dev] [beta]')).toBe('model dev beta');
+    it('should collapse bracket qualifiers into the base name', () => {
+        expect(normalizeNameForMatch('FLUX.1 [pro]')).toBe('flux1pro');
+        expect(normalizeNameForMatch('Model [dev] [beta]')).toBe('modeldevbeta');
     });
 
     it('should handle null/undefined', () => {

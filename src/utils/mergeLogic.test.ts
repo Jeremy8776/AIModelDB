@@ -235,6 +235,46 @@ describe('mergeRecords', () => {
 
         expect(result.description).toBe('This is an English description');
     });
+
+    it('should prefer existing English description over incoming CJK', () => {
+        // Sync direction shouldn't matter — English wins regardless
+        const existing = createModel({
+            description: 'This is an English description',
+        });
+        const incoming = createModel({
+            description: '这是中文描述',
+        });
+
+        const result = mergeRecords(existing, incoming);
+
+        expect(result.description).toBe('This is an English description');
+    });
+
+    it('should preserve user-edited fields from incoming sync data', () => {
+        // User edited the description and parameters, marked via editedFields.
+        // A subsequent sync brings new values, which must NOT overwrite them.
+        const existing = createModel({
+            description: 'User-curated description',
+            parameters: '70B',
+            context_window: '8192',
+            editedFields: ['description', 'parameters'],
+        });
+        const incoming = createModel({
+            description: 'Auto-fetched description from source',
+            parameters: '7B',
+            context_window: '32768',
+        });
+
+        const result = mergeRecords(existing, incoming);
+
+        // Protected fields stay as the user left them
+        expect(result.description).toBe('User-curated description');
+        expect(result.parameters).toBe('70B');
+        // Unprotected dynamic field still takes the fresh value
+        expect(result.context_window).toBe('32768');
+        // editedFields persists for future syncs
+        expect(result.editedFields).toEqual(expect.arrayContaining(['description', 'parameters']));
+    });
 });
 
 describe('performMergeBatch', () => {

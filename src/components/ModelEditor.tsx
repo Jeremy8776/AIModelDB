@@ -14,6 +14,7 @@ export function ModelEditor({ model, onSave, onClose, isOpen }: ModelEditorProps
   const { theme } = useContext(ThemeContext);
   const { t } = useTranslation();
   const [editedModel, setEditedModel] = useState<Model | null>(null);
+  const [touchedFields, setTouchedFields] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
 
   // Available domains for selection
@@ -26,15 +27,27 @@ export function ModelEditor({ model, onSave, onClose, isOpen }: ModelEditorProps
   useEffect(() => {
     if (model) {
       setEditedModel({ ...model });
+      setTouchedFields(new Set());
       setError(null);
     }
   }, [model]);
 
   if (!isOpen || !editedModel) return null;
 
+  // For nested field names like "license.name", protect the whole parent ("license").
+  const topLevel = (name: string) => name.split('.')[0];
+  const markTouched = (name: string) => {
+    setTouchedFields(prev => {
+      const next = new Set(prev);
+      next.add(topLevel(name));
+      return next;
+    });
+  };
+
   // Handle input changes
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
+    markTouched(name);
 
     // Handle nested properties with dot notation
     if (name.includes('.')) {
@@ -61,6 +74,7 @@ export function ModelEditor({ model, onSave, onClose, isOpen }: ModelEditorProps
   // Handle checkbox changes
   const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, checked } = e.target;
+    markTouched(name);
 
     if (name.includes('.')) {
       const [parent, child] = name.split('.');
@@ -87,6 +101,7 @@ export function ModelEditor({ model, onSave, onClose, isOpen }: ModelEditorProps
   const handleTagsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const tagsString = e.target.value;
     const tagsArray = tagsString.split(',').map(tag => tag.trim()).filter(Boolean);
+    markTouched('tags');
 
     setEditedModel(prev => {
       if (!prev) return prev;
@@ -104,8 +119,13 @@ export function ModelEditor({ model, onSave, onClose, isOpen }: ModelEditorProps
       return;
     }
 
-    // Save the edited model
-    onSave(editedModel);
+    // Record fields the user touched, unioned with any pre-existing protections.
+    const editedFields = Array.from(new Set([
+      ...(editedModel.editedFields || []),
+      ...touchedFields,
+    ]));
+
+    onSave({ ...editedModel, editedFields });
   };
 
   return (
