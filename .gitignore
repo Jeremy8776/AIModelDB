@@ -46,5 +46,10 @@ tsc-errors.txt
 cert_base64.txt
 scripts/build_signed_release.ps1
 
+# Lint output / TS incremental cache
+lint-results.json
+sync-lint.json
+tsconfig.tsbuildinfo
+
 # Agent files
 
