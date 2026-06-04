@@ -19,6 +19,10 @@ import { MCPFiltersSidebar, MCPTransportFilter, MCPRegistryFilter, MCPVerifiedFi
 import { MCPDetailPanel } from "./components/views/MCPDetailPanel";
 import { MCPSortKey } from "./components/views/MCPTableHeader";
 import { SkillsView } from "./components/views/SkillsView";
+import { SkillsFiltersSidebar, SkillTypeFilter, SkillOriginFilter } from "./components/views/SkillsFiltersSidebar";
+import { SkillsDetailPanel } from "./components/views/SkillsDetailPanel";
+import { SkillSortKey } from "./components/views/SkillsTableHeader";
+import { useSkills } from "./hooks/useSkills";
 import { TitleBar } from "./components/TitleBar";
 import { UpdateProgress } from "./components/UpdateProgress";
 import { ModelTable } from "./components/table/ModelTable";
@@ -40,6 +44,7 @@ function AIModelDBContent() {
   const { activeEntity } = useEntityType();
   const controller = useDashboardController();
   const mcp = useMCPServers();
+  const skills = useSkills();
 
   // MCP-specific filter state (lives here so the MainLayout sidebar slot is
   // entity-agnostic; both the FiltersSidebar and MCPFiltersSidebar pull from
@@ -56,6 +61,18 @@ function AIModelDBContent() {
   const [mcpSelectedIds, setMcpSelectedIds] = useState<Set<string>>(new Set());
   const [mcpPage, setMcpPage] = useState(1);
   const [mcpPageSize, setMcpPageSize] = useState<number | null>(100);
+
+  // Skills filter / sort / pagination / selection state (parallel to MCP).
+  const [skillType, setSkillType] = useState<SkillTypeFilter>('all');
+  const [skillOrigin, setSkillOrigin] = useState<SkillOriginFilter>('all');
+  const [skillFamily, setSkillFamily] = useState<string>('all');
+  const [skillFavoritesOnly, setSkillFavoritesOnly] = useState(false);
+  const [skillSelected, setSkillSelected] = useState<import('./types').Skill | null>(null);
+  const [skillSortKey, setSkillSortKey] = useState<SkillSortKey>('name');
+  const [skillSortDirection, setSkillSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [skillSelectedIds, setSkillSelectedIds] = useState<Set<string>>(new Set());
+  const [skillPage, setSkillPage] = useState(1);
+  const [skillPageSize, setSkillPageSize] = useState<number | null>(100);
 
   const {
     t,
@@ -169,6 +186,37 @@ function AIModelDBContent() {
     if (mcpPage > mcpTotalPages) setMcpPage(1);
   }, [mcpPage, mcpTotalPages]);
 
+  // ─── Skills: distinct categories (for the filter dropdown) ───
+  const skillFamilies = useMemo(() => {
+    const set = new Set<string>();
+    skills.skills.forEach(s => { if (s.family) set.add(s.family); });
+    return Array.from(set).sort();
+  }, [skills.skills]);
+
+  // ─── Skills: filtered list (sidebar filters + global search) ───
+  const skillsFiltered = useMemo(() => {
+    const q = uiState.query.trim().toLowerCase();
+    return skills.skills.filter(s => {
+      if (skillFavoritesOnly && !s.isFavorite) return false;
+      if (skillType !== 'all' && s.type !== skillType) return false;
+      if (skillOrigin !== 'all' && s.origin !== skillOrigin) return false;
+      if (skillFamily !== 'all' && s.family !== skillFamily) return false;
+      if (q && !`${s.name} ${s.description ?? ''} ${s.id} ${(s.tags || []).join(' ')}`.toLowerCase().includes(q)) return false;
+      return true;
+    });
+  }, [skills.skills, skillType, skillOrigin, skillFamily, skillFavoritesOnly, uiState.query]);
+
+  const skillTotalPages = skillPageSize ? Math.max(1, Math.ceil(skillsFiltered.length / skillPageSize)) : 1;
+  const skillPageItems = useMemo(() => {
+    if (!skillPageSize) return skillsFiltered;
+    const start = (skillPage - 1) * skillPageSize;
+    return skillsFiltered.slice(start, start + skillPageSize);
+  }, [skillsFiltered, skillPage, skillPageSize]);
+
+  useEffect(() => {
+    if (skillPage > skillTotalPages) setSkillPage(1);
+  }, [skillPage, skillTotalPages]);
+
   // Loading screen
   if (isLoading) {
     return (
@@ -183,10 +231,11 @@ function AIModelDBContent() {
   const handleSync = () => {
     if (activeEntity === 'mcp') {
       mcp.syncOfficialRegistry();
+    } else if (activeEntity === 'skills') {
+      skills.syncOfficialMarketplace();
     } else if (activeEntity === 'models') {
       handleSyncWithApiCheck();
     }
-    // Skills sync arrives later
   };
 
   // ─── Build the slot contents per entity ───
@@ -255,15 +304,26 @@ function AIModelDBContent() {
       </ErrorBoundary>
     );
   } else {
-    // Skills sidebar — empty card matching the shell visual rhythm until Phase 3 lands
     sidebarNode = (
-      <aside className="w-full lg:w-72 flex-shrink-0">
-        <div className="rounded-2xl border border-border bg-bg-card p-4 text-center">
-          <div className="text-sm text-text-secondary">
-            {t('skills.sidebar.placeholder', { defaultValue: 'Filters arrive with v0.8.0 Skills sync.' })}
-          </div>
-        </div>
-      </aside>
+      <ErrorBoundary name="Skills Filters">
+        <SkillsFiltersSidebar
+          type={skillType}
+          onTypeChange={setSkillType}
+          origin={skillOrigin}
+          onOriginChange={setSkillOrigin}
+          family={skillFamily}
+          onFamilyChange={setSkillFamily}
+          families={skillFamilies}
+          favoritesOnly={skillFavoritesOnly}
+          onFavoritesOnlyChange={setSkillFavoritesOnly}
+          onClearFilters={() => {
+            setSkillType('all');
+            setSkillOrigin('all');
+            setSkillFamily('all');
+            setSkillFavoritesOnly(false);
+          }}
+        />
+      </ErrorBoundary>
     );
   }
 
@@ -353,7 +413,40 @@ function AIModelDBContent() {
       </ErrorBoundary>
     );
   } else {
-    innerContent = <SkillsView />;
+    innerContent = (
+      <ErrorBoundary name="Skills Table">
+        <SkillsView
+          skills={skillPageItems}
+          totalCount={skills.skills.length}
+          isSyncing={skills.isSyncing}
+          syncProgress={skills.syncProgress}
+          lastError={skills.meta.lastError}
+          sortKey={skillSortKey}
+          sortDirection={skillSortDirection}
+          onSortChange={(key, dir) => {
+            setSkillSortKey(key);
+            setSkillSortDirection(dir);
+          }}
+          activeSkillId={skillSelected?.id ?? null}
+          onOpen={(skill) => setSkillSelected(prev => (prev?.id === skill.id ? null : skill))}
+          onToggleFavorite={skills.toggleFavorite}
+          selectedIds={skillSelectedIds}
+          onSelect={(skill, selected) => {
+            setSkillSelectedIds(prev => {
+              const next = new Set(prev);
+              if (selected) next.add(skill.id);
+              else next.delete(skill.id);
+              return next;
+            });
+          }}
+          onSelectAll={(selected) => {
+            if (selected) setSkillSelectedIds(new Set(skillPageItems.map(s => s.id)));
+            else setSkillSelectedIds(new Set());
+          }}
+          theme={theme}
+        />
+      </ErrorBoundary>
+    );
   }
 
   // Tabs sit directly above the content's own card; the active tab's bottom
@@ -403,6 +496,18 @@ function AIModelDBContent() {
           onClose={() => setMcpSelected(null)}
           onToggleFavorite={mcp.toggleFavorite}
           onDelete={mcp.deleteServer}
+          className="lg:max-h-[calc(100vh-100px)]"
+        />
+      </ErrorBoundary>
+    );
+  } else if (activeEntity === 'skills' && skillSelected) {
+    detailPanelNode = (
+      <ErrorBoundary name="Skills Detail Panel" onReset={() => setSkillSelected(null)}>
+        <SkillsDetailPanel
+          skill={skillSelected}
+          onClose={() => setSkillSelected(null)}
+          onToggleFavorite={skills.toggleFavorite}
+          onDelete={skills.deleteSkill}
           className="lg:max-h-[calc(100vh-100px)]"
         />
       </ErrorBoundary>
@@ -515,9 +620,34 @@ function AIModelDBContent() {
               hasDetailOpen={!!mcpSelected}
             />
           ) : (
-            <EntityStatusBar
-              entity="skills"
-              hasDetailOpen={false}
+            <Toolbar
+              isSyncing={skills.isSyncing}
+              syncProgress={skills.syncProgress
+                ? { current: skills.syncProgress.page, total: 0, statusMessage: `Syncing — ${skills.syncProgress.fetched.toLocaleString()} fetched` }
+                : null}
+              lastSync={skills.meta.lastSync}
+              pageSize={skillPageSize}
+              onPageSizeChange={(size) => {
+                setSkillPageSize(size);
+                setSkillPage(1);
+              }}
+              page={skillPage}
+              totalPages={skillTotalPages}
+              onPageChange={setSkillPage}
+              totalItems={skills.skills.length}
+              itemLabel="skills"
+              onExport={() => skills.exportSkills?.()}
+              onDeleteDatabase={() => {
+                modalState.setConfirmationToast({
+                  title: t('skills.clearConfirmTitle', { defaultValue: 'Clear skills cache?' }),
+                  message: t('skills.clearConfirmMessage', { defaultValue: 'This removes all locally cached skills. You can re-sync at any time.' }),
+                  type: 'error',
+                  confirmText: t('skills.clearConfirmButton', { defaultValue: 'Clear cache' }),
+                  onConfirm: () => skills.clearAll(),
+                });
+              }}
+              theme={theme}
+              hasDetailOpen={!!skillSelected}
             />
           )}
         </div>
@@ -572,41 +702,6 @@ function AIModelDBContent() {
         />
       </div>
     </>
-  );
-}
-
-/**
- * Lightweight status row used on the Skills tab (which has no pagination
- * yet). Matches the Models/MCP Toolbar's vertical footprint and 3-zone
- * layout so the page doesn't shift when switching to the Skills tab.
- */
-function EntityStatusBar({
-  entity,
-  hasDetailOpen,
-}: {
-  entity: 'skills';
-  hasDetailOpen: boolean;
-}) {
-  return (
-    <div className="flex flex-col lg:flex-row gap-4 lg:gap-8">
-      {/* Left zone */}
-      <div className="w-full lg:w-48 flex-shrink-0">
-        <div className="text-xs text-text-secondary space-y-0.5">
-          <div className="flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-text-secondary/40"></span>
-            <span>Not synced</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Middle zone — spacer above content card */}
-      <div className={`flex-1 transition-all duration-300 ${hasDetailOpen ? 'lg:w-3/5' : 'w-full'}`} />
-
-      {/* Right zone */}
-      <div className={`flex items-center justify-end gap-2 text-xs text-text-secondary ${hasDetailOpen ? 'lg:w-2/5' : ''}`}>
-        {entity === 'skills' && <span>Skills sync arrives in v0.8.0</span>}
-      </div>
-    </div>
   );
 }
 
