@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useMCPServers } from '../../hooks/useMCPServers';
 import { openExternalUrl } from '../../utils/electron';
 import { MCPServer } from '../../types';
+import { EntityTabs } from '../layout/EntityTabs';
 
 /**
  * MCP Servers tab — Phase 2.
@@ -61,54 +62,65 @@ export function MCPView() {
 
     return (
         <div id="entity-panel-mcp" role="tabpanel" className="p-4 max-w-7xl mx-auto">
-            {/* Toolbar */}
-            <div className="flex flex-wrap items-center gap-3 mb-4 p-3 rounded-2xl border border-border bg-bg-card">
-                <button
-                    onClick={isSyncing ? cancelSync : syncOfficialRegistry}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
-                        isSyncing
-                            ? 'bg-amber-500/20 text-amber-700 hover:bg-amber-500/30'
-                            : 'bg-accent text-white hover:opacity-90'
-                    }`}
-                >
-                    <RefreshCw size={16} className={isSyncing ? 'animate-spin' : ''} />
-                    {isSyncing
-                        ? t('mcp.toolbar.cancel', { defaultValue: 'Cancel sync' })
-                        : t('mcp.toolbar.sync', { defaultValue: 'Sync MCP Registry' })}
-                </button>
-
-                <div className="flex items-center gap-2 flex-1 min-w-[200px]">
-                    <Search size={14} className="text-text-secondary" />
-                    <input
-                        type="text"
-                        value={query}
-                        onChange={e => setQuery(e.target.value)}
-                        placeholder={t('mcp.toolbar.search', { defaultValue: 'Search MCP servers...' })}
-                        className="w-full bg-transparent border-none outline-none text-sm placeholder:text-text-secondary"
-                    />
+            {/* Toolbar — 3-zone layout: left (sync) | center (entity tabs) | right (filters) */}
+            <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center mb-4">
+                {/* Left zone: Sync button + status */}
+                <div className="flex items-center gap-3 lg:w-72 flex-shrink-0">
+                    <button
+                        onClick={isSyncing ? cancelSync : syncOfficialRegistry}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+                            isSyncing
+                                ? 'bg-amber-500/20 text-amber-700 hover:bg-amber-500/30'
+                                : 'bg-accent text-white hover:opacity-90'
+                        }`}
+                    >
+                        <RefreshCw size={16} className={isSyncing ? 'animate-spin' : ''} />
+                        {isSyncing
+                            ? t('mcp.toolbar.cancel', { defaultValue: 'Cancel sync' })
+                            : t('mcp.toolbar.sync', { defaultValue: 'Sync Registry' })}
+                    </button>
                 </div>
 
-                <select
-                    value={transportFilter}
-                    onChange={e => setTransportFilter(e.target.value as typeof transportFilter)}
-                    className="px-3 py-1.5 rounded-lg border border-border bg-bg-input text-sm"
-                >
-                    <option value="all">{t('mcp.toolbar.allTransports', { defaultValue: 'All transports' })}</option>
-                    <option value="stdio">stdio</option>
-                    <option value="streamable-http">streamable-http</option>
-                    <option value="sse">sse</option>
-                </select>
+                {/* Center zone: entity tabs (above the table body, inline with controls) */}
+                <div className="flex-1 flex items-center justify-center">
+                    <EntityTabs />
+                </div>
 
-                <label className="flex items-center gap-2 text-sm cursor-pointer">
-                    <input
-                        type="checkbox"
-                        checked={favoritesOnly}
-                        onChange={e => setFavoritesOnly(e.target.checked)}
-                        className="accent-accent"
-                    />
-                    <Star size={14} className={favoritesOnly ? 'fill-amber-500 text-amber-500' : ''} />
-                    {t('mcp.toolbar.favoritesOnly', { defaultValue: 'Favorites only' })}
-                </label>
+                {/* Right zone: search + filters */}
+                <div className="flex items-center gap-2 flex-wrap lg:justify-end">
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border bg-bg-card min-w-[200px]">
+                        <Search size={14} className="text-text-secondary" />
+                        <input
+                            type="text"
+                            value={query}
+                            onChange={e => setQuery(e.target.value)}
+                            placeholder={t('mcp.toolbar.search', { defaultValue: 'Search MCP servers...' })}
+                            className="w-full bg-transparent border-none outline-none text-sm placeholder:text-text-secondary"
+                        />
+                    </div>
+
+                    <select
+                        value={transportFilter}
+                        onChange={e => setTransportFilter(e.target.value as typeof transportFilter)}
+                        className="px-3 py-1.5 rounded-lg border border-border bg-bg-input text-sm"
+                    >
+                        <option value="all">{t('mcp.toolbar.allTransports', { defaultValue: 'All transports' })}</option>
+                        <option value="stdio">stdio</option>
+                        <option value="streamable-http">streamable-http</option>
+                        <option value="sse">sse</option>
+                    </select>
+
+                    <label className="flex items-center gap-2 text-sm cursor-pointer px-2 py-1.5 rounded-lg border border-border bg-bg-card">
+                        <input
+                            type="checkbox"
+                            checked={favoritesOnly}
+                            onChange={e => setFavoritesOnly(e.target.checked)}
+                            className="accent-accent"
+                        />
+                        <Star size={14} className={favoritesOnly ? 'fill-amber-500 text-amber-500' : ''} />
+                        {t('mcp.toolbar.favoritesOnly', { defaultValue: 'Favorites' })}
+                    </label>
+                </div>
             </div>
 
             {/* Status bar */}

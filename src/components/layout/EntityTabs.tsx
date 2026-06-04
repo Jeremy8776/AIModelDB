@@ -38,7 +38,7 @@ export function EntityTabs() {
 
     return (
         <nav
-            className="flex items-center gap-1 border-b border-border bg-bg/60 px-4 backdrop-blur-md"
+            className="inline-flex items-center gap-0.5 rounded-xl border border-border bg-bg-card p-0.5"
             role="tablist"
             aria-label="Entity type"
         >
@@ -53,11 +53,11 @@ export function EntityTabs() {
                         title={tab.description}
                         onClick={() => setActiveEntity(tab.id)}
                         className={`
-                            flex items-center gap-2 px-4 py-2.5 text-sm font-medium
-                            border-b-2 transition-colors
+                            flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg
+                            transition-colors
                             ${isActive
-                                ? 'border-accent text-text'
-                                : 'border-transparent text-text-secondary hover:text-text hover:border-border'
+                                ? 'bg-accent text-white shadow-sm'
+                                : 'text-text-secondary hover:text-text hover:bg-bg-input'
                             }
                         `}
                     >

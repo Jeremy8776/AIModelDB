@@ -11,7 +11,6 @@ import { Toolbar } from "./components/layout/Toolbar";
 import { MainLayout } from "./components/layout/MainLayout";
 import { FiltersSidebar } from "./components/layout/FiltersSidebar";
 import { FloatingToolbar } from "./components/layout/FloatingToolbar";
-import { EntityTabs } from "./components/layout/EntityTabs";
 import { MCPView } from "./components/views/MCPView";
 import { SkillsView } from "./components/views/SkillsView";
 import { TitleBar } from "./components/TitleBar";
@@ -141,8 +140,6 @@ function AIModelDBContent() {
           theme={theme}
           hasUpdate={updateState.updateAvailable}
         />
-
-        <EntityTabs />
 
         {activeEntity === 'mcp' && <MCPView />}
         {activeEntity === 'skills' && <SkillsView />}
