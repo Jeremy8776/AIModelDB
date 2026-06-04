@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { ThemeProvider } from "./context/ThemeContext";
 import { SettingsProvider } from "./context/SettingsContext";
 import { UpdateProvider } from "./context/UpdateContext";
@@ -54,6 +54,8 @@ function AIModelDBContent() {
   const [mcpSortKey, setMcpSortKey] = useState<MCPSortKey>('updatedAt');
   const [mcpSortDirection, setMcpSortDirection] = useState<'asc' | 'desc'>('desc');
   const [mcpSelectedIds, setMcpSelectedIds] = useState<Set<string>>(new Set());
+  const [mcpPage, setMcpPage] = useState(1);
+  const [mcpPageSize, setMcpPageSize] = useState<number | null>(100);
 
   const {
     t,
@@ -153,6 +155,19 @@ function AIModelDBContent() {
       return true;
     });
   }, [mcp.servers, mcpTransport, mcpRegistry, mcpVerified, mcpFavoritesOnly, mcpHasPackagesOnly, mcpHasRemotesOnly, uiState.query]);
+
+  // MCP pagination — same page-size semantics as Models (null = show all).
+  const mcpTotalPages = mcpPageSize ? Math.max(1, Math.ceil(mcpFiltered.length / mcpPageSize)) : 1;
+  const mcpPageItems = useMemo(() => {
+    if (!mcpPageSize) return mcpFiltered;
+    const start = (mcpPage - 1) * mcpPageSize;
+    return mcpFiltered.slice(start, start + mcpPageSize);
+  }, [mcpFiltered, mcpPage, mcpPageSize]);
+
+  // Snap back to page 1 if filters shrink the list below the current page.
+  useEffect(() => {
+    if (mcpPage > mcpTotalPages) setMcpPage(1);
+  }, [mcpPage, mcpTotalPages]);
 
   // Loading screen
   if (isLoading) {
@@ -303,7 +318,7 @@ function AIModelDBContent() {
     innerContent = (
       <ErrorBoundary name="MCP Table">
         <MCPView
-          servers={mcpFiltered}
+          servers={mcpPageItems}
           totalCount={mcp.servers.length}
           isSyncing={mcp.isSyncing}
           syncProgress={mcp.syncProgress}
@@ -328,7 +343,7 @@ function AIModelDBContent() {
           }}
           onSelectAll={(selected) => {
             if (selected) {
-              setMcpSelectedIds(new Set(mcpFiltered.map(s => s.id)));
+              setMcpSelectedIds(new Set(mcpPageItems.map(s => s.id)));
             } else {
               setMcpSelectedIds(new Set());
             }
@@ -443,9 +458,6 @@ function AIModelDBContent() {
               isSyncing={syncState.isSyncing || isSaving}
               syncProgress={syncState.syncProgress}
               lastSync={syncState.lastSync}
-              pageItems={pageItems}
-              total={total}
-              minDownloads={uiState.minDownloads}
               pageSize={uiState.pageSize}
               onPageSizeChange={(size) => {
                 uiState.setPageSize(size);
@@ -454,7 +466,8 @@ function AIModelDBContent() {
               page={page}
               totalPages={totalPages}
               onPageChange={setPage}
-              totalModels={models.length}
+              totalItems={models.length}
+              itemLabel={t('entityTabs.models', { defaultValue: 'models' }).toLowerCase()}
               onExport={() => modalState.setShowExportModal(true)}
               onDeleteDatabase={() => {
                 modalState.setConfirmationToast({
@@ -471,14 +484,40 @@ function AIModelDBContent() {
               theme={theme}
               hasDetailOpen={!!uiState.open}
             />
+          ) : activeEntity === 'mcp' ? (
+            <Toolbar
+              isSyncing={mcp.isSyncing}
+              syncProgress={mcp.syncProgress
+                ? { current: mcp.syncProgress.page, total: 0, statusMessage: `Syncing — ${mcp.syncProgress.fetched.toLocaleString()} fetched` }
+                : null}
+              lastSync={mcp.meta.lastSync}
+              pageSize={mcpPageSize}
+              onPageSizeChange={(size) => {
+                setMcpPageSize(size);
+                setMcpPage(1);
+              }}
+              page={mcpPage}
+              totalPages={mcpTotalPages}
+              onPageChange={setMcpPage}
+              totalItems={mcp.servers.length}
+              itemLabel="servers"
+              onExport={() => mcp.exportServers?.()}
+              onDeleteDatabase={() => {
+                modalState.setConfirmationToast({
+                  title: t('mcp.clearConfirmTitle', { defaultValue: 'Clear MCP cache?' }),
+                  message: t('mcp.clearConfirmMessage', { defaultValue: 'This removes all locally cached MCP servers. You can re-sync from the registry at any time.' }),
+                  type: 'error',
+                  confirmText: t('mcp.clearConfirmButton', { defaultValue: 'Clear cache' }),
+                  onConfirm: () => mcp.clearAll(),
+                });
+              }}
+              theme={theme}
+              hasDetailOpen={!!mcpSelected}
+            />
           ) : (
             <EntityStatusBar
-              entity={activeEntity}
-              mcpCount={mcp.servers.length}
-              mcpVisible={mcpFiltered.length}
-              mcpIsSyncing={mcp.isSyncing}
-              mcpLastSync={mcp.meta.lastSync}
-              hasDetailOpen={!!mcpSelected}
+              entity="skills"
+              hasDetailOpen={false}
             />
           )}
         </div>
@@ -537,23 +576,15 @@ function AIModelDBContent() {
 }
 
 /**
- * Lightweight status row used on MCP/Skills tabs in place of the Models
- * Toolbar. Same vertical footprint and 3-zone layout so the rest of the
- * page doesn't shift between tabs.
+ * Lightweight status row used on the Skills tab (which has no pagination
+ * yet). Matches the Models/MCP Toolbar's vertical footprint and 3-zone
+ * layout so the page doesn't shift when switching to the Skills tab.
  */
 function EntityStatusBar({
   entity,
-  mcpCount,
-  mcpVisible,
-  mcpIsSyncing,
-  mcpLastSync,
   hasDetailOpen,
 }: {
-  entity: 'mcp' | 'skills';
-  mcpCount: number;
-  mcpVisible: number;
-  mcpIsSyncing: boolean;
-  mcpLastSync: string | null;
+  entity: 'skills';
   hasDetailOpen: boolean;
 }) {
   return (
@@ -561,39 +592,18 @@ function EntityStatusBar({
       {/* Left zone */}
       <div className="w-full lg:w-48 flex-shrink-0">
         <div className="text-xs text-text-secondary space-y-0.5">
-          {entity === 'mcp' && mcpIsSyncing ? (
-            <div className="flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
-              <span>Syncing</span>
-            </div>
-          ) : (
-            <div className="flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
-              <span>Idle</span>
-              {entity === 'mcp' && (
-                <span className="opacity-70">• {mcpCount.toLocaleString()} servers</span>
-              )}
-            </div>
-          )}
+          <div className="flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-text-secondary/40"></span>
+            <span>Not synced</span>
+          </div>
         </div>
       </div>
 
       {/* Middle zone — spacer above content card */}
       <div className={`flex-1 transition-all duration-300 ${hasDetailOpen ? 'lg:w-3/5' : 'w-full'}`} />
 
-      {/* Right zone — entity-specific status */}
+      {/* Right zone */}
       <div className={`flex items-center justify-end gap-2 text-xs text-text-secondary ${hasDetailOpen ? 'lg:w-2/5' : ''}`}>
-        {entity === 'mcp' && (
-          <>
-            <span>{mcpVisible.toLocaleString()} / {mcpCount.toLocaleString()} visible</span>
-            {mcpLastSync && (
-              <>
-                <span className="mx-1">•</span>
-                <span>Last sync {new Date(mcpLastSync).toLocaleString()}</span>
-              </>
-            )}
-          </>
-        )}
         {entity === 'skills' && <span>Skills sync arrives in v0.8.0</span>}
       </div>
     </div>

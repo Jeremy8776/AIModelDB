@@ -11,28 +11,31 @@ import React from "react";
 import { RefreshCw, ChevronLeft, ChevronRight, Download as DownloadIcon, Trash2, ShieldCheck } from "lucide-react";
 import { useTranslation } from 'react-i18next';
 import { ThemedSelect } from "../ThemedSelect";
-import { Model } from "../../types";
 
 /**
- * Props for the Toolbar component
+ * Props for the Toolbar component.
+ *
+ * Entity-agnostic: the same toolbar serves Models, MCP servers, and (later)
+ * Skills. Action buttons that don't apply to a given entity are simply
+ * omitted by not passing their handler (e.g. MCP has no "Validate").
  */
 export interface ToolbarProps {
     isSyncing: boolean;
     syncProgress: { current: number; total: number; source?: string; found?: number; statusMessage?: string } | null;
-    lastSync: string | null;
-    pageItems: Model[];
-    total: number;
-    minDownloads: number;
-    onSkipFilter?: () => void;
+    lastSync?: string | null;
     pageSize: number | null;
     onPageSizeChange: (size: number | null) => void;
     page: number;
     totalPages: number;
     onPageChange: (page: number) => void;
-    totalModels?: number;
-    onExport: () => void;
-    onDeleteDatabase: () => void;
-    onValidateModels: () => void;
+    /** Total item count shown in the left status zone. */
+    totalItems?: number;
+    /** Noun for the count, e.g. "models" or "servers". Defaults to "models". */
+    itemLabel?: string;
+    /** Action handlers — buttons render only when their handler is provided. */
+    onExport?: () => void;
+    onDeleteDatabase?: () => void;
+    onValidateModels?: () => void;
     theme: "light" | "dark";
     hasDetailOpen?: boolean;
 }
@@ -46,21 +49,16 @@ export interface ToolbarProps {
 export function Toolbar({
     isSyncing,
     syncProgress,
-    lastSync,
-    pageItems,
-    total,
-    minDownloads,
-    onSkipFilter,
     pageSize,
     onPageSizeChange,
     page,
     totalPages,
     onPageChange,
-    totalModels,
+    totalItems,
+    itemLabel = 'models',
     onExport,
     onDeleteDatabase,
     onValidateModels,
-    theme,
     hasDetailOpen = false,
 }: ToolbarProps) {
     const { t } = useTranslation();
@@ -83,8 +81,8 @@ export function Toolbar({
                         <div className="flex items-center gap-1.5">
                             <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
                             <span>Idle</span>
-                            {totalModels !== undefined && (
-                                <span className="opacity-70">• {totalModels.toLocaleString()} models</span>
+                            {totalItems !== undefined && (
+                                <span className="opacity-70">• {totalItems.toLocaleString()} {itemLabel}</span>
                             )}
                         </div>
                     )}
@@ -136,32 +134,40 @@ export function Toolbar({
                 </button>
 
                 {/* Separator */}
-                <div className="h-4 w-px bg-border mx-1"></div>
+                {(onExport || onDeleteDatabase || onValidateModels) && (
+                    <div className="h-4 w-px bg-border mx-1"></div>
+                )}
 
-                {/* Action buttons */}
-                <button
-                    onClick={onExport}
-                    className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs transition-colors border bg-bg-card border-border text-text hover:bg-bg/10"
-                >
-                    <DownloadIcon className="size-3" />
-                    {t('toolbar.export')}
-                </button>
-                <button
-                    onClick={onDeleteDatabase}
-                    className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs transition-colors border bg-bg-card border-border text-text hover:bg-bg/10"
-                    title={t('toolbar.deleteDatabase')}
-                >
-                    <Trash2 className="size-3" />
-                    {t('common.delete')} DB
-                </button>
-                <button
-                    onClick={onValidateModels}
-                    className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs transition-colors border bg-bg-card border-border text-text hover:bg-bg/10"
-                    title={t('toolbar.validate')}
-                >
-                    <ShieldCheck className="size-3" />
-                    {t('toolbar.validate')}
-                </button>
+                {/* Action buttons — each renders only if its handler is provided */}
+                {onExport && (
+                    <button
+                        onClick={onExport}
+                        className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs transition-colors border bg-bg-card border-border text-text hover:bg-bg/10"
+                    >
+                        <DownloadIcon className="size-3" />
+                        {t('toolbar.export')}
+                    </button>
+                )}
+                {onDeleteDatabase && (
+                    <button
+                        onClick={onDeleteDatabase}
+                        className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs transition-colors border bg-bg-card border-border text-text hover:bg-bg/10"
+                        title={t('toolbar.deleteDatabase')}
+                    >
+                        <Trash2 className="size-3" />
+                        {t('common.delete')} DB
+                    </button>
+                )}
+                {onValidateModels && (
+                    <button
+                        onClick={onValidateModels}
+                        className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs transition-colors border bg-bg-card border-border text-text hover:bg-bg/10"
+                        title={t('toolbar.validate')}
+                    >
+                        <ShieldCheck className="size-3" />
+                        {t('toolbar.validate')}
+                    </button>
+                )}
             </div>
         </div>
     );

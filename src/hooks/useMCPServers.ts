@@ -159,6 +159,27 @@ export function useMCPServers() {
         setMetaState({ lastSync: null });
     }, []);
 
+    /**
+     * Export the current MCP server cache as a JSON download. Mirrors the
+     * Models export affordance so the shared Toolbar's Export button works
+     * on the MCP tab too.
+     */
+    const exportServers = useCallback(() => {
+        try {
+            const blob = new Blob([JSON.stringify(servers, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `mcp-servers-${new Date().toISOString().slice(0, 10)}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        } catch (e) {
+            console.error('[MCP] Export failed:', e);
+        }
+    }, [servers]);
+
     return {
         servers,
         meta,
@@ -169,6 +190,7 @@ export function useMCPServers() {
         toggleFavorite,
         deleteServer,
         clearAll,
+        exportServers,
         mergeServers,
     };
 }
