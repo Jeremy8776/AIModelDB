@@ -41,7 +41,7 @@ export function EntityTabs() {
         // bottom edge paints over the table's top border, merging the two.
         // -mb-px pulls the table up by 1px so that overlap lands exactly on the border line.
         <div
-            className="flex items-end gap-1 -mb-px relative z-30 px-1"
+            className="flex items-end gap-1 -mb-px relative z-30"
             role="tablist"
             aria-label="Entity type"
         >
