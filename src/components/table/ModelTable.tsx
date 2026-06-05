@@ -269,8 +269,8 @@ export function ModelTable({
                     const root = document.getElementById('root');
                     root?.scrollTo({ top: 0, behavior: 'smooth' });
                 }}
-                className={`fixed bottom-8 right-8 z-50 p-3 rounded-full shadow-lg transition-all duration-300 transform ${showBackToTop ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0 pointer-events-none'
-                    } bg-bg-card text-text hover:bg-bg/10 border-border`}
+                className={`fixed bottom-8 left-1/2 z-50 p-3 rounded-full shadow-lg transition-all duration-300 transform -translate-x-1/2 ${showBackToTop ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0 pointer-events-none'
+                    } bg-bg-card text-text hover:bg-bg/10 border border-border`}
                 title="Scroll to top"
             >
                 <ArrowUp size={20} />
