@@ -248,18 +248,23 @@ export function MCPTable({
                 <div className="h-2" />
             </div>
 
-            <button
-                onClick={() => {
-                    const root = document.getElementById('root');
-                    root?.scrollTo({ top: 0, behavior: 'smooth' });
-                }}
-                className={`fixed bottom-8 left-1/2 z-50 p-3 rounded-full shadow-lg transition-all duration-300 transform -translate-x-1/2 ${
-                    showBackToTop ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0 pointer-events-none'
-                } bg-bg-card text-text hover:bg-bg/10 border border-border`}
-                title="Scroll to top"
-            >
-                <ArrowUp size={20} />
-            </button>
+            {/* Scroll-to-top — fixed overlay mirroring the sidebar|table|detail
+                columns so the button stays centered over the table. */}
+            <div className="fixed bottom-8 inset-x-0 z-50 px-4 pointer-events-none">
+                <div className="flex gap-5">
+                    <div className="hidden lg:block lg:w-72 flex-shrink-0" />
+                    <div className={`flex-1 flex justify-center ${activeServerId ? 'lg:w-3/5' : 'w-full'}`}>
+                        <button
+                            onClick={() => document.getElementById('root')?.scrollTo({ top: 0, behavior: 'smooth' })}
+                            className={`pointer-events-auto p-3 rounded-full shadow-lg transition-all duration-300 transform border border-white/20 bg-accent text-white hover:opacity-90 ${showBackToTop ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0 pointer-events-none'}`}
+                            title="Scroll to top"
+                        >
+                            <ArrowUp size={20} />
+                        </button>
+                    </div>
+                    {activeServerId && <div className="hidden lg:block lg:w-2/5 flex-shrink-0" />}
+                </div>
+            </div>
         </div>
     );
 }
