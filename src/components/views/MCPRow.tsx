@@ -1,5 +1,4 @@
 import React, { memo } from 'react';
-import { Plug, ShieldCheck, Star } from 'lucide-react';
 import { MCPServer } from '../../types';
 import { RoundCheckbox } from '../RoundCheckbox';
 
@@ -14,11 +13,11 @@ interface MCPRowProps {
 }
 
 /**
- * MCP server row. Visually identical to ModelRow:
- *   - 12-col grid (checkbox / name+id / updated / transport / packages / verified)
- *   - same hover, active, focus, selected states
- *   - same border + bg-card treatment
- *   - same row height (px-3 py-2 with two stacked lines in the name column)
+ * MCP server row. Shares the exact styling rules of ModelRow / SkillsRow:
+ * no decorative leading icon, no inline favorite star (favoriting happens
+ * in the detail panel), 12-col grid, identical hover/active/focus/selected
+ * states. Content is pure text + text chips. Verified state is shown as a
+ * text glyph, not an SVG icon.
  */
 export const MCPRow = memo(function MCPRow({
     server,
@@ -27,7 +26,6 @@ export const MCPRow = memo(function MCPRow({
     isSelected,
     onSelect,
     isFocused,
-    onToggleFavorite,
 }: MCPRowProps) {
     const rowBg = isActive
         ? 'border-accent/50 bg-accent/10 shadow-[0_0_15px_rgba(var(--accent-rgb,139,92,246),0.1)]'
@@ -38,10 +36,11 @@ export const MCPRow = memo(function MCPRow({
     const subtleText = 'text-text-subtle';
 
     const transports = Array.from(new Set((server.remotes || []).map(r => r.type)));
-    const primaryPkg = server.packages?.[0];
+    const primaryPackage = server.packages?.[0];
     const updatedLabel = server.updatedAt
         ? new Date(server.updatedAt).toLocaleDateString()
         : (server.publishedAt ? new Date(server.publishedAt).toLocaleDateString() : '—');
+    const isVerified = server.namespaceVerified || server.imageVerified || server.directoryVerified;
 
     return (
         <div
@@ -62,42 +61,23 @@ export const MCPRow = memo(function MCPRow({
             </div>
 
             <div className="col-span-3 flex min-w-0 items-center gap-2 overflow-hidden text-left">
-                <Plug className={`h-4 w-4 flex-shrink-0 align-middle ${textSecondary}`} />
                 <div className="flex min-w-0 flex-col">
-                    <span className={`truncate text-sm ${textMain} flex items-center gap-1.5`} title={server.name}>
-                        {server.name}
-                        {server.isFavorite && (
-                            <button
-                                onClick={(e) => { e.stopPropagation(); onToggleFavorite?.(server.id); }}
-                                className="shrink-0"
-                                title="Unfavorite"
-                            >
-                                <Star className="h-3 w-3 fill-amber-500 text-amber-500" />
-                            </button>
-                        )}
-                    </span>
-                    <span className={`truncate text-xs ${subtleText}`} title={server.id}>
-                        {server.id}
-                    </span>
+                    <span className={`truncate text-sm ${textMain}`} title={server.name}>{server.name}</span>
+                    <span className={`truncate text-xs ${subtleText}`} title={server.id}>{server.id}</span>
                 </div>
             </div>
 
             <div className={`col-span-2 truncate text-sm ${textSecondary}`}>
                 {updatedLabel}
-                {server.version && (
-                    <span className="ml-1 text-xs opacity-70">v{server.version}</span>
-                )}
+                {server.version && <span className="ml-1 text-xs opacity-70">v{server.version}</span>}
             </div>
 
             <div className={`col-span-2 flex items-center gap-1 text-sm ${textSecondary} overflow-hidden flex-wrap`}>
                 {transports.length === 0 ? (
-                    <span>—</span>
+                    <span className="opacity-50">—</span>
                 ) : (
                     transports.map(tr => (
-                        <span
-                            key={tr}
-                            className="text-[10px] px-1.5 py-0.5 rounded bg-bg-input text-text-secondary font-mono whitespace-nowrap"
-                        >
+                        <span key={tr} className="text-[10px] px-1.5 py-0.5 rounded bg-bg-input text-text-secondary font-mono whitespace-nowrap">
                             {tr}
                         </span>
                     ))
@@ -105,39 +85,21 @@ export const MCPRow = memo(function MCPRow({
             </div>
 
             <div className={`col-span-2 text-sm ${textSecondary} truncate`}>
-                {primaryPkg ? (
+                {primaryPackage ? (
                     <span className="inline-flex items-center gap-1">
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-bg-input font-mono uppercase">
-                            {primaryPkg.registryType}
-                        </span>
-                        <span className="truncate text-xs" title={primaryPkg.identifier}>
-                            {primaryPkg.identifier}
-                        </span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-bg-input font-mono uppercase">{primaryPackage.registryType}</span>
+                        <span className="truncate text-xs" title={primaryPackage.identifier}>{primaryPackage.identifier}</span>
                     </span>
                 ) : (
-                    <span>—</span>
+                    <span className="opacity-50">—</span>
                 )}
             </div>
 
-            <div className={`col-span-2 flex items-center gap-1 text-sm ${textSecondary}`}>
-                {server.namespaceVerified && (
-                    <span title="Namespace verified by official registry" className="text-emerald-600">
-                        <ShieldCheck className="h-4 w-4" />
-                    </span>
-                )}
-                {server.imageVerified && (
-                    <span title="Docker-signed image" className="text-blue-600 text-xs px-1.5 py-0.5 rounded bg-blue-500/10">
-                        Docker
-                    </span>
-                )}
-                {server.directoryVerified && (
-                    <span title="Listed in curated directory" className="text-text-secondary text-xs px-1.5 py-0.5 rounded bg-bg-input">
-                        Dir
-                    </span>
-                )}
-                {!server.namespaceVerified && !server.imageVerified && !server.directoryVerified && (
-                    <span className="text-xs opacity-50">—</span>
-                )}
+            <div className={`col-span-2 flex items-center gap-1 text-sm ${textSecondary} flex-wrap`}>
+                {server.namespaceVerified && <span className="text-emerald-600 text-xs font-medium">✓ Verified</span>}
+                {server.imageVerified && <span className="text-[10px] px-1.5 py-0.5 rounded bg-bg-input font-mono">docker</span>}
+                {server.directoryVerified && <span className="text-[10px] px-1.5 py-0.5 rounded bg-bg-input font-mono">dir</span>}
+                {!isVerified && <span className="opacity-50">—</span>}
             </div>
         </div>
     );

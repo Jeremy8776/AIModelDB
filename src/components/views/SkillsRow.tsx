@@ -1,5 +1,4 @@
 import React, { memo } from 'react';
-import { Sparkles, Star } from 'lucide-react';
 import { Skill } from '../../types';
 import { RoundCheckbox } from '../RoundCheckbox';
 
@@ -14,8 +13,10 @@ interface SkillsRowProps {
 }
 
 /**
- * Skill row — visually identical to ModelRow / MCPRow.
- * 12-col grid: checkbox / name+id / type / category / origin / source.
+ * Skill row. Shares the exact styling rules of ModelRow / MCPRow:
+ * no decorative leading icon, no inline favorite star (favoriting happens
+ * in the detail panel), 12-col grid, identical row states. Pure text +
+ * text chips.
  */
 export const SkillsRow = memo(function SkillsRow({
     skill,
@@ -24,7 +25,6 @@ export const SkillsRow = memo(function SkillsRow({
     isSelected,
     onSelect,
     isFocused,
-    onToggleFavorite,
 }: SkillsRowProps) {
     const rowBg = isActive
         ? 'border-accent/50 bg-accent/10 shadow-[0_0_15px_rgba(var(--accent-rgb,139,92,246),0.1)]'
@@ -55,30 +55,14 @@ export const SkillsRow = memo(function SkillsRow({
             </div>
 
             <div className="col-span-3 flex min-w-0 items-center gap-2 overflow-hidden text-left">
-                <Sparkles className={`h-4 w-4 flex-shrink-0 align-middle ${textSecondary}`} />
                 <div className="flex min-w-0 flex-col">
-                    <span className={`truncate text-sm ${textMain} flex items-center gap-1.5`} title={skill.name}>
-                        {skill.name}
-                        {skill.isFavorite && (
-                            <button
-                                onClick={(e) => { e.stopPropagation(); onToggleFavorite?.(skill.id); }}
-                                className="shrink-0"
-                                title="Unfavorite"
-                            >
-                                <Star className="h-3 w-3 fill-amber-500 text-amber-500" />
-                            </button>
-                        )}
-                    </span>
-                    <span className={`truncate text-xs ${subtleText}`} title={skill.id}>
-                        {skill.id}
-                    </span>
+                    <span className={`truncate text-sm ${textMain}`} title={skill.name}>{skill.name}</span>
+                    <span className={`truncate text-xs ${subtleText}`} title={skill.id}>{skill.id}</span>
                 </div>
             </div>
 
             <div className={`col-span-2 text-sm ${textSecondary}`}>
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-bg-input font-mono capitalize">
-                    {skill.type}
-                </span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-bg-input font-mono capitalize">{skill.type}</span>
             </div>
 
             <div className={`col-span-2 truncate text-sm ${textSecondary} capitalize`} title={skill.family || ''}>
