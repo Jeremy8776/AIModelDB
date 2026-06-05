@@ -231,11 +231,16 @@ function AIModelDBContent() {
   // ─── Entity-aware sync dispatcher (Header Sync button) ───
   // The Header's Sync button is a GLOBAL sync — it refreshes every entity type
   // (Models + MCP servers + Skills) in one click, regardless of the active tab.
-  // Each hook guards its own in-flight state, so re-clicking is a no-op per source.
+  // Each entity only syncs the data sources enabled in Settings; each hook also
+  // guards its own in-flight state, so re-clicking is a no-op per source.
   const handleSync = () => {
     handleSyncWithApiCheck();          // Models (full sync; may prompt for API check)
-    mcp.syncOfficialRegistry();        // MCP servers (official registry)
-    skills.syncOfficialMarketplace();  // Skills (official plugins marketplace)
+    if (settings.mcpSources?.['mcp-registry'] !== false) {
+      mcp.syncOfficialRegistry();      // MCP servers (official registry)
+    }
+    if (settings.skillSources?.['claude-plugins-official'] !== false) {
+      skills.syncOfficialMarketplace(); // Skills (official plugins marketplace)
+    }
   };
 
   // ─── Build the slot contents per entity ───

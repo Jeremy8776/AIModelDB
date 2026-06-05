@@ -5,6 +5,7 @@ import ThemeContext from '../../context/ThemeContext';
 import { useSettings } from '../../context/SettingsContext';
 import { ThemedSelect } from '../ThemedSelect';
 import { handleExternalLink } from '../../utils/external-links';
+import { MCP_SOURCES, SKILL_SOURCES, EntitySource } from '../../services/sources/entitySources';
 
 interface DataSourcesSectionProps {
   onSync: (options?: any) => void;
@@ -31,6 +32,68 @@ export function DataSourcesSection({ onSync, addConsoleLog }: DataSourcesSection
     { key: 'civitasbay', label: t('settings.dataSources.civitasbay'), description: t('settings.dataSources.descriptions.civitasbay') },
     { key: 'ollamaLibrary', label: t('settings.dataSources.ollama'), description: t('settings.dataSources.descriptions.ollamaLibrary') },
   ];
+
+  // Renders a grid of entity data sources (MCP / Skills) mirroring the Models
+  // grid above. Available sources toggle their settings map; planned ones are
+  // shown disabled with a "Soon" badge so users can see the roadmap.
+  const renderEntitySources = (
+    title: string,
+    sources: EntitySource[],
+    enabledMap: Record<string, boolean>,
+    settingsKey: 'mcpSources' | 'skillSources'
+  ) => (
+    <div className={`rounded-xl border p-4 ${bgCard}`}>
+      <h4 className="font-medium mb-4">{title}</h4>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {sources.map((source) => {
+          const isPlanned = source.status === 'planned';
+          const isEnabled = !isPlanned && (enabledMap?.[source.key] ?? false);
+          return (
+            <div
+              key={source.key}
+              className={`p-4 rounded-lg border-2 text-left transition-all duration-200 ${isPlanned
+                ? 'border-border bg-bg-input/30 opacity-60'
+                : isEnabled
+                  ? 'border-accent bg-accent/10'
+                  : 'border-border bg-bg-input/50'
+                }`}
+            >
+              <button
+                disabled={isPlanned}
+                onClick={() => {
+                  if (isPlanned) return;
+                  saveSettings({ [settingsKey]: { ...enabledMap, [source.key]: !isEnabled } } as any);
+                }}
+                className={`w-full text-left group ${isPlanned ? 'cursor-not-allowed' : ''}`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex-1 min-w-0">
+                    <div className={`font-semibold text-sm flex items-center gap-2 ${isEnabled ? 'text-accent' : 'text-text'} transition-colors`}>
+                      {source.label}
+                      {isPlanned && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-bg-input text-text-subtle uppercase tracking-wide">
+                          {t('settings.dataSources.soon', { defaultValue: 'Soon' })}
+                        </span>
+                      )}
+                    </div>
+                    <div className={`text-xs mt-1 ${isEnabled ? 'text-text-secondary' : 'text-text-subtle'} transition-colors`}>
+                      {source.description}
+                    </div>
+                  </div>
+                  <div className={`ml-3 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${isEnabled
+                    ? 'bg-accent border-accent text-white'
+                    : 'border-border-input group-hover:border-accent'
+                    }`}>
+                    {isEnabled && <Check size={14} strokeWidth={3} className="text-white" />}
+                  </div>
+                </div>
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 
   const handleSync = async () => {
     setSyncStatus('syncing');
@@ -201,6 +264,22 @@ export function DataSourcesSection({ onSync, addConsoleLog }: DataSourcesSection
           })}
         </div>
       </div>
+
+      {/* MCP Server sources */}
+      {renderEntitySources(
+        t('settings.dataSources.mcpSources', { defaultValue: 'MCP Server Sources' }),
+        MCP_SOURCES,
+        settings.mcpSources || {},
+        'mcpSources'
+      )}
+
+      {/* Skill sources */}
+      {renderEntitySources(
+        t('settings.dataSources.skillSources', { defaultValue: 'Skill Sources' }),
+        SKILL_SOURCES,
+        settings.skillSources || {},
+        'skillSources'
+      )}
 
       {/* Sync Settings */}
       <div className={`rounded-xl border p-4 ${bgCard}`}>

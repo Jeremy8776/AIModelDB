@@ -3,6 +3,7 @@ import { ApiDir } from '../types';
 import { DEFAULT_API_DIR } from '../services/api';
 import { CurrencyCode } from '../utils/currency';
 import { LanguageCode } from '../i18n';
+import { DEFAULT_MCP_SOURCES, DEFAULT_SKILL_SOURCES } from '../services/sources/entitySources';
 
 export interface Settings {
   apiConfig: ApiDir;
@@ -45,6 +46,10 @@ export interface Settings {
     civitasbay: boolean;
     ollamaLibrary: boolean;
   };
+  // MCP server data-source toggles (keyed by EntitySource.key)
+  mcpSources: Record<string, boolean>;
+  // Skill data-source toggles (keyed by EntitySource.key)
+  skillSources: Record<string, boolean>;
   // External API keys (user-provided)
   artificialAnalysisApiKey: string;
   gitHubToken: string;  // Optional: For higher GitHub API rate limits
@@ -120,6 +125,8 @@ const defaultSettings: Settings = {
     civitasbay: true, // Enabled - good for model preservation
     ollamaLibrary: true,
   },
+  mcpSources: { ...DEFAULT_MCP_SOURCES },
+  skillSources: { ...DEFAULT_SKILL_SOURCES },
   // External API keys (user-provided)
   artificialAnalysisApiKey: "",
   gitHubToken: "",  // Optional: For higher GitHub API rate limits
@@ -169,6 +176,14 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
             dataSources: {
               ...defaultSettings.dataSources,
               ...(parsedSettings.dataSources || {})
+            },
+            mcpSources: {
+              ...defaultSettings.mcpSources,
+              ...(parsedSettings.mcpSources || {})
+            },
+            skillSources: {
+              ...defaultSettings.skillSources,
+              ...(parsedSettings.skillSources || {})
             },
             autoRefresh: {
               ...defaultSettings.autoRefresh,

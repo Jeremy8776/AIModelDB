@@ -6,6 +6,7 @@ import { useSettings } from '../context/SettingsContext';
 import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 import { ThemedSelect } from './ThemedSelect';
 import { handleExternalLink } from '../utils/external-links';
+import { MCP_SOURCES, SKILL_SOURCES } from '../services/sources/entitySources';
 
 interface OnboardingWizardProps {
     isOpen: boolean;
@@ -38,6 +39,18 @@ export function OnboardingWizard({ isOpen, onClose, onComplete, initialStep = 1 
         apiDiscovery: settings?.dataSources?.apiDiscovery ?? true,
         localDiscovery: settings?.dataSources?.localDiscovery ?? true,
     }));
+
+    // MCP + Skill registries (only the wired "available" sources are shown here).
+    const [selectedMcpSources, setSelectedMcpSources] = useState<Record<string, boolean>>(() => {
+        const m: Record<string, boolean> = {};
+        MCP_SOURCES.filter(s => s.status === 'available').forEach(s => { m[s.key] = settings?.mcpSources?.[s.key] ?? true; });
+        return m;
+    });
+    const [selectedSkillSources, setSelectedSkillSources] = useState<Record<string, boolean>>(() => {
+        const m: Record<string, boolean> = {};
+        SKILL_SOURCES.filter(s => s.status === 'available').forEach(s => { m[s.key] = settings?.skillSources?.[s.key] ?? true; });
+        return m;
+    });
 
     // ... (rest of state initialization)
     const [apiKeys, setApiKeys] = useState({
@@ -156,6 +169,8 @@ export function OnboardingWizard({ isOpen, onClose, onComplete, initialStep = 1 
             // Save selected data sources and API keys with VERSION UPGRADE
             saveSettings({
                 dataSources: selectedSources as any,
+                mcpSources: { ...settings.mcpSources, ...selectedMcpSources },
+                skillSources: { ...settings.skillSources, ...selectedSkillSources },
                 artificialAnalysisApiKey: apiKeys.artificialAnalysisApiKey,
                 gitHubToken: apiKeys.gitHubToken,
                 apiConfig: updatedApiConfig,
@@ -238,6 +253,50 @@ export function OnboardingWizard({ isOpen, onClose, onComplete, initialStep = 1 
                                         </button>
                                     );
                                 })}
+                            </div>
+
+                            {/* MCP + Skill registries — the other entity types in the directory. */}
+                            <div>
+                                <h4 className="text-sm font-semibold mt-2 mb-2 text-zinc-300">
+                                    {t('onboarding.moreRegistries', { defaultValue: 'MCP & Skill registries' })}
+                                </h4>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    {[
+                                        ...MCP_SOURCES.filter(s => s.status === 'available').map(s => ({ ...s, map: 'mcp' as const })),
+                                        ...SKILL_SOURCES.filter(s => s.status === 'available').map(s => ({ ...s, map: 'skill' as const })),
+                                    ].map((source) => {
+                                        const isSelected = source.map === 'mcp'
+                                            ? selectedMcpSources[source.key]
+                                            : selectedSkillSources[source.key];
+                                        const toggle = () => {
+                                            if (source.map === 'mcp') {
+                                                setSelectedMcpSources(prev => ({ ...prev, [source.key]: !prev[source.key] }));
+                                            } else {
+                                                setSelectedSkillSources(prev => ({ ...prev, [source.key]: !prev[source.key] }));
+                                            }
+                                        };
+                                        return (
+                                            <button
+                                                key={source.key}
+                                                onClick={toggle}
+                                                className={`p-4 rounded-lg border-2 text-left transition-all duration-200 ${isSelected ? 'border-accent bg-accent/10' : 'border-zinc-700 hover:border-zinc-500 bg-zinc-900/50'}`}
+                                            >
+                                                <div className="flex items-start justify-between">
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className={`font-semibold text-sm flex items-center gap-2 ${isSelected ? 'text-white' : 'text-zinc-200'}`}>
+                                                            {source.label}
+                                                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 uppercase tracking-wide">
+                                                                {source.map === 'mcp' ? 'MCP' : 'Skill'}
+                                                            </span>
+                                                        </div>
+                                                        <div className={`text-xs mt-1 ${isSelected ? 'text-zinc-300' : 'text-zinc-500'}`}>{source.description}</div>
+                                                    </div>
+                                                    {isSelected && <CheckCircle size={16} className="text-accent" />}
+                                                </div>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
                             </div>
                         </div>
                     )}
