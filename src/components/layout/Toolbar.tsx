@@ -40,6 +40,21 @@ export interface ToolbarProps {
     hasDetailOpen?: boolean;
 }
 
+/** Compact relative time for the "Synced …" status line. */
+function formatRelativeTime(iso: string): string {
+    const then = new Date(iso).getTime();
+    if (Number.isNaN(then)) return '';
+    const diffMs = Date.now() - then;
+    const m = Math.floor(diffMs / 60000);
+    if (m < 1) return 'just now';
+    if (m < 60) return `${m}m ago`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `${h}h ago`;
+    const d = Math.floor(h / 24);
+    if (d < 7) return `${d}d ago`;
+    return new Date(iso).toLocaleDateString();
+}
+
 /**
  * Toolbar component with 3-column layout matching main content areas.
  * Left: Status info (above filters)
@@ -49,6 +64,7 @@ export interface ToolbarProps {
 export function Toolbar({
     isSyncing,
     syncProgress,
+    lastSync,
     pageSize,
     onPageSizeChange,
     page,
@@ -65,26 +81,53 @@ export function Toolbar({
     const textSubtle = "text-text-secondary";
     const pageSafe = Math.max(1, Math.min(page, totalPages));
 
+    // Progress fraction across sources (when the entity reports a total).
+    const sourceProgress = syncProgress && syncProgress.total > 0
+        ? `${syncProgress.current}/${syncProgress.total}`
+        : null;
+
     return (
         <div className="flex flex-col lg:flex-row gap-4 lg:gap-8">
             {/* Left Zone - Status info (matches Filters sidebar width) */}
             <div className="w-full lg:w-48 flex-shrink-0">
-                <div className={`text-xs ${textSubtle} space-y-0.5`}>
+                <div className={`text-xs ${textSubtle} leading-tight space-y-0.5`}>
                     {isSyncing ? (
-                        <div className="flex items-center gap-2">
-                            <RefreshCw className="size-3 animate-spin text-violet-500" />
-                            <span className="truncate">
-                                {syncProgress?.statusMessage || 'Syncing...'}
-                            </span>
-                        </div>
-                    ) : (
-                        <div className="flex items-center gap-1.5">
-                            <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
-                            <span>Idle</span>
-                            {totalItems !== undefined && (
-                                <span className="opacity-70">• {totalItems.toLocaleString()} {itemLabel}</span>
+                        <>
+                            <div className="flex items-center gap-2">
+                                <RefreshCw className="size-3 animate-spin text-violet-500 flex-shrink-0" />
+                                <span className="font-medium text-text">
+                                    {t('toolbar.syncing', { defaultValue: 'Syncing' })}
+                                </span>
+                                {sourceProgress && (
+                                    <span className="opacity-70 tabular-nums">{sourceProgress}</span>
+                                )}
+                            </div>
+                            {syncProgress?.source && (
+                                <div className="pl-5 truncate opacity-80" title={syncProgress.source}>
+                                    {syncProgress.source}
+                                </div>
                             )}
-                        </div>
+                            {syncProgress?.statusMessage && (
+                                <div className="pl-5 truncate opacity-70" title={syncProgress.statusMessage}>
+                                    {syncProgress.statusMessage}
+                                </div>
+                            )}
+                        </>
+                    ) : (
+                        <>
+                            <div className="flex items-center gap-1.5">
+                                <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                                <span>{t('toolbar.idle', { defaultValue: 'Idle' })}</span>
+                                {totalItems !== undefined && (
+                                    <span className="opacity-70">• {totalItems.toLocaleString()} {itemLabel}</span>
+                                )}
+                            </div>
+                            <div className="pl-3 opacity-60 truncate">
+                                {lastSync
+                                    ? `${t('toolbar.synced', { defaultValue: 'Synced' })} ${formatRelativeTime(lastSync)}`
+                                    : t('toolbar.neverSynced', { defaultValue: 'Not synced yet' })}
+                            </div>
+                        </>
                     )}
                 </div>
             </div>

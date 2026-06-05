@@ -607,7 +607,7 @@ function AIModelDBContent() {
             <Toolbar
               isSyncing={mcp.isSyncing}
               syncProgress={mcp.syncProgress
-                ? { current: mcp.syncProgress.page, total: 0, statusMessage: `Syncing — ${mcp.syncProgress.fetched.toLocaleString()} fetched` }
+                ? { current: mcp.syncProgress.page, total: 0, source: mcp.syncProgress.source, statusMessage: `${mcp.syncProgress.fetched.toLocaleString()} fetched` }
                 : null}
               lastSync={mcp.meta.lastSync}
               pageSize={mcpPageSize}
@@ -637,7 +637,7 @@ function AIModelDBContent() {
             <Toolbar
               isSyncing={skills.isSyncing}
               syncProgress={skills.syncProgress
-                ? { current: skills.syncProgress.page, total: 0, statusMessage: `Syncing — ${skills.syncProgress.fetched.toLocaleString()} fetched` }
+                ? { current: skills.syncProgress.page, total: 0, source: skills.syncProgress.source, statusMessage: `${skills.syncProgress.fetched.toLocaleString()} fetched` }
                 : null}
               lastSync={skills.meta.lastSync}
               pageSize={skillPageSize}

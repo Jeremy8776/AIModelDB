@@ -12,7 +12,11 @@ import { useTranslation } from 'react-i18next';
 interface LoadingScreenProps {
     /** Current theme */
     theme: 'dark' | 'light';
-    /** Loading progress (optional) */
+    /**
+     * Loading progress (optional). Retained for API compatibility but no longer
+     * rendered as a percentage — the initial load has no honest total to measure
+     * against, so we show an indeterminate bar instead.
+     */
     progress?: {
         current: number;
         total: number;
@@ -20,51 +24,32 @@ interface LoadingScreenProps {
 }
 
 /**
- * Full-screen loading component with progress indicator
+ * Full-screen loading component shown briefly during the initial IndexedDB read.
+ * Uses an indeterminate bar (no fake percentage / model count).
  */
-export function LoadingScreen({ theme, progress }: LoadingScreenProps) {
+export function LoadingScreen({ theme }: LoadingScreenProps) {
     const { t } = useTranslation();
 
-    const bgRoot = 'bg-bg text-text';
-    const textSubtle = 'text-text-secondary';
-    const progressBg = 'bg-bg-input';
-
     return (
-        <div className={`min-h-screen ${bgRoot} flex items-center justify-center`}>
-            <div className="flex flex-col items-center gap-4 max-w-md w-full px-4">
+        <div className="min-h-screen bg-bg text-text flex items-center justify-center">
+            <div className="flex flex-col items-center gap-4 max-w-sm w-full px-4">
                 <Database className="size-16 animate-pulse text-accent" />
 
                 <div className="text-center w-full">
                     <h2 className="text-xl font-semibold mb-2">
                         {t('app.loadingTitle')}
                     </h2>
-                    <p className={`text-sm ${textSubtle} mb-4`}>
+                    <p className="text-sm text-text-secondary mb-4">
                         {t('app.loadingDesc')}
                     </p>
 
-                    {progress && (
-                        <div className="w-full">
-                            <div className="flex justify-between text-xs mb-1">
-                                <span>{progress.current.toLocaleString()} models</span>
-                                <span>
-                                    {progress.total > 0
-                                        ? `${Math.round((progress.current / progress.total) * 100)}%`
-                                        : '0%'
-                                    }
-                                </span>
-                            </div>
-                            <div className={`w-full ${progressBg} rounded-full h-2`}>
-                                <div
-                                    className="bg-accent h-2 rounded-full transition-all duration-300"
-                                    style={{
-                                        width: progress.total > 0
-                                            ? `${(progress.current / progress.total) * 100}%`
-                                            : '0%'
-                                    }}
-                                />
-                            </div>
-                        </div>
-                    )}
+                    {/* Indeterminate bar — a sliding accent segment, no fake percentage. */}
+                    <div className="w-full bg-bg-input rounded-full h-1 overflow-hidden">
+                        <div
+                            className="bg-accent h-full w-1/4 rounded-full"
+                            style={{ animation: 'indeterminate-bar 1.1s ease-in-out infinite' }}
+                        />
+                    </div>
                 </div>
             </div>
         </div>

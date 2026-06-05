@@ -4,6 +4,12 @@
 
 /* Custom utility classes removed - handled by tailwind.config.js */
 
+/* Indeterminate loading bar (used by LoadingScreen) */
+@keyframes indeterminate-bar {
+  0% { transform: translateX(-120%); }
+  100% { transform: translateX(420%); }
+}
+
 :root {
   color-scheme: dark;
 
