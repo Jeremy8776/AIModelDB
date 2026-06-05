@@ -1,10 +1,8 @@
 import React, { useContext, memo, Fragment } from 'react';
-import { Database, Download, CheckCircle, Star, Flag } from 'lucide-react';
 import ThemeContext from '../context/ThemeContext';
 import { useSettings } from '../context/SettingsContext';
 import { Model } from '../types';
 import { RoundCheckbox } from './RoundCheckbox';
-import { DomainIcon } from './UI';
 import { kfmt } from '../utils/format';
 import {
   formatCurrency,
@@ -77,7 +75,6 @@ export const ModelRow = memo(function ModelRow({
 
     const targetCurrency = settings.currency;
     const displays: string[] = [];
-    let hasValidationIssues = false;
 
     // Process API pricing (badge formatting)
     if (apiPricing.length > 0) {
@@ -108,15 +105,6 @@ export const ModelRow = memo(function ModelRow({
             const enterpriseFormat = formatEnterprisePricing(convertedAmount, null, targetCurrency);
             displays.push(enterpriseFormat);
           }
-
-          // Validate API costs if enabled
-          if (settings.showCostValidation) {
-            const validation = validateModelCost(pricing, model.name, model.domain);
-            const factCheck = factCheckModelCost(model.name, pricing);
-            hasValidationIssues = hasValidationIssues ||
-              (validation && (!validation.isValid || validation.confidence === 'low')) ||
-              (factCheck && (!factCheck.isValid || factCheck.confidence === 'low'));
-          }
         } catch (error) {
           console.warn('Error converting API currency for model:', model.name, error);
         }
@@ -136,15 +124,6 @@ export const ModelRow = memo(function ModelRow({
           const unit = pricing.unit || 'month';
           const period = unit.toLowerCase().includes('year') || unit.toLowerCase().includes('annual') ? '/yr' : '/mo';
           displays.push(`Sub • ${formatCurrency(convertedAmount, targetCurrency)}${period}`);
-
-          // Validate subscription costs if enabled
-          if (settings.showCostValidation) {
-            const validation = validateModelCost(pricing, model.name, model.domain);
-            const factCheck = factCheckModelCost(model.name, pricing);
-            hasValidationIssues = hasValidationIssues ||
-              (validation && (!validation.isValid || validation.confidence === 'low')) ||
-              (factCheck && (!factCheck.isValid || factCheck.confidence === 'low'));
-          }
         } catch (error) {
           console.warn('Error converting subscription currency for model:', model.name, error);
         }
@@ -177,11 +156,6 @@ export const ModelRow = memo(function ModelRow({
             <Fragment key={index}>{renderBadge(display)}</Fragment>
           ))}
         </div>
-        {settings.showCostValidation && !hasValidationIssues && displays.length > 0 && (
-          <div title="Pricing validated">
-            <CheckCircle className="size-3 text-green-500 flex-shrink-0 opacity-50" />
-          </div>
-        )}
       </div>
     );
   };
@@ -263,11 +237,10 @@ export const ModelRow = memo(function ModelRow({
       </div>
 
       <div className="col-span-3 flex min-w-0 items-center gap-2 overflow-hidden text-left">
-        <Database className={`h-4 w-4 flex-shrink-0 align-middle ${textSecondary}`} />
         <div className="flex min-w-0 flex-col">
           <span className={`truncate text-sm ${textMain}`} title={m.name || 'Unknown Model'}>{(m.name || 'Unknown Model').replace(/^[^/]+\//, '')}</span>
           <span className={`truncate text-xs ${subtleText} flex items-center gap-1`}>
-            <span className="truncate">{m.provider || ((m.name || '').includes('/') ? (m.name || '').split('/')[0] : '')}</span> · <Download className="h-3 w-3 flex-shrink-0 align-middle relative top-0.5" /> {kfmt(m.downloads || 0)}
+            <span className="truncate">{m.provider || ((m.name || '').includes('/') ? (m.name || '').split('/')[0] : '')}</span> · {kfmt(m.downloads || 0)}
           </span>
         </div>
       </div>
@@ -276,7 +249,6 @@ export const ModelRow = memo(function ModelRow({
         {formatReleaseDate(m)}
       </div>
       <div className={`col-span-2 flex items-center gap-2 text-sm ${textSecondary} overflow-hidden`}>
-        <DomainIcon d={m.domain} className="h-4 w-4 flex-shrink-0 align-middle" />
         <span className="truncate">{m.domain}</span>
       </div>
       <div className={`col-span-2 text-sm ${textSecondary}`} title={getCostSummary(m)}>
