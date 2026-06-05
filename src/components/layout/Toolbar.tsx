@@ -66,13 +66,9 @@ export function Toolbar({
     const pageSafe = Math.max(1, Math.min(page, totalPages));
 
     return (
-        // Zones mirror the MainLayout columns below (sidebar | table | detail) so the
-        // toolbar is balanced: status aligns over the filters sidebar (w-72), and the
-        // pagination/actions sit at the TABLE's right edge — not the page edge / over
-        // the detail panel. gap-5 matches MainLayout's column gap.
-        <div className="flex flex-col lg:flex-row gap-4 lg:gap-5 w-full">
-            {/* Left Zone - Status, aligned to the filters sidebar width (w-72) */}
-            <div className="w-full lg:w-72 flex-shrink-0 flex items-center">
+        <div className="flex flex-col lg:flex-row gap-4 lg:gap-8">
+            {/* Left Zone - Status info (matches Filters sidebar width) */}
+            <div className="w-full lg:w-48 flex-shrink-0">
                 <div className={`text-xs ${textSubtle} space-y-0.5`}>
                     {isSyncing ? (
                         <div className="flex items-center gap-2">
@@ -93,9 +89,13 @@ export function Toolbar({
                 </div>
             </div>
 
-            {/* Middle Zone - Pagination + actions, right-aligned to the table's right edge */}
-            <div className={`flex-1 flex items-center min-w-0 transition-all duration-300 ${hasDetailOpen ? 'lg:w-3/5' : 'w-full'}`}>
-                <div className="flex items-center justify-end gap-2 w-full ml-auto flex-wrap">
+            {/* Middle Zone - Spacer (above table); entity tabs render inside MainLayout content */}
+            <div className={`flex-1 transition-all duration-300 ${hasDetailOpen ? 'lg:w-3/5' : 'w-full'}`}>
+                {/* Intentionally empty - tabs sit flush atop the content card below */}
+            </div>
+
+            {/* Right Zone - Pagination + Action buttons */}
+            <div className={`flex items-center justify-end gap-2 ml-auto ${hasDetailOpen ? 'lg:w-2/5' : ''}`}>
                 {/* Pagination */}
                 <label className="text-xs text-text">{t('toolbar.pageSize')}</label>
                 <div className="min-w-[80px]">
@@ -168,12 +168,7 @@ export function Toolbar({
                         {t('toolbar.validate')}
                     </button>
                 )}
-                </div>
             </div>
-
-            {/* Right Zone - empty spacer over the detail panel so the pagination/actions
-                stay anchored to the table's right edge instead of drifting over the panel. */}
-            {hasDetailOpen && <div className="hidden lg:block lg:w-2/5 flex-shrink-0" />}
         </div>
     );
 }
