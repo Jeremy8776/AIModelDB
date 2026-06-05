@@ -229,14 +229,13 @@ function AIModelDBContent() {
   }
 
   // ─── Entity-aware sync dispatcher (Header Sync button) ───
+  // The Header's Sync button is a GLOBAL sync — it refreshes every entity type
+  // (Models + MCP servers + Skills) in one click, regardless of the active tab.
+  // Each hook guards its own in-flight state, so re-clicking is a no-op per source.
   const handleSync = () => {
-    if (activeEntity === 'mcp') {
-      mcp.syncOfficialRegistry();
-    } else if (activeEntity === 'skills') {
-      skills.syncOfficialMarketplace();
-    } else if (activeEntity === 'models') {
-      handleSyncWithApiCheck();
-    }
+    handleSyncWithApiCheck();          // Models (full sync; may prompt for API check)
+    mcp.syncOfficialRegistry();        // MCP servers (official registry)
+    skills.syncOfficialMarketplace();  // Skills (official plugins marketplace)
   };
 
   // ─── Build the slot contents per entity ───
@@ -553,9 +552,7 @@ function AIModelDBContent() {
           query={uiState.query}
           onQueryChange={uiState.setQuery}
           searchRef={searchRef}
-          isSyncing={
-            (activeEntity === 'mcp' ? mcp.isSyncing : syncState.isSyncing) || isSaving
-          }
+          isSyncing={syncState.isSyncing || mcp.isSyncing || skills.isSyncing || isSaving}
           onSync={handleSync}
           onAddModel={() => modalState.setShowAddModel(true)}
           onImport={() => modalState.setShowImport(true)}
