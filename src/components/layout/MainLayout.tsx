@@ -56,7 +56,7 @@ export function MainLayout({
 
                 {/* Detail Panel */}
                 {detailPanel && (
-                    <div className="lg:w-2/5 relative transition-all duration-500 ease-out lg:sticky lg:top-[5.5rem] lg:self-start">
+                    <div className="lg:w-2/5 relative transition-all duration-500 ease-out lg:sticky lg:top-[calc(var(--titlebar-h)_+_4rem)] lg:self-start">
                         {detailPanel}
                     </div>
                 )}
