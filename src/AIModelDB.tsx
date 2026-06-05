@@ -31,6 +31,7 @@ import { SkeletonRow } from "./components/ModelRow";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { EmptyState } from "./components/EmptyState";
 import { MCPServer } from "./types";
+import { isElectron } from "./utils/electron";
 
 /**
  * Main content component for the AI Model Database application.
@@ -529,7 +530,15 @@ function AIModelDBContent() {
   return (
     <>
       <TitleBar />
-      <div className={`min-h-screen ${bgRoot}`}>
+      {/* --titlebar-h drives every sticky offset below. It's 2rem when the
+          Electron custom title bar is present, 0 in the browser (where TitleBar
+          renders nothing) — so the toolbar and table headers stick flush to the
+          real top in both environments, with no uncovered strip for rows to
+          bleed through. */}
+      <div
+        className={`min-h-screen ${bgRoot}`}
+        style={{ ['--titlebar-h' as string]: isElectron() ? '2rem' : '0px' } as React.CSSProperties}
+      >
         <UpdateProgress
           show={showUpdateProgress}
           onDismiss={() => setShowUpdateProgress(false)}
@@ -560,7 +569,7 @@ function AIModelDBContent() {
         {/* Fixed-height toolbar (sticks at top-8 = 32px, height 64px -> bottom at
             96px). The table headers below stick at top-[6rem] (96px) so they butt
             against the toolbar exactly with no gap for rows to bleed through. */}
-        <div className="w-full px-4 sticky top-8 z-40 bg-bg grid items-center py-3 lg:py-0 lg:h-16">
+        <div className="w-full px-4 sticky top-[var(--titlebar-h)] z-40 bg-bg grid items-center py-3 lg:py-0 lg:h-16">
           {activeEntity === 'models' ? (
             <Toolbar
               isSyncing={syncState.isSyncing || isSaving}

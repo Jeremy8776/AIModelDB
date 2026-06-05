@@ -181,10 +181,11 @@ export function ModelTable({
 
     return (
         <div className="w-full">
-            {/* Table Header - Sticky. top-[6rem] (96px) butts exactly against the
-                fixed 64px toolbar that sticks at top-8 (32px), so no gap lets rows
-                bleed through. Flat top edge merges with the active entity tab. */}
-            <div className={`sticky top-[6rem] z-20 ${bgColor} ${borderColor} border-t border-x`}>
+            {/* Table Header - Sticky. Offset = title-bar height + 4rem toolbar, so
+                it butts exactly against the toolbar in both Electron (--titlebar-h:2rem)
+                and browser (--titlebar-h:0). No gap for rows to bleed through. Flat top
+                edge merges with the active entity tab. */}
+            <div className={`sticky top-[calc(var(--titlebar-h)_+_4rem)] z-20 ${bgColor} ${borderColor} border-t border-x`}>
                 <TableHeader
                     sortKey={sortKey}
                     sortDirection={sortDirection}

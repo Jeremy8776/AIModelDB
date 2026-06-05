@@ -186,9 +186,10 @@ export function MCPTable({
 
     return (
         <div className="w-full">
-            {/* Table Header - Sticky. top-[6rem] butts against the fixed toolbar
-                (parity with ModelTable). Flat top merges with the active tab. */}
-            <div className={`sticky top-[6rem] z-20 ${bgColor} ${borderColor} border-t border-x`}>
+            {/* Table Header - Sticky. Offset = title-bar height + 4rem toolbar
+                (parity with ModelTable, works in Electron + browser). Flat top
+                merges with the active tab. */}
+            <div className={`sticky top-[calc(var(--titlebar-h)_+_4rem)] z-20 ${bgColor} ${borderColor} border-t border-x`}>
                 <MCPTableHeader
                     sortKey={sortKey}
                     sortDirection={sortDirection}
