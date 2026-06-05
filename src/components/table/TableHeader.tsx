@@ -80,8 +80,9 @@ export function TableHeader({
 
     return (
         <div className={`grid grid-cols-12 gap-3 px-3 py-2 text-xs ${textSubtle} border-b items-center`}>
-            {/* Checkbox Column */}
-            <div className="col-span-1 flex justify-center">
+            {/* Checkbox Column — left-anchored (pl-6) so it sits at a stable x under
+                the leftmost entity tab, instead of drifting with the fluid column width. */}
+            <div className="col-span-1 flex justify-start pl-6">
                 <RoundCheckbox
                     checked={!!isAllSelected}
                     onChange={(checked) => onSelectAll && onSelectAll(checked)}

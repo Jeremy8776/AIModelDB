@@ -56,7 +56,7 @@ export function SkillsTableHeader({
 
     return (
         <div className={`grid grid-cols-12 gap-3 px-3 py-2 text-xs ${textSubtle} border-b items-center`}>
-            <div className="col-span-1 flex justify-center">
+            <div className="col-span-1 flex justify-start pl-6">
                 <RoundCheckbox
                     checked={!!isAllSelected}
                     onChange={(checked) => onSelectAll && onSelectAll(checked)}

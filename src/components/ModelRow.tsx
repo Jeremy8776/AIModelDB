@@ -227,7 +227,7 @@ export const ModelRow = memo(function ModelRow({
       }}
       className={`group/row relative grid w-full grid-cols-12 items-center gap-3 rounded-xl border ${rowBg} px-3 py-2 text-left transition cursor-pointer hover:border-accent ${isFocused ? 'ring-2 ring-accent z-10' : ''}`}
     >
-      <div className="col-span-1 flex justify-center items-center h-full">
+      <div className="col-span-1 flex justify-start items-center h-full pl-6">
         <RoundCheckbox
           checked={!!isSelected}
           onChange={(checked) => onSelect && onSelect(m, checked)}
@@ -262,7 +262,7 @@ export const ModelRow = memo(function ModelRow({
 export function SkeletonRow() {
   return (
     <div className="grid w-full grid-cols-12 items-center gap-3 rounded-xl border border-border bg-bg-card px-3 py-3">
-      <div className="col-span-1 h-4 rounded w-4 mx-auto bg-bg-input animate-pulse" />
+      <div className="col-span-1 h-4 rounded w-4 ml-6 bg-bg-input animate-pulse" />
       <div className="col-span-3 h-4 rounded bg-bg-input animate-pulse" />
       <div className="col-span-2 h-4 rounded bg-bg-input animate-pulse" />
       <div className="col-span-2 h-4 rounded bg-bg-input animate-pulse" />
