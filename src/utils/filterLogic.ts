@@ -286,23 +286,19 @@ export const filterModels = (models: Model[], options: FilterOptions): Model[] =
             return dir * (aDate - bDate);
         }
         if (sortKey === "parameters") {
-            const extractCost = (model: Model | null | undefined) => {
-                if (!model || !model.pricing || model.pricing.length === 0) return 0;
-                const pricing = model.pricing[0];
-
-                // Prioritize API costs over subscription costs for sorting
-                if (pricing.input != null) return pricing.input * 1000;
-                if (pricing.output != null) return pricing.output * 1000;
-                if (pricing.flat != null) {
-                    const unit = pricing.unit?.toLowerCase() || '';
-                    const isSubscription = unit.includes('month') || unit.includes('year') ||
-                        unit.includes('annual') || unit.includes('subscription') || unit.includes('plan');
-                    return isSubscription ? pricing.flat / 12 : pricing.flat;
-                }
-                return 0;
+            const extractParameters = (model: Model | null | undefined) => {
+                const raw = model?.parameters || '';
+                const match = String(raw).match(/(\d+(?:\.\d+)?)\s*([bmk])?/i);
+                if (!match) return 0;
+                const value = Number(match[1]);
+                const unit = (match[2] || '').toLowerCase();
+                if (unit === 'b') return value * 1_000_000_000;
+                if (unit === 'm') return value * 1_000_000;
+                if (unit === 'k') return value * 1_000;
+                return value;
             };
-            const aVal = extractCost(a);
-            const bVal = extractCost(b);
+            const aVal = extractParameters(a);
+            const bVal = extractParameters(b);
             return dir * (aVal - bVal);
         }
 

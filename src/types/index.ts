@@ -176,7 +176,15 @@ export type MCPPackage = {
   identifier: string;             // e.g. "@modelcontextprotocol/server-filesystem"
   version?: string | null;
   runtimeHint?: "node" | "python" | "docker" | "binary" | null;
+  transport?: { type: string };
   runtimeArguments?: unknown[];   // canonical schema-defined args
+  environmentVariables?: Array<{
+    name: string;
+    description?: string;
+    isRequired?: boolean;
+    isSecret?: boolean;
+    default?: string;
+  }>;
 };
 
 /**

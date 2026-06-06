@@ -1,5 +1,5 @@
 import { Model } from "../types";
-import { mapDomain, cleanModelDescription } from "./format";
+import { mapDomain, cleanModelDescription, pick } from "./format";
 
 export function toNormalizedModel(m: any, idx: number, sheetName?: string): Model {
     const toStringLower = (x: any) => String(x || '').toLowerCase();
@@ -46,15 +46,17 @@ export function toNormalizedModel(m: any, idx: number, sheetName?: string): Mode
         return null;
     };
 
+    const hasAny = (...keys: string[]) => keys.some(key => m[key] !== undefined && m[key] !== null && m[key] !== '');
     const id = String(m.id || m.uniqueId || `${m.source || 'import'}-${m['Model Name'] || m.name || m.model || idx}`);
     const name = String(m.name || m.model || m['Model Name'] || m['Model'] || id);
     const sheet = (m.__sheetName ? String(m.__sheetName) : sheetName);
     const domain = mapDomain(m.domain || m['Model Type'] || m.Type, sheet) as any;
     const source = m.source || 'Import';
-    const url = m.url || m.homepage || null;
-    const repo = m.repo || null;
+    const provider = m.provider || pick(m, ["Company/Developer", "Company", "Developer", "Author", "Provider", "Org"]);
+    const url = m.url || m.homepage || pick(m, ["Repository/URL", "URL", "Homepage", "Website", "Link"]) || null;
+    const repo = m.repo || pick(m, ["Repository", "Repo", "GitHub", "Git"]) || null;
     const licenseName = m.license_name || m.license || 'Unknown';
-    const commercialParsed = parseYesNo(m.commercial);
+    const commercialParsed = parseYesNo(m.commercial ?? pick(m, ["Commercial Use", "Commercial"]));
     const license: any = {
         name: String(licenseName),
         type: mapLicenseType(licenseName),
@@ -75,11 +77,24 @@ export function toNormalizedModel(m: any, idx: number, sheetName?: string): Mode
     const updated = parseExcelDate(m.updated_at || m.Updated);
     const priceRaw = m.pricing || m.price || m.Pricing || m.Cost;
     const pricing = Array.isArray(m.pricing) ? m.pricing : (priceRaw ? parsePricing(priceRaw) : undefined);
-    const modelOut: Model = { id, name, provider: m.provider || null, domain, source, url, repo, license, hosting, tags, parameters, context_window } as Model;
+    const modelOut: Model = { id, name, provider: provider ? String(provider) : null, domain, source, url: url ? String(url) : null, repo: repo ? String(repo) : null, license, hosting, tags, parameters, context_window } as Model;
     if (rel) (modelOut as any).release_date = String(rel);
     if (updated) (modelOut as any).updated_at = String(updated);
     if (pricing) (modelOut as any).pricing = pricing as any;
     if (m.description) (modelOut as any).description = cleanModelDescription(m.description);
+
+    const editedFields = new Set<string>(Array.isArray(m.editedFields) ? m.editedFields.map((field: any) => String(field)) : []);
+    if (hasAny('description')) editedFields.add('description');
+    if (hasAny('parameters', 'Params', 'Size')) editedFields.add('parameters');
+    if (hasAny('context_window', 'Context Window')) editedFields.add('context_window');
+    if (hasAny('license_name', 'license', 'commercial', 'Commercial Use', 'Commercial', 'attribution_required', 'share_alike', 'copyleft')) editedFields.add('license');
+    if (hasAny('tags')) editedFields.add('tags');
+    if (hasAny('pricing', 'price', 'Pricing', 'Cost')) editedFields.add('pricing');
+    if (hasAny('url', 'homepage', 'Repository/URL', 'URL', 'Homepage', 'Website', 'Link')) editedFields.add('url');
+    if (hasAny('repo', 'Repository', 'Repo', 'GitHub', 'Git')) editedFields.add('repo');
+    if (hasAny('provider', 'Company/Developer', 'Company', 'Developer', 'Author', 'Provider', 'Org')) editedFields.add('provider');
+    if (hasAny('release_date', 'Released', 'Release Date', 'Date')) editedFields.add('release_date');
+    if (editedFields.size > 0) modelOut.editedFields = Array.from(editedFields);
 
     return modelOut;
 }

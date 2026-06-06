@@ -73,6 +73,26 @@ describe('RateLimiter', () => {
             // The limiter should have waited for the minimum interval
         });
 
+        it('should serialize concurrent waiters across the minimum interval', async () => {
+            const minInterval = 1000;
+            const limiter = new RateLimiter(10, 1, minInterval);
+
+            await limiter.waitForSlot();
+
+            let completed = 0;
+            const waiters = [
+                limiter.waitForSlot().then(() => { completed++; }),
+                limiter.waitForSlot().then(() => { completed++; }),
+            ];
+
+            await vi.advanceTimersByTimeAsync(minInterval);
+            expect(completed).toBe(1);
+
+            await vi.advanceTimersByTimeAsync(minInterval);
+            await Promise.all(waiters);
+            expect(completed).toBe(2);
+        });
+
         it('should not use recursion (stack-safe)', async () => {
             // This test verifies the iterative implementation by checking
             // that requests are properly queued and the limiter doesn't

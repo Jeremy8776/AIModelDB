@@ -65,6 +65,7 @@ export function useSyncOperations({ models, settings, callbacks }: UseSyncOperat
                 {
                     dataSources: settings.dataSources || {},
                     artificialAnalysisApiKey: settings.artificialAnalysisApiKey,
+                    gitHubToken: settings.gitHubToken,
                     enableNSFWFiltering: settings.enableNSFWFiltering,
                     logNSFWAttempts: settings.logNSFWAttempts,
                     customNSFWKeywords: settings.customNSFWKeywords || [],
@@ -133,6 +134,7 @@ export function useSyncOperations({ models, settings, callbacks }: UseSyncOperat
                     {
                         dataSources: settings.dataSources || {},
                         artificialAnalysisApiKey: settings.artificialAnalysisApiKey,
+                        gitHubToken: settings.gitHubToken,
                         enableNSFWFiltering: settings.enableNSFWFiltering,
                         logNSFWAttempts: settings.logNSFWAttempts,
                         apiConfig: options.apiConfig,

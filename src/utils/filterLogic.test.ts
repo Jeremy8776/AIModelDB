@@ -330,6 +330,15 @@ describe('filterModels', () => {
             expect(result[0].name).toBe('High');
         });
 
+        it('should sort by parameter size instead of pricing', () => {
+            const models = [
+                createModel({ name: 'Small Expensive', parameters: '7B', pricing: [{ input: 99, currency: 'USD', unit: '1M tokens' }] }),
+                createModel({ name: 'Large Cheap', parameters: '70B', pricing: [{ input: 1, currency: 'USD', unit: '1M tokens' }] }),
+            ];
+            const result = filterModels(models, createOptions({ sortKey: 'parameters', sortDirection: 'desc' }));
+            expect(result[0].name).toBe('Large Cheap');
+        });
+
         it('should sort by release date', () => {
             const models = [
                 createModel({ name: 'Old', release_date: '2023-01-01' }),

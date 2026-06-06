@@ -275,6 +275,43 @@ describe('mergeRecords', () => {
         // editedFields persists for future syncs
         expect(result.editedFields).toEqual(expect.arrayContaining(['description', 'parameters']));
     });
+
+    it('should let uploaded custom fields enhance synced records and protect them from later syncs', () => {
+        const synced = createModel({
+            id: 'hf-custom/llama',
+            name: 'Custom Llama',
+            source: 'HuggingFace',
+            description: 'Synced description',
+            parameters: '7B',
+        });
+        const uploaded = createModel({
+            id: 'hf-custom/llama',
+            name: 'Custom Llama',
+            source: 'Import',
+            description: 'User uploaded description',
+            parameters: '13B',
+            editedFields: ['description', 'parameters'],
+        });
+
+        const importedMerge = mergeRecords(synced, uploaded);
+        expect(importedMerge.description).toBe('User uploaded description');
+        expect(importedMerge.parameters).toBe('13B');
+        expect(importedMerge.source).toContain('HuggingFace');
+        expect(importedMerge.source).toContain('Import');
+        expect(importedMerge.editedFields).toEqual(expect.arrayContaining(['description', 'parameters']));
+
+        const laterSync = createModel({
+            id: 'hf-custom/llama',
+            name: 'Custom Llama',
+            source: 'HuggingFace',
+            description: 'Later synced description',
+            parameters: '70B',
+        });
+
+        const afterLaterSync = mergeRecords(importedMerge, laterSync);
+        expect(afterLaterSync.description).toBe('User uploaded description');
+        expect(afterLaterSync.parameters).toBe('13B');
+    });
 });
 
 describe('performMergeBatch', () => {
@@ -313,6 +350,22 @@ describe('performMergeBatch', () => {
         // With autoMergeDuplicates=true, it should merge instead of add
         expect(result.updated).toBe(1);
         expect(result.added).toBe(0);
+        expect(result.duplicates).toBe(1);
+    });
+
+    it('should not collapse same-name records from different providers when auto merge is disabled', () => {
+        const current = [
+            createModel({ id: '1', name: 'Atlas', provider: 'Provider A', domain: 'LLM' }),
+        ];
+        const newModels = [
+            createModel({ id: '2', name: 'Atlas', provider: 'Provider B', domain: 'ImageGen' }),
+        ];
+
+        const result = performMergeBatch(current, newModels, false);
+
+        expect(result.added).toBe(1);
+        expect(result.updated).toBe(0);
+        expect(result.models).toHaveLength(2);
     });
 
     it('should not mutate input arrays', () => {

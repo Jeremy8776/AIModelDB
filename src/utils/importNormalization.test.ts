@@ -55,4 +55,47 @@ describe('toNormalizedModel', () => {
         const result = toNormalizedModel(input, 4);
         expect(result.description).toBe('Here is a link');
     });
+
+    it('should preserve common spreadsheet column aliases', () => {
+        const result = toNormalizedModel({
+            'Model Name': 'Alias Model',
+            Provider: 'Alias Labs',
+            URL: 'https://example.com/model',
+            Repository: 'https://github.com/alias/model',
+            'Commercial Use': 'No',
+        }, 5);
+
+        expect(result.provider).toBe('Alias Labs');
+        expect(result.url).toBe('https://example.com/model');
+        expect(result.repo).toBe('https://github.com/alias/model');
+        expect(result.license?.commercial_use).toBe(false);
+    });
+
+    it('marks uploaded custom fields as edited so later syncs cannot overwrite them', () => {
+        const result = toNormalizedModel({
+            id: 'hf-custom/llama',
+            name: 'Custom Llama',
+            provider: 'Custom Lab',
+            description: 'User curated description',
+            parameters: '13B',
+            'Context Window': '32768',
+            license: 'MIT',
+            tags: 'local, approved',
+            pricing: 'Free',
+            URL: 'https://example.com/custom-llama',
+            Repository: 'https://github.com/example/custom-llama',
+        }, 6);
+
+        expect(result.editedFields).toEqual(expect.arrayContaining([
+            'description',
+            'parameters',
+            'context_window',
+            'license',
+            'tags',
+            'pricing',
+            'url',
+            'repo',
+            'provider',
+        ]));
+    });
 });

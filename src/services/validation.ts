@@ -1,5 +1,6 @@
 import { Model } from "../types";
 import { ValidationSource, ValidationJobStatus, ValidationJob } from "../types/validation";
+import { parseCSV } from "../utils/format";
 
 export { ValidationSource } from "../types/validation";
 export type { ValidationJobStatus, ValidationJob } from "../types/validation";
@@ -224,7 +225,6 @@ export class ValidationQueue {
     this.processingCount = 0;
   }
 }
-
 // Helper functions for common validation tasks
 
 // Create a validation prompt for LLM-based validation
@@ -368,10 +368,10 @@ export function convertModelsToCSV(models: Model[]): string {
     model.repo || '',
     model.license?.name || '',
     model.license?.type || '',
-    model.license?.commercial_use ? 'true' : 'false',
-    model.license?.attribution_required ? 'true' : 'false',
-    model.license?.share_alike ? 'true' : 'false',
-    model.license?.copyleft ? 'true' : 'false',
+    model.license?.commercial_use == null ? '' : String(model.license.commercial_use),
+    model.license?.attribution_required == null ? '' : String(model.license.attribution_required),
+    model.license?.share_alike == null ? '' : String(model.license.share_alike),
+    model.license?.copyleft == null ? '' : String(model.license.copyleft),
     model.parameters || '',
     model.context_window || '',
     model.description || '',
@@ -399,36 +399,23 @@ export function convertModelsToCSV(models: Model[]): string {
 // Parse CSV response from GPT back to models
 export function parseCSVToModels(csvData: string): Model[] {
   try {
-    const lines = csvData.trim().split('\n');
-    if (lines.length < 2) {
+    const rows = parseCSV(csvData.trim());
+    if (rows.length < 1) {
       console.warn('CSV parsing: Less than 2 lines found');
       return [];
     }
 
-    const headers = lines[0].split(',').map(h => h.replace(/"/g, '').trim());
     const models: Model[] = [];
 
-    console.log(`CSV parsing: Found ${lines.length - 1} data rows with ${headers.length} columns`);
+    console.log(`CSV parsing: Found ${rows.length} data rows`);
 
-    for (let i = 1; i < lines.length; i++) {
+    for (let i = 0; i < rows.length; i++) {
       try {
-        const values = parseCSVLine(lines[i]);
-
-        // More lenient: allow slight column mismatch
-        if (values.length === 0) {
+        const modelData = rows[i];
+        if (!Object.values(modelData).some(value => value.trim())) {
           console.warn(`CSV parsing: Row ${i} is empty, skipping`);
           continue;
         }
-
-        if (Math.abs(values.length - headers.length) > 3) {
-          console.warn(`CSV parsing: Row ${i} has ${values.length} columns, expected ${headers.length}, skipping`);
-          continue;
-        }
-
-        const modelData: any = {};
-        headers.forEach((header, index) => {
-          modelData[header] = values[index]?.replace(/"/g, '').trim() || '';
-        });
 
         // Skip rows without essential fields
         if (!modelData.id && !modelData.name) {
@@ -448,10 +435,10 @@ export function parseCSVToModels(csvData: string): Model[] {
           license: {
             name: modelData.license_name || 'Unknown',
             type: modelData.license_type as any || 'Custom',
-            commercial_use: modelData.commercial_use === 'true',
-            attribution_required: modelData.attribution_required === 'true',
-            share_alike: modelData.share_alike === 'true',
-            copyleft: modelData.copyleft === 'true'
+            commercial_use: modelData.commercial_use === '' ? undefined as any : modelData.commercial_use === 'true',
+            attribution_required: modelData.attribution_required === '' ? undefined as any : modelData.attribution_required === 'true',
+            share_alike: modelData.share_alike === '' ? undefined as any : modelData.share_alike === 'true',
+            copyleft: modelData.copyleft === '' ? undefined as any : modelData.copyleft === 'true'
           },
           pricing: [],
           parameters: modelData.parameters || null,
@@ -497,36 +484,4 @@ export function parseCSVToModels(csvData: string): Model[] {
     console.error('CSV parsing: Fatal error:', error);
     return [];
   }
-}
-
-// Helper function to parse CSV line properly handling quoted fields
-function parseCSVLine(line: string): string[] {
-  const result = [];
-  let current = '';
-  let inQuotes = false;
-  let i = 0;
-
-  while (i < line.length) {
-    const char = line[i];
-
-    if (char === '"') {
-      if (inQuotes && line[i + 1] === '"') {
-        current += '"';
-        i += 2;
-      } else {
-        inQuotes = !inQuotes;
-        i++;
-      }
-    } else if (char === ',' && !inQuotes) {
-      result.push(current);
-      current = '';
-      i++;
-    } else {
-      current += char;
-      i++;
-    }
-  }
-
-  result.push(current);
-  return result;
 }

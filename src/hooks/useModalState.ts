@@ -14,11 +14,17 @@ import { UndoToastData } from '../components/toasts/UndoToast';
  * Data structure for import toast notifications
  */
 export interface ImportToastData {
+    scope?: 'import' | 'sync';
     found: number;
     added: number;
     updated: number;
     flagged: number;
     duplicates?: number;
+    entityBreakdown?: {
+        models?: number;
+        mcp?: number;
+        skills?: number;
+    };
 }
 
 export interface ConfirmationToastData {

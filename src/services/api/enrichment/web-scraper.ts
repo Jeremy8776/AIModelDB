@@ -98,6 +98,16 @@ export async function enrichFromWebScraping(
         }
         // Extract license info
         if (scraped.license && (!enriched.license?.name || enriched.license.name === 'Unknown')) {
+            if (!enriched.license) {
+                enriched.license = {
+                    name: 'Unknown',
+                    type: 'Custom',
+                    commercial_use: false,
+                    attribution_required: false,
+                    share_alike: false,
+                    copyleft: false,
+                };
+            }
             enriched.license.name = scraped.license;
             enriched.license.type = determineType(scraped.license);
             enriched.license.commercial_use = determineCommercialUse(scraped.license);

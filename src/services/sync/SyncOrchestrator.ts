@@ -6,7 +6,9 @@ import {
     openModelDBFetcher,
     ollamaLibraryFetcher,
     fetchArtificialAnalysisIndex,
+    fetchCivitai,
     fetchCivitasBay,
+    fetchPopularGenerativeRepos,
     // Legacy imports referenced in adapters
     fetchOpenModelDB, // Keeping if needed for types, but we use the fetcher object
     fetchOllamaLibrary
@@ -52,6 +54,24 @@ export async function orchestrateSync(
             fetch: async (opts) => fetchArtificialAnalysisIndex(opts.artificialAnalysisApiKey)
         };
         registry.register(aaFetcher);
+
+        const civitaiFetcher: Fetcher = {
+            id: 'civitai',
+            name: 'Civitai',
+            isEnabled: (opts) => opts.dataSources?.civitai === true,
+            fetch: async () => fetchCivitai()
+        };
+        registry.register(civitaiFetcher);
+
+        // GitHub Adapter — popular generative-AI repos. Token is optional;
+        // unauthenticated calls work but hit the 60/hr unauth rate limit fast.
+        const githubFetcher: Fetcher = {
+            id: 'github',
+            name: 'GitHub',
+            isEnabled: (opts) => opts.dataSources?.github === true,
+            fetch: async (opts) => fetchPopularGenerativeRepos(30, opts.gitHubToken)
+        };
+        registry.register(githubFetcher);
 
         // CivitasBay Adapter
         const civitasFetcher: Fetcher = {
@@ -236,8 +256,14 @@ function deduplicateModels(models: Model[], ignoredModels?: string[]): Model[] {
     const map = new Map<string, Model>();
 
     for (const model of models) {
-        // Create an extremely robust key for fuzzy matching using centralized normalization
-        const key = normalizeNameForMatch(model.name);
+        const key = model.id
+            || model.repo
+            || model.url
+            || [
+                normalizeNameForMatch(model.name),
+                model.domain || '',
+                (model.provider || '').toLowerCase(),
+            ].join('|');
 
         if (!key) {
             map.set(model.id, model); // Fallback to ID if name normalization fails

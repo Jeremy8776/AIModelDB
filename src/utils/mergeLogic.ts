@@ -1,5 +1,5 @@
 import { Model, Pricing, BenchmarkEntry } from '../types';
-import { dedupe, normalizeNameForMatch } from './format';
+import { normalizeNameForMatch } from './format';
 
 // Detects CJK characters (Han, Hiragana, Katakana, Hangul). Used to prefer
 // English (non-CJK) descriptions when merging records from mixed-locale sources.
@@ -69,13 +69,18 @@ export const mergeRecords = (existing: Model, incoming: Model): Model => {
     //    usage_restrictions, benchmarks unioned across both records.
     // ═══════════════════════════════════════════════════════════════════════════
 
-    const editedFields = new Set(existing.editedFields || []);
-    const isProtected = (field: string) => editedFields.has(field);
+    const existingEditedFields = new Set(existing.editedFields || []);
+    const incomingEditedFields = new Set(incoming.editedFields || []);
+    const editedFields = new Set([...existingEditedFields, ...incomingEditedFields]);
+    const isExistingProtected = (field: string) => existingEditedFields.has(field);
+    const isIncomingProtected = (field: string) => incomingEditedFields.has(field);
+    const hasValue = <T>(value: T): boolean => value !== null && value !== undefined && value !== '';
 
     // pick: protected → existing; else incoming if truthy, else existing
     const pick = <T>(field: string, existingVal: T, incomingVal: T): T => {
-        if (isProtected(field)) return existingVal;
-        return (incomingVal as unknown) ? incomingVal : existingVal;
+        if (isExistingProtected(field)) return existingVal;
+        if (isIncomingProtected(field) && hasValue(incomingVal)) return incomingVal;
+        return hasValue(incomingVal) ? incomingVal : existingVal;
     };
 
     const merged: Model = { ...existing } as Model;
@@ -116,8 +121,10 @@ export const mergeRecords = (existing: Model, incoming: Model): Model => {
     merged.data_provenance = pick('data_provenance', existing.data_provenance, incoming.data_provenance);
 
     // 3a. Description — prefer non-CJK; else incoming-wins; unless protected
-    if (isProtected('description')) {
+    if (isExistingProtected('description')) {
         merged.description = existing.description;
+    } else if (isIncomingProtected('description') && hasValue(incoming.description)) {
+        merged.description = incoming.description;
     } else {
         const ex = existing.description;
         const inc = incoming.description;
@@ -131,8 +138,10 @@ export const mergeRecords = (existing: Model, incoming: Model): Model => {
     // 4. Release date — earliest wins (true first appearance); updated_at — latest wins
     const exDate = existing.release_date ? new Date(existing.release_date) : null;
     const inDate = incoming.release_date ? new Date(incoming.release_date) : null;
-    if (isProtected('release_date')) {
+    if (isExistingProtected('release_date')) {
         merged.release_date = existing.release_date;
+    } else if (isIncomingProtected('release_date') && hasValue(incoming.release_date)) {
+        merged.release_date = incoming.release_date;
     } else {
         merged.release_date = (exDate && inDate)
             ? (exDate < inDate ? existing.release_date : incoming.release_date)
@@ -163,18 +172,18 @@ export const mergeRecords = (existing: Model, incoming: Model): Model => {
     merged.downloads = Object.values(stats).reduce((acc, curr) => acc + (curr.downloads || 0), 0) || null;
 
     // 6. Accumulating fields — union across both (unless protected)
-    merged.tags = isProtected('tags')
+    merged.tags = isExistingProtected('tags')
         ? existing.tags
         : Array.from(new Set([...(existing.tags || []), ...(incoming.tags || [])]));
-    merged.usage_restrictions = isProtected('usage_restrictions')
+    merged.usage_restrictions = isExistingProtected('usage_restrictions')
         ? existing.usage_restrictions
         : Array.from(new Set([...(existing.usage_restrictions || []), ...(incoming.usage_restrictions || [])]));
-    merged.images = isProtected('images')
+    merged.images = isExistingProtected('images')
         ? existing.images
         : Array.from(new Set([...(existing.images || []), ...(incoming.images || [])]));
 
     // 7. Pricing — accumulate with dedupe on composite key
-    if (isProtected('pricing')) {
+    if (isExistingProtected('pricing')) {
         merged.pricing = existing.pricing;
     } else {
         const pricingKey = (p: Pricing) =>
@@ -186,7 +195,7 @@ export const mergeRecords = (existing: Model, incoming: Model): Model => {
     }
 
     // 8. License — incoming wins per-field unless protected
-    if (isProtected('license')) {
+    if (isExistingProtected('license')) {
         merged.license = existing.license;
     } else {
         merged.license = {
@@ -202,7 +211,7 @@ export const mergeRecords = (existing: Model, incoming: Model): Model => {
     }
 
     // 9. Hosting — OR booleans, union providers (unless protected)
-    if (isProtected('hosting')) {
+    if (isExistingProtected('hosting')) {
         merged.hosting = existing.hosting;
     } else {
         merged.hosting = {
@@ -230,9 +239,9 @@ export const mergeRecords = (existing: Model, incoming: Model): Model => {
         merged.flaggedImageUrls = Array.from(new Set([...existing.flaggedImageUrls, ...(incoming.flaggedImageUrls || [])]));
     }
 
-    // 12. editedFields — preserve from existing (incoming sync doesn't carry user edits)
-    if (existing.editedFields && existing.editedFields.length > 0) {
-        merged.editedFields = [...existing.editedFields];
+    // 12. editedFields — preserve both existing edits and imported custom locks.
+    if (editedFields.size > 0) {
+        merged.editedFields = Array.from(editedFields);
     }
 
     return merged;
@@ -269,17 +278,12 @@ export const performMergeBatch = (currentModels: Model[], newModels: Model[], au
             // the incoming record was a duplicate that needed reconciling.
             base[idx] = mergeRecords(base[idx], inc);
             updated++;
+            duplicates++;
         }
     });
 
-    const finalModels = dedupe(base);
-
-    // Catch-all: anything dedupe() collapsed that matchExistingIndex missed
-    const unaccounted = base.length - finalModels.length;
-    if (unaccounted > 0) duplicates += unaccounted;
-
     return {
-        models: finalModels,
+        models: base,
         added,
         updated,
         duplicates

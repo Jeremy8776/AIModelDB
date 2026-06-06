@@ -189,7 +189,7 @@ export function useDashboardController() {
         importModels(importedModels);
         modalState.setShowImport(false);
         const cnt = importedModels?.length || 0;
-        modalState.setImportToast({ found: cnt, added: cnt, updated: 0, flagged: 0 });
+        modalState.setImportToast({ scope: 'import', found: cnt, added: cnt, updated: 0, flagged: 0 });
     }, [importModels, modalState]);
 
     /**
@@ -304,7 +304,7 @@ export function useDashboardController() {
         const found = syncState.syncSummary?.found ?? (added + updated);
         const flagged = syncState.syncSummary?.flagged ?? 0;
 
-        modalState.setImportToast({ found, added, updated, flagged, duplicates });
+        modalState.setImportToast({ scope: 'sync', found, added, updated, flagged, duplicates });
         syncState.setSyncSummary(null);
 
         if (updated > 0) {

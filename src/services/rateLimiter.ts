@@ -8,6 +8,7 @@ export class RateLimiter {
   private maxRequests: number;
   private timeWindow: number; // in milliseconds
   private minInterval: number; // minimum time between requests in ms
+  private queue: Promise<void> = Promise.resolve();
 
   constructor(maxRequests: number = 20, timeWindowMinutes: number = 1, minIntervalMs: number = 3000) {
     this.maxRequests = maxRequests;
@@ -16,6 +17,12 @@ export class RateLimiter {
   }
 
   async waitForSlot(): Promise<void> {
+    const previous = this.queue;
+    let release!: () => void;
+    this.queue = new Promise(resolve => { release = resolve; });
+    await previous;
+
+    try {
     // Use iterative loop instead of recursion to prevent potential stack overflow
     // in extreme rate-limiting scenarios
     while (true) {
@@ -50,6 +57,9 @@ export class RateLimiter {
       // Record this request and exit the loop
       this.requests.push(Date.now());
       break;
+    }
+    } finally {
+      release();
     }
   }
 

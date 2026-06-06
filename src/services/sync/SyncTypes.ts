@@ -6,6 +6,7 @@ import { Model, ApiDir } from "../../types";
 export interface SyncOptions {
     dataSources: {
         huggingface?: boolean;
+        github?: boolean;
         artificialanalysis?: boolean;
         civitai?: boolean;
         openmodeldb?: boolean;
@@ -15,6 +16,7 @@ export interface SyncOptions {
         localDiscovery?: boolean;
     };
     artificialAnalysisApiKey?: string;
+    gitHubToken?: string;
     enableNSFWFiltering?: boolean;
     logNSFWAttempts?: boolean;
     customNSFWKeywords?: string[];

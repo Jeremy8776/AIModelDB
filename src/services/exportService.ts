@@ -151,7 +151,7 @@ function exportTSV(models: Model[], filename: string): void {
     const headers = Object.keys(rows[0] || {});
     const tsvContent = [
         headers.join('\t'),
-        ...rows.map(row => headers.map(h => String(row[h as keyof typeof row] || '')).join('\t'))
+        ...rows.map(row => headers.map(h => escapeTSV(String(row[h as keyof typeof row] || ''))).join('\t'))
     ].join('\n');
 
     downloadFile(tsvContent, `${filename}.tsv`, 'text/tab-separated-values;charset=utf-8;');
@@ -164,24 +164,25 @@ function exportTSV(models: Model[], filename: string): void {
  * @param filename - Base filename (without extension)
  */
 function exportYAML(models: Model[], filename: string): void {
+    const y = (value: unknown) => JSON.stringify(String(value ?? ''));
     const yamlContent = models.map(model => {
         const yamlModel = [
-            `- name: "${model.name}"`,
-            `  provider: "${model.provider || ''}"`,
-            `  domain: "${model.domain || ''}"`,
-            `  source: "${model.source || ''}"`,
-            `  url: "${model.url || ''}"`,
+            `- name: ${y(model.name)}`,
+            `  provider: ${y(model.provider)}`,
+            `  domain: ${y(model.domain)}`,
+            `  source: ${y(model.source)}`,
+            `  url: ${y(model.url)}`,
             `  license:`,
-            `    name: "${model.license?.name || ''}"`,
-            `    type: "${model.license?.type || ''}"`,
+            `    name: ${y(model.license?.name)}`,
+            `    type: ${y(model.license?.type)}`,
             `    commercial_use: ${model.license?.commercial_use || false}`,
             `    attribution_required: ${model.license?.attribution_required || false}`,
             `    copyleft: ${model.license?.copyleft || false}`,
-            `  updated_at: "${model.updated_at || ''}"`,
-            `  release_date: "${model.release_date || ''}"`,
+            `  updated_at: ${y(model.updated_at)}`,
+            `  release_date: ${y(model.release_date)}`,
             `  downloads: ${model.downloads || 0}`,
-            `  tags: [${(model.tags || []).map(t => `"${t}"`).join(', ')}]`,
-            `  pricing: [${(model.pricing || []).map(p => `"${p.model || ''}:${p.unit || ''}:${p.input || ''}/${p.output || ''}:${p.flat || ''}${p.currency ? ' ' + p.currency : ''}"`).join(', ')}]`
+            `  tags: [${(model.tags || []).map(y).join(', ')}]`,
+            `  pricing: [${(model.pricing || []).map(p => y(`${p.model || ''}:${p.unit || ''}:${p.input || ''}/${p.output || ''}:${p.flat || ''}${p.currency ? ' ' + p.currency : ''}`)).join(', ')}]`
         ].join('\n');
         return yamlModel;
     }).join('\n\n');
@@ -242,12 +243,12 @@ function exportMarkdown(models: Model[], filename: string): void {
     const headers = ['Name', 'Provider', 'Domain', 'License', 'Downloads', 'Updated'];
     const separator = headers.map(() => '---').join(' | ');
     const rows = models.map(m => [
-        m.name || '',
-        m.provider || '',
-        m.domain || '',
-        m.license?.name || '',
+        escapeMarkdownCell(m.name || ''),
+        escapeMarkdownCell(m.provider || ''),
+        escapeMarkdownCell(m.domain || ''),
+        escapeMarkdownCell(m.license?.name || ''),
         (m.downloads || 0).toLocaleString(),
-        m.updated_at ? new Date(m.updated_at).toLocaleDateString() : ''
+        escapeMarkdownCell(m.updated_at ? new Date(m.updated_at).toLocaleDateString() : '')
     ].join(' | '));
 
     const mdContent = [
@@ -259,6 +260,14 @@ function exportMarkdown(models: Model[], filename: string): void {
     ].join('\n');
 
     downloadFile(mdContent, `${filename}.md`, 'text/markdown;charset=utf-8;');
+}
+
+function escapeTSV(str: string): string {
+    return str.replace(/[\t\r\n]+/g, ' ');
+}
+
+function escapeMarkdownCell(str: string): string {
+    return str.replace(/\|/g, '\\|').replace(/[\r\n]+/g, ' ');
 }
 
 /**

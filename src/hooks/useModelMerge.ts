@@ -13,6 +13,8 @@ export function useModelMerge(
     const { settings } = useSettings();
     const [lastMergeStats, setLastMergeStats] = useState<{ added: number; updated: number; duplicates?: number } | null>(null);
     const workerRef = useRef<Worker | null>(null);
+    const requestIdRef = useRef(0);
+    const pendingMergeRef = useRef(new Map<number, { baseIds: Set<string>; autoMergeDuplicates: boolean }>());
 
     // Use ref to track the save callback so we don't recreate the worker when it changes
     const saveCallbackRef = useRef(onSaveModelsNow);
@@ -35,12 +37,25 @@ export function useModelMerge(
             workerRef.current.onmessage = (event) => {
                 const { type, payload, error } = event.data;
                 if (type === 'MERGE_COMPLETE') {
-                    const { models: newModels, added, updated, duplicates } = payload;
-                    setModelsRef.current(newModels);
-                    // Use the ref to get the current callback
-                    if (saveCallbackRef.current) {
-                        saveCallbackRef.current(newModels);
-                    }
+                    const { models: workerModels, added, updated, duplicates, requestId } = payload;
+                    const pending = pendingMergeRef.current.get(requestId);
+                    pendingMergeRef.current.delete(requestId);
+
+                    setModelsRef.current(latestModels => {
+                        const deletedSinceStart = new Set(
+                            [...(pending?.baseIds || [])].filter(id => !latestModels.some(model => model.id === id))
+                        );
+                        const candidates = workerModels.filter((model: Model) => !deletedSinceStart.has(model.id));
+                        const reconciled = performMergeBatch(
+                            latestModels,
+                            candidates,
+                            pending?.autoMergeDuplicates ?? false
+                        ).models;
+                        if (saveCallbackRef.current) {
+                            saveCallbackRef.current(reconciled);
+                        }
+                        return reconciled;
+                    });
                     setLastMergeStats({ added, updated, duplicates });
                 } else if (type === 'ERROR') {
                     console.error('Worker error:', error);
@@ -61,32 +76,38 @@ export function useModelMerge(
         modelsRef.current = models;
     }, [models]);
 
-    const mergeInModels = useCallback((incomingList: Model[]) => {
+    const postWorkerMerge = useCallback((incomingList: Model[]) => {
         if (!incomingList || incomingList.length === 0) return;
+        const currentModels = modelsRef.current;
+        const autoMergeDuplicates = settings.autoMergeDuplicates ?? false;
 
         if (workerRef.current) {
+            const requestId = ++requestIdRef.current;
+            pendingMergeRef.current.set(requestId, {
+                baseIds: new Set(currentModels.map(model => model.id)),
+                autoMergeDuplicates
+            });
             workerRef.current.postMessage({
                 type: 'MERGE_MODELS',
                 payload: {
-                    currentModels: modelsRef.current,
+                    requestId,
+                    currentModels,
                     newModels: incomingList,
-                    autoMergeDuplicates: settings.autoMergeDuplicates ?? false
+                    autoMergeDuplicates
                 }
             });
         } else {
             console.warn('Worker not ready, falling back to main thread');
             try {
-                const result = performMergeBatch(
-                    modelsRef.current,
-                    incomingList,
-                    settings.autoMergeDuplicates ?? false
-                );
-                setModels(result.models);
-                if (onSaveModelsNow) onSaveModelsNow(result.models);
-                setLastMergeStats({
-                    added: result.added,
-                    updated: result.updated,
-                    duplicates: result.duplicates
+                setModels(prev => {
+                    const result = performMergeBatch(prev, incomingList, autoMergeDuplicates);
+                    if (saveCallbackRef.current) saveCallbackRef.current(result.models);
+                    setLastMergeStats({
+                        added: result.added,
+                        updated: result.updated,
+                        duplicates: result.duplicates
+                    });
+                    return result.models;
                 });
             } catch (err) {
                 console.error("Main thread merge failed:", err);
@@ -94,41 +115,18 @@ export function useModelMerge(
         }
     }, [settings.autoMergeDuplicates, setModels]);
 
+    const mergeInModels = useCallback((incomingList: Model[]) => {
+        postWorkerMerge(incomingList);
+    }, [postWorkerMerge]);
+
     const importModels = useCallback((newModels: Model[]) => {
         const normalized: Model[] = (newModels || []).map((m: any, idx: number) => toNormalizedModel(m, idx));
 
         // Turn this off for large imports if using main thread to prevent freeze? 
         // For now we assume safety.
 
-        if (workerRef.current) {
-            workerRef.current.postMessage({
-                type: 'MERGE_MODELS',
-                payload: {
-                    currentModels: modelsRef.current,
-                    newModels: normalized,
-                    autoMergeDuplicates: settings.autoMergeDuplicates ?? false
-                }
-            });
-        } else {
-            console.warn('Worker not ready, falling back to main thread for import');
-            try {
-                const result = performMergeBatch(
-                    modelsRef.current,
-                    normalized,
-                    settings.autoMergeDuplicates ?? false
-                );
-                setModels(result.models);
-                if (onSaveModelsNow) onSaveModelsNow(result.models);
-                setLastMergeStats({
-                    added: result.added,
-                    updated: result.updated,
-                    duplicates: result.duplicates
-                });
-            } catch (err) {
-                console.error("Main thread import failed:", err);
-            }
-        }
-    }, [settings.autoMergeDuplicates, setModels]);
+        postWorkerMerge(normalized);
+    }, [postWorkerMerge]);
 
     return {
         importModels,
