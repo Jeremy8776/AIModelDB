@@ -1,9 +1,10 @@
 import React from 'react';
-import { Plug, AlertTriangle } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { MCPServer } from '../../types';
 import { MCPTable } from './MCPTable';
 import { MCPSortKey } from './MCPTableHeader';
+import { SectionEmptyState } from '../SectionEmptyState';
 
 /**
  * MCP tab content. Slots into MainLayout's content area exactly where
@@ -16,7 +17,6 @@ export interface MCPViewProps {
     servers: MCPServer[];
     totalCount: number;
     isSyncing: boolean;
-    syncProgress: { fetched: number; page: number; source: string } | null;
     lastError?: string | null;
     sortKey: MCPSortKey;
     sortDirection: 'asc' | 'desc';
@@ -27,6 +27,8 @@ export interface MCPViewProps {
     selectedIds?: Set<string>;
     onSelect?: (server: MCPServer, selected: boolean) => void;
     onSelectAll?: (selected: boolean) => void;
+    onSyncAll: () => void;
+    onImportCustom: () => void;
     theme: 'light' | 'dark';
 }
 
@@ -34,7 +36,6 @@ export function MCPView({
     servers,
     totalCount,
     isSyncing,
-    syncProgress,
     lastError,
     sortKey,
     sortDirection,
@@ -45,6 +46,8 @@ export function MCPView({
     selectedIds,
     onSelect,
     onSelectAll,
+    onSyncAll,
+    onImportCustom,
     theme,
 }: MCPViewProps) {
     const { t } = useTranslation();
@@ -73,7 +76,14 @@ export function MCPView({
     }
 
     if (totalCount === 0 && !isSyncing) {
-        return <EmptyState />;
+        return (
+            <SectionEmptyState
+                title={t('mcp.empty.title', { defaultValue: 'No MCP servers in the local database' })}
+                description={t('mcp.empty.desc', { defaultValue: 'Use Sync All to refresh every enabled source, or import custom data when you want to manage this section manually.' })}
+                onSyncAll={onSyncAll}
+                onImportCustom={onImportCustom}
+            />
+        );
     }
 
     if (servers.length === 0 && totalCount > 0 && !isSyncing) {
@@ -88,11 +98,6 @@ export function MCPView({
 
     return (
         <div className="space-y-2">
-            {syncProgress && (
-                <div className="text-xs text-text-secondary px-1">
-                    {syncProgress.source} — page {syncProgress.page}, {syncProgress.fetched.toLocaleString()} fetched
-                </div>
-            )}
             <MCPTable
                 servers={servers}
                 sortKey={sortKey}
@@ -115,27 +120,6 @@ function ErrorBanner({ message }: { message: string }) {
         <div className="flex items-center gap-2 p-3 rounded-lg border border-red-500/30 bg-red-500/10 text-red-700 text-sm">
             <AlertTriangle size={16} />
             <span>{message}</span>
-        </div>
-    );
-}
-
-function EmptyState() {
-    const { t } = useTranslation();
-    return (
-        <div className="flex flex-col items-center justify-center min-h-[40vh] p-8 text-center">
-            <div className="rounded-2xl border border-border bg-bg-card p-10 max-w-xl">
-                <div className="flex items-center justify-center w-16 h-16 mx-auto mb-4 rounded-full bg-accent/10 text-accent">
-                    <Plug size={32} />
-                </div>
-                <h2 className="text-xl font-semibold mb-2">
-                    {t('mcp.empty.title', { defaultValue: 'No MCP servers loaded yet' })}
-                </h2>
-                <p className="text-text-secondary">
-                    {t('mcp.empty.desc', {
-                        defaultValue: 'Hit Sync in the toolbar above to pull ~9,650 servers from the official Model Context Protocol registry. No API key required.',
-                    })}
-                </p>
-            </div>
         </div>
     );
 }

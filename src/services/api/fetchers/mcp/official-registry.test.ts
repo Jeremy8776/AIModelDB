@@ -81,6 +81,10 @@ describe('mapRegistryEntryToMCPServer', () => {
         expect(result.packages?.[0].registryType).toBe('npm');
         expect(result.packages?.[0].runtimeHint).toBe('node'); // npx -> node
         expect(result.packages?.[0].runtimeArguments).toHaveLength(1);
+        expect(result.packages?.[0].transport).toEqual({ type: 'stdio' });
+        expect(result.packages?.[0].environmentVariables).toEqual([
+            { name: 'GCS_BUCKET', isRequired: true },
+        ]);
     });
 
     it('treats deleted status as not-verified', () => {

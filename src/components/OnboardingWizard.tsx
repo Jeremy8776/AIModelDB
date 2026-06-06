@@ -5,8 +5,14 @@ import ThemeContext from '../context/ThemeContext';
 import { useSettings } from '../context/SettingsContext';
 import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 import { ThemedSelect } from './ThemedSelect';
+import { SourceCategoryTabs } from './SourceCategoryTabs';
 import { handleExternalLink } from '../utils/external-links';
-import { MCP_SOURCES, SKILL_SOURCES } from '../services/sources/entitySources';
+import {
+    DisplayEntitySource,
+    EntitySourceCategory,
+    getSourceCategorySummary,
+    getSourcesForSurface,
+} from '../services/sources/entitySources';
 
 interface OnboardingWizardProps {
     isOpen: boolean;
@@ -20,6 +26,7 @@ export function OnboardingWizard({ isOpen, onClose, onComplete, initialStep = 1 
     const { t } = useTranslation();
     const { settings, saveSettings } = useSettings();
     const [step, setStep] = useState(initialStep);
+    const [activeSourceCategory, setActiveSourceCategory] = useState<EntitySourceCategory>('models');
 
     // Reset step when modal re-opens with a new initialStep
     useEffect(() => {
@@ -40,15 +47,15 @@ export function OnboardingWizard({ isOpen, onClose, onComplete, initialStep = 1 
         localDiscovery: settings?.dataSources?.localDiscovery ?? true,
     }));
 
-    // MCP + Skill registries (only the wired "available" sources are shown here).
+    // MCP + Skill registries default to the wired "available" sources.
     const [selectedMcpSources, setSelectedMcpSources] = useState<Record<string, boolean>>(() => {
         const m: Record<string, boolean> = {};
-        MCP_SOURCES.filter(s => s.status === 'available').forEach(s => { m[s.key] = settings?.mcpSources?.[s.key] ?? true; });
+        getSourcesForSurface('onboarding', 'mcp').filter(s => s.isSelectable).forEach(s => { m[s.key] = settings?.mcpSources?.[s.key] ?? true; });
         return m;
     });
     const [selectedSkillSources, setSelectedSkillSources] = useState<Record<string, boolean>>(() => {
         const m: Record<string, boolean> = {};
-        SKILL_SOURCES.filter(s => s.status === 'available').forEach(s => { m[s.key] = settings?.skillSources?.[s.key] ?? true; });
+        getSourcesForSurface('onboarding', 'skills').filter(s => s.isSelectable).forEach(s => { m[s.key] = settings?.skillSources?.[s.key] ?? true; });
         return m;
     });
 
@@ -124,15 +131,87 @@ export function OnboardingWizard({ isOpen, onClose, onComplete, initialStep = 1 
     const bgCard = 'border-border bg-card text-text';
     const bgInput = 'border-border bg-input text-text';
 
-    const dataSources = useMemo(() => [
-        { key: 'huggingface', label: 'HuggingFace', description: t('onboarding.sourceDescs.huggingface'), requiresKey: false },
-        { key: 'github', label: 'GitHub', description: t('onboarding.sourceDescs.github'), requiresKey: true, keyUrl: 'https://github.com/settings/tokens' },
-        { key: 'artificialanalysis', label: 'Artificial Analysis', description: t('onboarding.sourceDescs.artificialanalysis'), requiresKey: true, keyUrl: 'https://artificialanalysis.ai/documentation' },
-        { key: 'civitai', label: 'Civitai', description: t('onboarding.sourceDescs.civitai'), requiresKey: false },
-        { key: 'openmodeldb', label: 'OpenModelDB', description: t('onboarding.sourceDescs.openmodeldb'), requiresKey: false },
-        { key: 'civitasbay', label: 'CivitasBay', description: t('onboarding.sourceDescs.civitasbay'), requiresKey: false },
-        { key: 'ollamaLibrary', label: 'Ollama Library', description: t('onboarding.sourceDescs.ollamaLibrary'), requiresKey: false },
-    ], [t]);
+    const dataSources = useMemo(() => getSourcesForSurface('onboarding', 'models')
+        .map(source => ({
+            ...source,
+            description: t(`onboarding.sourceDescs.${source.key}`, { defaultValue: source.description }),
+            requiresKey: source.key === 'github' || source.key === 'artificialanalysis',
+            keyUrl: source.key === 'github'
+                ? 'https://github.com/settings/tokens'
+                : source.key === 'artificialanalysis'
+                    ? 'https://artificialanalysis.ai/documentation'
+                    : undefined,
+        })), [t]);
+    const onboardingMcpSources = useMemo(() => getSourcesForSurface('onboarding', 'mcp'), []);
+    const onboardingSkillSources = useMemo(() => getSourcesForSurface('onboarding', 'skills'), []);
+
+    const getOnboardingSources = (category: EntitySourceCategory): DisplayEntitySource[] => {
+        if (category === 'models') return dataSources;
+        if (category === 'mcp') return onboardingMcpSources;
+        return onboardingSkillSources;
+    };
+
+    const getSourceCategoryTitle = (category: EntitySourceCategory): string => {
+        if (category === 'models') return t('entityTabs.models', { defaultValue: 'Models' });
+        if (category === 'mcp') return t('entityTabs.mcp', { defaultValue: 'MCP Servers' });
+        return t('entityTabs.skills', { defaultValue: 'Skills' });
+    };
+
+    const isOnboardingSourceSelected = (category: EntitySourceCategory, source: DisplayEntitySource): boolean => {
+        if (!source.isSelectable) return false;
+        if (category === 'models') return Boolean(selectedSources[source.key]);
+        if (category === 'mcp') return Boolean(selectedMcpSources[source.key]);
+        return Boolean(selectedSkillSources[source.key]);
+    };
+
+    const toggleOnboardingSource = (category: EntitySourceCategory, source: DisplayEntitySource) => {
+        if (!source.isSelectable) return;
+        if (category === 'models') {
+            toggleSource(source.key);
+        } else if (category === 'mcp') {
+            setSelectedMcpSources(prev => ({ ...prev, [source.key]: !prev[source.key] }));
+        } else {
+            setSelectedSkillSources(prev => ({ ...prev, [source.key]: !prev[source.key] }));
+        }
+    };
+
+    /**
+     * Bulk-select / deselect every *available* source in the current onboarding
+     * category. Planned sources stay disabled. Mirrors the Settings panel
+     * behavior so users see the same controls in both surfaces.
+     */
+    const setAllOnboardingSources = (category: EntitySourceCategory, value: boolean) => {
+        const selectableKeys = getOnboardingSources(category)
+            .filter(source => source.isSelectable)
+            .map(source => source.key);
+        if (selectableKeys.length === 0) return;
+
+        if (category === 'models') {
+            // models uses the parent toggleSource() per-key — flip each that's
+            // not already in the target state so we don't fight optimistic UI.
+            selectableKeys.forEach(key => {
+                if (Boolean(selectedSources[key]) !== value) toggleSource(key);
+            });
+        } else if (category === 'mcp') {
+            setSelectedMcpSources(prev => {
+                const next = { ...prev };
+                selectableKeys.forEach(key => { next[key] = value; });
+                return next;
+            });
+        } else {
+            setSelectedSkillSources(prev => {
+                const next = { ...prev };
+                selectableKeys.forEach(key => { next[key] = value; });
+                return next;
+            });
+        }
+    };
+
+    const allOnboardingSourcesAre = (category: EntitySourceCategory, value: boolean): boolean => {
+        const selectable = getOnboardingSources(category).filter(s => s.isSelectable);
+        if (selectable.length === 0) return true;
+        return selectable.every(s => isOnboardingSourceSelected(category, s) === value);
+    };
 
     // Don't render if not open
     if (!isOpen) return null;
@@ -225,77 +304,93 @@ export function OnboardingWizard({ isOpen, onClose, onComplete, initialStep = 1 
 
                 {/* Content */}
                 <div className="p-6 overflow-y-auto max-h-[calc(90vh-240px)]">
-                    {/* Step 1: Sources */}
+                    {/* Step 1: Sources — split into clear Models / MCP / Skills sub-sections
+                        so users see that all three entity tabs get configured here. */}
                     {step === 1 && (
-                        <div className="space-y-4">
+                        <div className="space-y-6">
                             <div>
                                 <h3 className="text-lg font-semibold mb-2">{t('onboarding.sourcesTitle')}</h3>
                                 <p className="text-sm text-zinc-500 mb-4">{t('onboarding.sourcesDesc')}</p>
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                {dataSources.map((source) => {
-                                    const isSelected = selectedSources[source.key];
-                                    return (
-                                        <button
-                                            key={source.key}
-                                            onClick={() => toggleSource(source.key)}
-                                            className={`p-4 rounded-lg border-2 text-left transition-all duration-200 ${isSelected ? 'border-accent bg-accent/10' : 'border-zinc-700 hover:border-zinc-500 bg-zinc-900/50'}`}
-                                        >
-                                            <div className="flex items-start justify-between">
-                                                <div className="flex-1 min-w-0">
-                                                    <div className={`font-semibold text-sm flex items-center gap-2 ${isSelected ? 'text-white' : 'text-zinc-200'}`}>
-                                                        {source.label}
-                                                    </div>
-                                                    <div className={`text-xs mt-1 ${isSelected ? 'text-zinc-300' : 'text-zinc-500'}`}>{source.description}</div>
-                                                </div>
-                                                {isSelected && <CheckCircle size={16} className="text-accent" />}
-                                            </div>
-                                        </button>
-                                    );
-                                })}
-                            </div>
 
-                            {/* MCP + Skill registries — the other entity types in the directory. */}
                             <div>
-                                <h4 className="text-sm font-semibold mt-2 mb-2 text-zinc-300">
-                                    {t('onboarding.moreRegistries', { defaultValue: 'MCP & Skill registries' })}
-                                </h4>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                    {[
-                                        ...MCP_SOURCES.filter(s => s.status === 'available').map(s => ({ ...s, map: 'mcp' as const })),
-                                        ...SKILL_SOURCES.filter(s => s.status === 'available').map(s => ({ ...s, map: 'skill' as const })),
-                                    ].map((source) => {
-                                        const isSelected = source.map === 'mcp'
-                                            ? selectedMcpSources[source.key]
-                                            : selectedSkillSources[source.key];
-                                        const toggle = () => {
-                                            if (source.map === 'mcp') {
-                                                setSelectedMcpSources(prev => ({ ...prev, [source.key]: !prev[source.key] }));
-                                            } else {
-                                                setSelectedSkillSources(prev => ({ ...prev, [source.key]: !prev[source.key] }));
-                                            }
-                                        };
+                                <SourceCategoryTabs activeCategory={activeSourceCategory} onChange={setActiveSourceCategory} />
+                                <div
+                                    id={`source-panel-${activeSourceCategory}`}
+                                    role="tabpanel"
+                                    className={`rounded-b-xl rounded-tr-xl border p-4 ${bgCard}`}
+                                >
+                                    {(() => {
+                                        const summary = getSourceCategorySummary(activeSourceCategory);
+                                        const activeSources = getOnboardingSources(activeSourceCategory);
                                         return (
-                                            <button
-                                                key={source.key}
-                                                onClick={toggle}
-                                                className={`p-4 rounded-lg border-2 text-left transition-all duration-200 ${isSelected ? 'border-accent bg-accent/10' : 'border-zinc-700 hover:border-zinc-500 bg-zinc-900/50'}`}
-                                            >
-                                                <div className="flex items-start justify-between">
-                                                    <div className="flex-1 min-w-0">
-                                                        <div className={`font-semibold text-sm flex items-center gap-2 ${isSelected ? 'text-white' : 'text-zinc-200'}`}>
-                                                            {source.label}
-                                                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 uppercase tracking-wide">
-                                                                {source.map === 'mcp' ? 'MCP' : 'Skill'}
-                                                            </span>
-                                                        </div>
-                                                        <div className={`text-xs mt-1 ${isSelected ? 'text-zinc-300' : 'text-zinc-500'}`}>{source.description}</div>
+                                            <>
+                                                <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                                                    <div className="min-w-0">
+                                                        <h4 className="font-medium">{getSourceCategoryTitle(activeSourceCategory)}</h4>
+                                                        <p className="mt-1 text-xs text-zinc-500">
+                                                            Dedupe: {summary.dedupeStrategy}
+                                                        </p>
                                                     </div>
-                                                    {isSelected && <CheckCircle size={16} className="text-accent" />}
+                                                    <div className="flex flex-shrink-0 flex-col items-start gap-2 md:items-end">
+                                                        {/* Bulk select/deselect the available sources in this category.
+                                                            Mirrors the Settings panel; planned sources are untouched. */}
+                                                        <div className="flex items-center gap-1">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setAllOnboardingSources(activeSourceCategory, true)}
+                                                                disabled={allOnboardingSourcesAre(activeSourceCategory, true)}
+                                                                className="rounded-md px-2.5 py-1 text-[11px] font-medium text-zinc-400 transition-colors hover:bg-accent/10 hover:text-accent disabled:pointer-events-none disabled:opacity-40"
+                                                            >
+                                                                {t('settings.dataSources.selectAll', { defaultValue: 'Select all' })}
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setAllOnboardingSources(activeSourceCategory, false)}
+                                                                disabled={allOnboardingSourcesAre(activeSourceCategory, false)}
+                                                                className="rounded-md px-2.5 py-1 text-[11px] font-medium text-zinc-400 transition-colors hover:bg-accent/10 hover:text-accent disabled:pointer-events-none disabled:opacity-40"
+                                                            >
+                                                                {t('settings.dataSources.selectNone', { defaultValue: 'Select none' })}
+                                                            </button>
+                                                        </div>
+                                                        <div className="flex flex-wrap gap-1.5 text-[11px] md:justify-end">
+                                                            <span className="rounded bg-accent/15 px-2 py-1 text-accent">{summary.available} ready</span>
+                                                            <span className="rounded bg-zinc-900 px-2 py-1 text-zinc-500">{summary.planned} planned</span>
+                                                            <span className="rounded bg-zinc-900 px-2 py-1 text-zinc-500">{summary.total} total</span>
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                            </button>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                    {activeSources.map(source => {
+                                                        const isSelected = isOnboardingSourceSelected(activeSourceCategory, source);
+                                                        return (
+                                                            <button
+                                                                key={source.key}
+                                                                disabled={!source.isSelectable}
+                                                                onClick={() => toggleOnboardingSource(activeSourceCategory, source)}
+                                                                className={`p-4 rounded-lg border-2 text-left transition-all duration-200 ${!source.isSelectable ? 'border-zinc-800 bg-zinc-900/30 opacity-60 cursor-not-allowed' : isSelected ? 'border-accent bg-accent/10' : 'border-zinc-700 hover:border-zinc-500 bg-zinc-900/50'}`}
+                                                            >
+                                                                <div className="flex items-start justify-between">
+                                                                    <div className="flex-1 min-w-0">
+                                                                        <div className={`font-semibold text-sm flex items-center gap-2 ${isSelected ? 'text-white' : 'text-zinc-200'}`}>
+                                                                            {source.label}
+                                                                            {!source.isSelectable && (
+                                                                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-500 uppercase tracking-wide">
+                                                                                    {t('settings.dataSources.soon', { defaultValue: 'Soon' })}
+                                                                                </span>
+                                                                            )}
+                                                                        </div>
+                                                                        <div className={`text-xs mt-1 ${isSelected ? 'text-zinc-300' : 'text-zinc-500'}`}>{source.description}</div>
+                                                                    </div>
+                                                                    {isSelected && <CheckCircle size={16} className="text-accent" />}
+                                                                </div>
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </>
                                         );
-                                    })}
+                                    })()}
                                 </div>
                             </div>
                         </div>
@@ -624,13 +719,13 @@ export function OnboardingWizard({ isOpen, onClose, onComplete, initialStep = 1 
                                 </p>
 
                                 <div className={`rounded-xl border p-4 ${bgCard} text-left max-w-md mx-auto`}>
-                                    <h4 className="font-medium mb-2">{t('onboarding.selectedSources')}</h4>
+                                    <h4 className="font-medium mb-2">{t('onboarding.selectedSources', { defaultValue: 'Selected Sources' })} <span className="text-xs opacity-60">— {t('entityTabs.models', { defaultValue: 'Models' })}</span></h4>
                                     <ul className="text-sm text-zinc-500 space-y-1">
                                         {Object.entries(selectedSources)
-                                            .filter(([key, enabled]) => enabled && key !== 'apiDiscovery' && key !== 'localDiscovery') // Exclude discovery toggles from sources list
+                                            .filter(([key, enabled]) => enabled && key !== 'apiDiscovery' && key !== 'localDiscovery')
                                             .map(([key]) => {
                                                 const source = dataSources.find(s => s.key === key);
-                                                if (!source) return null; // Skip if no matching source definition
+                                                if (!source) return null;
                                                 return (
                                                     <li key={key} className="flex items-center gap-2">
                                                         <CheckCircle size={14} className="text-green-500" />
@@ -639,6 +734,43 @@ export function OnboardingWizard({ isOpen, onClose, onComplete, initialStep = 1 
                                                 );
                                             })}
                                     </ul>
+
+                                    {(() => {
+                                        const selectedMcp = onboardingMcpSources.filter(s => s.isSelectable && selectedMcpSources[s.key]);
+                                        if (selectedMcp.length === 0) return null;
+                                        return (
+                                            <>
+                                                <h4 className="font-medium mb-2 mt-4">{t('onboarding.selectedSources', { defaultValue: 'Selected Sources' })} <span className="text-xs opacity-60">— {t('entityTabs.mcp', { defaultValue: 'MCP Servers' })}</span></h4>
+                                                <ul className="text-sm text-zinc-500 space-y-1">
+                                                    {selectedMcp.map(source => (
+                                                        <li key={source.key} className="flex items-center gap-2">
+                                                            <CheckCircle size={14} className="text-green-500" />
+                                                            {source.label} <span className="text-xs opacity-70">({t('onboarding.status.readyToSync')})</span>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </>
+                                        );
+                                    })()}
+
+                                    {(() => {
+                                        const selectedSkill = onboardingSkillSources.filter(s => s.isSelectable && selectedSkillSources[s.key]);
+                                        if (selectedSkill.length === 0) return null;
+                                        return (
+                                            <>
+                                                <h4 className="font-medium mb-2 mt-4">{t('onboarding.selectedSources', { defaultValue: 'Selected Sources' })} <span className="text-xs opacity-60">— {t('entityTabs.skills', { defaultValue: 'Skills' })}</span></h4>
+                                                <ul className="text-sm text-zinc-500 space-y-1">
+                                                    {selectedSkill.map(source => (
+                                                        <li key={source.key} className="flex items-center gap-2">
+                                                            <CheckCircle size={14} className="text-green-500" />
+                                                            {source.label} <span className="text-xs opacity-70">({t('onboarding.status.readyToSync')})</span>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </>
+                                        );
+                                    })()}
+
                                     {enableOllama && (
                                         <>
                                             <h4 className="font-medium mb-2 mt-4">{t('onboarding.localAIStatus')}</h4>

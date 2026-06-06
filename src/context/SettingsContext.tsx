@@ -1,9 +1,9 @@
-import React, { createContext, useState, ReactNode, useContext, useEffect } from 'react';
+import React, { createContext, useState, ReactNode, useContext, useEffect, useRef } from 'react';
 import { ApiDir } from '../types';
 import { DEFAULT_API_DIR } from '../services/api';
 import { CurrencyCode } from '../utils/currency';
 import { LanguageCode } from '../i18n';
-import { DEFAULT_MCP_SOURCES, DEFAULT_SKILL_SOURCES } from '../services/sources/entitySources';
+import { DEFAULT_MCP_SOURCES, DEFAULT_MODEL_SOURCES, DEFAULT_SKILL_SOURCES } from '../services/sources/entitySources';
 
 export interface Settings {
   apiConfig: ApiDir;
@@ -29,6 +29,7 @@ export interface Settings {
   preferredModelProvider: string | null;
   // Data source preferences
   dataSources: {
+    [key: string]: boolean;
     huggingface: boolean;
     github: boolean;
     artificialanalysis: boolean;
@@ -108,22 +109,23 @@ const defaultSettings: Settings = {
   preferredModelProvider: null,
   // Data source preferences  
   dataSources: {
+    ...DEFAULT_MODEL_SOURCES,
     huggingface: true,
     github: true,
     artificialanalysis: true,
+    civitai: true,
+    openmodeldb: true,
+    civitasbay: true,
+    ollamaLibrary: true,
     apiDiscovery: true,
     localDiscovery: true,
-    roboflow: true,
-    kaggle: true,
-    tensorart: true,
-    civitai: true,
-    runcomfy: false, // explicitly disabled per request
-    prompthero: true,
-    liblib: true,
-    shakker: true,
-    openmodeldb: true,
-    civitasbay: true, // Enabled - good for model preservation
-    ollamaLibrary: true,
+    roboflow: false,
+    kaggle: false,
+    tensorart: false,
+    runcomfy: false,
+    prompthero: false,
+    liblib: false,
+    shakker: false,
   },
   mcpSources: { ...DEFAULT_MCP_SOURCES },
   skillSources: { ...DEFAULT_SKILL_SOURCES },
@@ -157,8 +159,22 @@ const SettingsContext = createContext<SettingsContextType>({
   LATEST_CONFIG_VERSION
 });
 
+function mergeSettings(base: Settings, updates: Partial<Settings>): Settings {
+  return {
+    ...base,
+    ...updates,
+    dataSources: { ...base.dataSources, ...(updates.dataSources || {}) },
+    mcpSources: { ...base.mcpSources, ...(updates.mcpSources || {}) },
+    skillSources: { ...base.skillSources, ...(updates.skillSources || {}) },
+    autoRefresh: { ...base.autoRefresh, ...(updates.autoRefresh || {}) },
+    apiConfig: { ...base.apiConfig, ...(updates.apiConfig || {}) },
+  };
+}
+
 export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [settings, setSettings] = useState<Settings>(defaultSettings);
+  const settingsRef = useRef(defaultSettings);
+  const saveVersionRef = useRef(0);
 
   // Load settings from localStorage on initial mount
   useEffect(() => {
@@ -198,6 +214,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
 
           const decryptedSettings = { ...mergedSettings };
 
+          settingsRef.current = decryptedSettings;
           setSettings(decryptedSettings); // Update state immediately before decryption finishes
 
           // Decrypt API keys in apiConfig
@@ -223,6 +240,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
             decryptedSettings.gitHubToken = await window.electronAPI.decryptString(decryptedSettings.gitHubToken) || "";
           }
 
+          settingsRef.current = decryptedSettings;
           setSettings(decryptedSettings);
         }
       } catch (error) {
@@ -249,8 +267,10 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
   const saveSettings = async (newSettings: Partial<Settings>) => {
     try {
       // 1. Update state immediately for UI responsiveness
-      const nextSettings = { ...settings, ...newSettings };
+      const nextSettings = mergeSettings(settingsRef.current, newSettings);
+      settingsRef.current = nextSettings;
       setSettings(nextSettings);
+      const saveVersion = ++saveVersionRef.current;
 
       // 2. Prepare for storage (encryption)
       const storageSettings = { ...nextSettings };
@@ -278,7 +298,9 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
         storageSettings.gitHubToken = await window.electronAPI.encryptString(storageSettings.gitHubToken) || "";
       }
 
-      localStorage.setItem('aiModelDB_settings', JSON.stringify(storageSettings));
+      if (saveVersion === saveVersionRef.current) {
+        localStorage.setItem('aiModelDB_settings', JSON.stringify(storageSettings));
+      }
     } catch (error) {
       console.error('Error saving settings to localStorage:', error);
     }
@@ -286,6 +308,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   const resetSettings = () => {
     localStorage.removeItem('aiModelDB_settings');
+    settingsRef.current = defaultSettings;
     setSettings(defaultSettings);
   };
 

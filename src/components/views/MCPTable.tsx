@@ -4,6 +4,7 @@ import { ArrowUp } from 'lucide-react';
 import { MCPServer } from '../../types';
 import { MCPRow } from './MCPRow';
 import { MCPTableHeader, MCPSortKey } from './MCPTableHeader';
+import { getRuntimeLabel, getSetupRequirement, RUNTIME_SORT_WEIGHT, SETUP_SORT_WEIGHT } from '../../utils/mcpDisplay';
 
 /**
  * MCP Servers table — visually identical to ModelTable.
@@ -65,15 +66,15 @@ export function MCPTable({
                     const bT = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
                     return (aT - bT) * dir;
                 }
-                case 'transport': {
-                    const aT = (a.remotes?.[0]?.type) || 'zzz';
-                    const bT = (b.remotes?.[0]?.type) || 'zzz';
-                    return aT.localeCompare(bT) * dir;
+                case 'runtime': {
+                    const ra = getRuntimeLabel(a);
+                    const rb = getRuntimeLabel(b);
+                    const kindDelta = RUNTIME_SORT_WEIGHT[ra.kind] - RUNTIME_SORT_WEIGHT[rb.kind];
+                    if (kindDelta !== 0) return kindDelta * dir;
+                    return ra.detail.localeCompare(rb.detail) * dir;
                 }
-                case 'registry': {
-                    const aR = (a.packages?.[0]?.registryType) || 'zzz';
-                    const bR = (b.packages?.[0]?.registryType) || 'zzz';
-                    return aR.localeCompare(bR) * dir;
+                case 'setup': {
+                    return (SETUP_SORT_WEIGHT[getSetupRequirement(a)] - SETUP_SORT_WEIGHT[getSetupRequirement(b)]) * dir;
                 }
                 case 'verified': {
                     const score = (s: MCPServer) =>

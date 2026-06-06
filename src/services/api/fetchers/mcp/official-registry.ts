@@ -100,11 +100,19 @@ function normalizeRegistryType(raw: string): MCPPackage['registryType'] {
 /**
  * Normalize a remote/transport type string. The registry uses
  * 'streamable-http' as the modern canonical; older entries may say 'http'.
+ *
+ * Anything we don't recognize falls back to 'streamable-http' (the safest
+ * web-shaped default) but we warn in dev so a registry-side transport addition
+ * doesn't silently mislabel records — the canonical union below should be
+ * extended to match.
  */
 function normalizeTransportType(raw: string): MCPRemote['type'] {
     const r = raw.toLowerCase();
     if (r === 'stdio' || r === 'sse' || r === 'streamable-http' || r === 'websocket') return r;
     if (r === 'http' || r === 'https') return 'streamable-http';
+    if (import.meta.env?.DEV) {
+        console.warn(`[MCP registry] Unknown transport "${raw}" — coercing to streamable-http. Update MCPRemote['type'] if this is real.`);
+    }
     return 'streamable-http';
 }
 
@@ -135,7 +143,9 @@ export function mapRegistryEntryToMCPServer(raw: RawRegistryEntry): MCPServer {
         identifier: p.identifier,
         version: p.version ?? null,
         runtimeHint: normalizeRuntimeHint(p.runtimeHint),
+        transport: p.transport,
         runtimeArguments: p.runtimeArguments,
+        environmentVariables: p.environmentVariables,
     }));
 
     const remotes: MCPRemote[] | undefined = s.remotes?.map(r => ({

@@ -131,19 +131,19 @@ export function MCPFiltersSidebar({
                     />
                 </div>
 
-                {/* Verification */}
+                {/* Provenance */}
                 <div className="mb-4">
                     <label className="block text-sm font-medium mb-2 text-text">
-                        {t('mcpFilters.verified', { defaultValue: 'Verified' })}
+                        {t('mcpFilters.verified', { defaultValue: 'Provenance' })}
                     </label>
                     <ThemedSelect
                         value={verified}
                         onChange={(v) => onVerifiedChange(v as MCPVerifiedFilter)}
                         options={[
                             { value: 'all', label: t('common.all', { defaultValue: 'All' }) },
-                            { value: 'namespace', label: t('mcpFilters.namespaceVerified', { defaultValue: 'Namespace verified' }) },
-                            { value: 'image', label: t('mcpFilters.imageVerified', { defaultValue: 'Docker-signed' }) },
-                            { value: 'directory', label: t('mcpFilters.directoryVerified', { defaultValue: 'Directory-listed' }) },
+                            { value: 'namespace', label: t('mcpFilters.namespaceVerified', { defaultValue: 'Publisher verified' }) },
+                            { value: 'image', label: t('mcpFilters.imageVerified', { defaultValue: 'Docker signed' }) },
+                            { value: 'directory', label: t('mcpFilters.directoryVerified', { defaultValue: 'Directory listed' }) },
                         ]}
                     />
                 </div>

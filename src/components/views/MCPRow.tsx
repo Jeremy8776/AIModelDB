@@ -1,6 +1,7 @@
 import React, { memo } from 'react';
 import { MCPServer } from '../../types';
 import { RoundCheckbox } from '../RoundCheckbox';
+import { getRuntimeLabel, getSetupRequirement, getSetupTooltip } from '../../utils/mcpDisplay';
 
 interface MCPRowProps {
     server: MCPServer;
@@ -16,8 +17,8 @@ interface MCPRowProps {
  * MCP server row. Shares the exact styling rules of ModelRow / SkillsRow:
  * no decorative leading icon, no inline favorite star (favoriting happens
  * in the detail panel), 12-col grid, identical hover/active/focus/selected
- * states. Content is pure text + text chips. Verified state is shown as a
- * text glyph, not an SVG icon.
+ * states. Content is pure text + text chips. Provenance state is shown as
+ * explicit badges so users do not mistake it for a security audit.
  */
 export const MCPRow = memo(function MCPRow({
     server,
@@ -35,12 +36,36 @@ export const MCPRow = memo(function MCPRow({
     const textSecondary = 'text-text-secondary';
     const subtleText = 'text-text-subtle';
 
-    const transports = Array.from(new Set((server.remotes || []).map(r => r.type)));
+    const runtime = getRuntimeLabel(server);
+    const setup = getSetupRequirement(server);
+    const setupTooltip = getSetupTooltip(server);
     const primaryPackage = server.packages?.[0];
     const updatedLabel = server.updatedAt
         ? new Date(server.updatedAt).toLocaleDateString()
         : (server.publishedAt ? new Date(server.publishedAt).toLocaleDateString() : '—');
-    const isVerified = server.namespaceVerified || server.imageVerified || server.directoryVerified;
+    const hasProvenance = server.namespaceVerified || server.imageVerified || server.directoryVerified;
+
+    const runtimeKindLabel = runtime.kind === 'local'
+        ? 'Local'
+        : runtime.kind === 'remote'
+            ? 'Remote'
+            : '—';
+    const runtimeTooltip = runtime.kind === 'local'
+        ? `Local install via ${runtime.detail}${primaryPackage ? ` · ${primaryPackage.identifier}` : ''}`
+        : runtime.kind === 'remote'
+            ? `Remote endpoint over ${runtime.detail}`
+            : 'No install or endpoint info on record';
+
+    const setupChipClass = setup === 'required'
+        ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300'
+        : setup === 'optional'
+            ? 'bg-bg-input text-text-secondary'
+            : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300';
+    const setupLabel = setup === 'required'
+        ? 'Keys required'
+        : setup === 'optional'
+            ? 'Optional config'
+            : 'No setup';
 
     return (
         <div
@@ -72,34 +97,43 @@ export const MCPRow = memo(function MCPRow({
                 {server.version && <span className="ml-1 text-xs opacity-70">v{server.version}</span>}
             </div>
 
-            <div className={`col-span-2 flex items-center gap-1 text-sm ${textSecondary} overflow-hidden flex-wrap`}>
-                {transports.length === 0 ? (
+            <div className={`col-span-2 flex items-center gap-1 text-sm ${textSecondary} overflow-hidden flex-wrap`} title={runtimeTooltip}>
+                {runtime.kind === 'unknown' ? (
                     <span className="opacity-50">—</span>
                 ) : (
-                    transports.map(tr => (
-                        <span key={tr} className="text-[10px] px-1.5 py-0.5 rounded bg-bg-input text-text-secondary font-mono whitespace-nowrap">
-                            {tr}
+                    <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+                        <span className="text-xs font-medium text-text">{runtimeKindLabel}</span>
+                        <span className="opacity-50 text-xs">·</span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-bg-input font-mono">
+                            {runtime.detail}
                         </span>
-                    ))
+                    </span>
                 )}
             </div>
 
-            <div className={`col-span-2 text-sm ${textSecondary} truncate`}>
-                {primaryPackage ? (
-                    <span className="inline-flex items-center gap-1">
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-bg-input font-mono uppercase">{primaryPackage.registryType}</span>
-                        <span className="truncate text-xs" title={primaryPackage.identifier}>{primaryPackage.identifier}</span>
-                    </span>
-                ) : (
-                    <span className="opacity-50">—</span>
-                )}
+            <div className={`col-span-2 text-sm ${textSecondary} truncate`} title={setupTooltip || undefined}>
+                <span className={`inline-flex items-center text-[11px] px-2 py-0.5 rounded-full font-medium ${setupChipClass}`}>
+                    {setupLabel}
+                </span>
             </div>
 
             <div className={`col-span-2 flex items-center gap-1 text-sm ${textSecondary} flex-wrap`}>
-                {server.namespaceVerified && <span className="text-emerald-600 text-xs font-medium">✓ Verified</span>}
-                {server.imageVerified && <span className="text-[10px] px-1.5 py-0.5 rounded bg-bg-input font-mono">docker</span>}
-                {server.directoryVerified && <span className="text-[10px] px-1.5 py-0.5 rounded bg-bg-input font-mono">dir</span>}
-                {!isVerified && <span className="opacity-50">—</span>}
+                {server.namespaceVerified && (
+                    <span className="text-emerald-600 text-xs font-medium" title="Publisher namespace ownership signal. Not a security audit.">
+                        Publisher verified
+                    </span>
+                )}
+                {server.imageVerified && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-bg-input font-mono" title="Docker image signature signal. Not a security audit.">
+                        Docker signed
+                    </span>
+                )}
+                {server.directoryVerified && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-bg-input font-mono" title="Listed by an MCP directory source. Not a security audit.">
+                        Directory listed
+                    </span>
+                )}
+                {!hasProvenance && <span className="opacity-60 text-xs">No checks</span>}
             </div>
         </div>
     );

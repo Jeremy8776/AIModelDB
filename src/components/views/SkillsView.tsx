@@ -1,9 +1,10 @@
 import React from 'react';
-import { Sparkles, AlertTriangle } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Skill } from '../../types';
 import { SkillsTable } from './SkillsTable';
 import { SkillSortKey } from './SkillsTableHeader';
+import { SectionEmptyState } from '../SectionEmptyState';
 
 /**
  * Skills tab content. Slots into MainLayout's content area exactly where
@@ -15,7 +16,6 @@ export interface SkillsViewProps {
     skills: Skill[];
     totalCount: number;
     isSyncing: boolean;
-    syncProgress: { fetched: number; page: number; source: string } | null;
     lastError?: string | null;
     sortKey: SkillSortKey;
     sortDirection: 'asc' | 'desc';
@@ -26,6 +26,8 @@ export interface SkillsViewProps {
     selectedIds?: Set<string>;
     onSelect?: (skill: Skill, selected: boolean) => void;
     onSelectAll?: (selected: boolean) => void;
+    onSyncAll: () => void;
+    onImportCustom: () => void;
     theme: 'light' | 'dark';
 }
 
@@ -33,7 +35,6 @@ export function SkillsView({
     skills,
     totalCount,
     isSyncing,
-    syncProgress,
     lastError,
     sortKey,
     sortDirection,
@@ -44,6 +45,8 @@ export function SkillsView({
     selectedIds,
     onSelect,
     onSelectAll,
+    onSyncAll,
+    onImportCustom,
     theme,
 }: SkillsViewProps) {
     const { t } = useTranslation();
@@ -77,7 +80,14 @@ export function SkillsView({
     }
 
     if (totalCount === 0 && !isSyncing) {
-        return <EmptyState />;
+        return (
+            <SectionEmptyState
+                title={t('skills.empty.title', { defaultValue: 'No skills in the local database' })}
+                description={t('skills.empty.desc', { defaultValue: 'Use Sync All to refresh every enabled source, or import custom data when you want to manage this section manually.' })}
+                onSyncAll={onSyncAll}
+                onImportCustom={onImportCustom}
+            />
+        );
     }
 
     if (skills.length === 0 && totalCount > 0 && !isSyncing) {
@@ -92,33 +102,7 @@ export function SkillsView({
 
     return (
         <div className="space-y-2">
-            {syncProgress && (
-                <div className="text-xs text-text-secondary px-1">
-                    {syncProgress.source} — {syncProgress.fetched.toLocaleString()} fetched
-                </div>
-            )}
             {table}
-        </div>
-    );
-}
-
-function EmptyState() {
-    const { t } = useTranslation();
-    return (
-        <div className="flex flex-col items-center justify-center min-h-[40vh] p-8 text-center">
-            <div className="rounded-2xl border border-border bg-bg-card p-10 max-w-xl">
-                <div className="flex items-center justify-center w-16 h-16 mx-auto mb-4 rounded-full bg-accent/10 text-accent">
-                    <Sparkles size={32} />
-                </div>
-                <h2 className="text-xl font-semibold mb-2">
-                    {t('skills.empty.title', { defaultValue: 'No skills loaded yet' })}
-                </h2>
-                <p className="text-text-secondary">
-                    {t('skills.empty.desc', {
-                        defaultValue: 'Hit Sync in the toolbar above to pull the official Claude plugins marketplace. No API key required. More sources (Cowork, HuggingFace, GitHub) land next.',
-                    })}
-                </p>
-            </div>
         </div>
     );
 }

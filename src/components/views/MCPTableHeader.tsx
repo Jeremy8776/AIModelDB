@@ -3,7 +3,7 @@ import { ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { RoundCheckbox } from '../RoundCheckbox';
 
-export type MCPSortKey = 'name' | 'updatedAt' | 'transport' | 'registry' | 'verified';
+export type MCPSortKey = 'name' | 'updatedAt' | 'runtime' | 'setup' | 'verified';
 
 export interface MCPTableHeaderProps {
     sortKey: MCPSortKey;
@@ -38,7 +38,7 @@ export function MCPTableHeader({
         }
     };
 
-    const renderSortButton = (key: MCPSortKey, label: string, colSpan: string) => {
+    const renderSortButton = (key: MCPSortKey, label: string, colSpan: string, hint?: string) => {
         const isActive = sortKey === key;
         return (
             <button
@@ -47,6 +47,7 @@ export function MCPTableHeader({
                 style={{ color: isActive ? 'var(--accent)' : undefined }}
                 onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.color = 'var(--accent)'; }}
                 onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.color = ''; }}
+                title={hint}
             >
                 {label}
                 {isActive ? (
@@ -73,9 +74,19 @@ export function MCPTableHeader({
 
             {renderSortButton('name', t('mcpTable.name', { defaultValue: 'Name' }), 'col-span-3')}
             {renderSortButton('updatedAt', t('mcpTable.updated', { defaultValue: 'Updated' }), 'col-span-2')}
-            {renderSortButton('transport', t('mcpTable.transport', { defaultValue: 'Transport' }), 'col-span-2')}
-            {renderSortButton('registry', t('mcpTable.packages', { defaultValue: 'Packages' }), 'col-span-2')}
-            {renderSortButton('verified', t('mcpTable.verified', { defaultValue: 'Verified' }), 'col-span-2')}
+            {renderSortButton(
+                'runtime',
+                t('mcpTable.runtime', { defaultValue: 'How to run' }),
+                'col-span-2',
+                t('mcpTable.runtimeHint', { defaultValue: 'Local install (node, python, docker, …) or remote endpoint (HTTP, SSE, WebSocket).' })
+            )}
+            {renderSortButton(
+                'setup',
+                t('mcpTable.setup', { defaultValue: 'Setup' }),
+                'col-span-2',
+                t('mcpTable.setupHint', { defaultValue: 'What you have to supply before it runs — API keys, env vars, or headers. None means nothing extra needed.' })
+            )}
+            {renderSortButton('verified', t('mcpTable.verified', { defaultValue: 'Provenance' }), 'col-span-2')}
         </div>
     );
 }

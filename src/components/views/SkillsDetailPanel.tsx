@@ -1,5 +1,5 @@
-import React from 'react';
-import { X, ExternalLink, Star, Copy, Box } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, ExternalLink, Star, Copy, Check, Box, Wrench, FileText, MessageSquare, Zap, Key, Cpu, Plug } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Skill } from '../../types';
 import { openExternalUrl } from '../../utils/electron';
@@ -27,6 +27,12 @@ export function SkillsDetailPanel({
     if (!skill) return null;
 
     const meta = (skill._meta || {}) as { author?: { name?: string }; version?: string; homepage?: string };
+    const requires = skill.requires || {};
+    const hasRequirements =
+        (requires.mcps && requires.mcps.length > 0)
+        || (requires.plugins && requires.plugins.length > 0)
+        || (requires.api_keys && requires.api_keys.length > 0)
+        || (requires.runtimes && requires.runtimes.length > 0);
 
     return (
         <div className={`rounded-2xl border border-border bg-bg-card flex flex-col ${className}`}>
@@ -36,8 +42,18 @@ export function SkillsDetailPanel({
                         <h2 className="text-lg font-semibold truncate">{skill.name}</h2>
                         <span className="text-[10px] px-1.5 py-0.5 rounded bg-bg-input font-mono capitalize">{skill.type}</span>
                         {meta.version && <span className="text-xs text-text-secondary">v{meta.version}</span>}
+                        {meta.author?.name && (
+                            <span className="text-xs text-text-secondary">· {meta.author.name}</span>
+                        )}
                     </div>
                     <div className="text-xs text-text-secondary font-mono break-all">{skill.id}</div>
+                    {skill.capabilities && skill.capabilities.length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-1">
+                            {skill.capabilities.map(cap => (
+                                <CapabilityChip key={cap} cap={cap} />
+                            ))}
+                        </div>
+                    )}
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
                     <button
@@ -65,15 +81,40 @@ export function SkillsDetailPanel({
 
                 {skill.install_command && (
                     <Section title={t('skillsDetail.install', { defaultValue: 'Install' })}>
-                        <div className="flex items-center gap-2 rounded-lg border border-border bg-bg p-2">
-                            <code className="flex-1 text-xs font-mono break-all">{skill.install_command}</code>
-                            <button
-                                onClick={() => navigator.clipboard?.writeText(skill.install_command || '')}
-                                className="p-1 rounded hover:bg-bg-input text-text-secondary shrink-0"
-                                title={t('common.copy', { defaultValue: 'Copy' })}
-                            >
-                                <Copy size={12} />
-                            </button>
+                        <CopyableCommand command={skill.install_command} />
+                    </Section>
+                )}
+
+                {skill.triggers && skill.triggers.length > 0 && (
+                    <Section title={t('skillsDetail.triggers', { defaultValue: 'Activates when' })}>
+                        <p className="mb-2 text-xs text-text-secondary leading-relaxed">
+                            {t('skillsDetail.triggersHelp', { defaultValue: 'Example phrases that trigger this skill in a conversation.' })}
+                        </p>
+                        <div className="space-y-1">
+                            {skill.triggers.map((tr, i) => (
+                                <div key={i} className="rounded bg-bg-input px-2 py-1 text-xs text-text font-medium">
+                                    "{tr}"
+                                </div>
+                            ))}
+                        </div>
+                    </Section>
+                )}
+
+                {hasRequirements && (
+                    <Section title={t('skillsDetail.requirements', { defaultValue: 'Requires' })}>
+                        <div className="space-y-2">
+                            {requires.api_keys && requires.api_keys.length > 0 && (
+                                <RequirementRow icon={<Key size={12} />} label={t('skillsDetail.apiKeys', { defaultValue: 'API keys' })} items={requires.api_keys} highlight />
+                            )}
+                            {requires.runtimes && requires.runtimes.length > 0 && (
+                                <RequirementRow icon={<Cpu size={12} />} label={t('skillsDetail.runtimes', { defaultValue: 'Runtimes' })} items={requires.runtimes} />
+                            )}
+                            {requires.mcps && requires.mcps.length > 0 && (
+                                <RequirementRow icon={<Zap size={12} />} label={t('skillsDetail.mcps', { defaultValue: 'MCP servers' })} items={requires.mcps} />
+                            )}
+                            {requires.plugins && requires.plugins.length > 0 && (
+                                <RequirementRow icon={<Plug size={12} />} label={t('skillsDetail.plugins', { defaultValue: 'Plugins' })} items={requires.plugins} />
+                            )}
                         </div>
                     </Section>
                 )}
@@ -86,16 +127,6 @@ export function SkillsDetailPanel({
                         <KV label={t('skillsDetail.redistributable', { defaultValue: 'Redistributable' })} value={skill.redistributable} />
                     </div>
                 </Section>
-
-                {skill.capabilities && skill.capabilities.length > 0 && (
-                    <Section title={t('skillsDetail.capabilities', { defaultValue: 'Capabilities' })}>
-                        <div className="flex flex-wrap gap-1">
-                            {skill.capabilities.map((c, i) => (
-                                <span key={i} className="text-xs px-2 py-0.5 rounded bg-bg-input text-text-secondary">{c}</span>
-                            ))}
-                        </div>
-                    </Section>
-                )}
 
                 {skill.tags && skill.tags.length > 0 && (
                     <Section title={t('skillsDetail.tags', { defaultValue: 'Tags' })}>
@@ -111,14 +142,55 @@ export function SkillsDetailPanel({
                     <Section title={t('skillsDetail.links', { defaultValue: 'Links' })}>
                         <div className="space-y-1">
                             {skill.source_repo && (
-                                <LinkRow
-                                    icon={<Box size={14} />}
-                                    label={`${skill.source_repo.owner}/${skill.source_repo.repo}`}
-                                    url={`https://github.com/${skill.source_repo.owner}/${skill.source_repo.repo}`}
-                                />
+                                <>
+                                    <LinkRow
+                                        icon={<Box size={14} />}
+                                        label={`${skill.source_repo.owner}/${skill.source_repo.repo}`}
+                                        url={`https://github.com/${skill.source_repo.owner}/${skill.source_repo.repo}`}
+                                    />
+                                    {skill.source_repo.path && (
+                                        <div className="text-[11px] text-text-secondary font-mono pl-2 break-all" title={skill.source_repo.path}>
+                                            {t('skillsDetail.repoPath', { defaultValue: 'Path' })}: {skill.source_repo.path}
+                                        </div>
+                                    )}
+                                    {skill.source_repo.sha && (
+                                        <div className="text-[11px] text-text-secondary font-mono pl-2 break-all" title={skill.source_repo.sha}>
+                                            {t('skillsDetail.repoSha', { defaultValue: 'Commit' })}: {skill.source_repo.sha.slice(0, 12)}
+                                        </div>
+                                    )}
+                                </>
                             )}
                             {meta.homepage && (
                                 <LinkRow icon={<ExternalLink size={14} />} label={t('skillsDetail.homepage', { defaultValue: 'Homepage' })} url={meta.homepage} />
+                            )}
+                        </div>
+                    </Section>
+                )}
+
+                {skill.license && skill.license.name && skill.license.name !== 'Unknown' && (
+                    <Section title={t('skillsDetail.license', { defaultValue: 'License' })}>
+                        <div className="space-y-1 text-xs">
+                            <div className="flex items-center justify-between">
+                                <span className="text-text-secondary">{t('skillsDetail.licenseName', { defaultValue: 'Name' })}</span>
+                                <span className="text-text font-mono">{skill.license.name}</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <span className="text-text-secondary">{t('skillsDetail.licenseType', { defaultValue: 'Type' })}</span>
+                                <span className="text-text">{skill.license.type}</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <span className="text-text-secondary">{t('skillsDetail.commercialUse', { defaultValue: 'Commercial use' })}</span>
+                                <span className={skill.license.commercial_use ? 'text-emerald-600 font-medium' : 'text-amber-600 font-medium'}>
+                                    {skill.license.commercial_use ? t('common.allowed', { defaultValue: 'Allowed' }) : t('common.notAllowed', { defaultValue: 'Not allowed' })}
+                                </span>
+                            </div>
+                            {skill.license.url && (
+                                <button
+                                    onClick={() => openExternalUrl(skill.license!.url!)}
+                                    className="inline-flex items-center gap-1 text-purple-600 dark:text-purple-300 hover:underline mt-1"
+                                >
+                                    {t('skillsDetail.viewLicense', { defaultValue: 'View terms' })} <ExternalLink size={10} />
+                                </button>
                             )}
                         </div>
                     </Section>
@@ -131,6 +203,80 @@ export function SkillsDetailPanel({
                         ))}
                     </div>
                 </Section>
+
+                {skill.updated_at && (
+                    <Section title={t('skillsDetail.timestamps', { defaultValue: 'Updated' })}>
+                        <div className="text-xs text-text-secondary">
+                            {new Date(skill.updated_at).toLocaleString()}
+                        </div>
+                    </Section>
+                )}
+            </div>
+        </div>
+    );
+}
+
+function CapabilityChip({ cap }: { cap: string }) {
+    const c = cap.toLowerCase();
+    const icon = c === 'tools' || c === 'tool' ? <Wrench size={11} />
+        : c === 'resources' || c === 'resource' ? <FileText size={11} />
+            : c === 'prompts' || c === 'prompt' ? <MessageSquare size={11} />
+                : null;
+    return (
+        <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-accent/10 text-accent font-medium">
+            {icon}
+            {cap}
+        </span>
+    );
+}
+
+function CopyableCommand({ command }: { command: string }) {
+    const [copied, setCopied] = useState(false);
+    const copy = async () => {
+        try {
+            await navigator.clipboard?.writeText(command);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 1500);
+        } catch {
+            // clipboard may be blocked
+        }
+    };
+    return (
+        <div className="flex items-center gap-2 rounded-lg border border-border bg-bg p-2">
+            <code className="flex-1 text-xs font-mono break-all">{command}</code>
+            <button
+                onClick={copy}
+                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-bg-input text-text-secondary shrink-0 text-[10px]"
+                title="Copy to clipboard"
+            >
+                {copied ? <Check size={11} className="text-emerald-600" /> : <Copy size={11} />}
+                {copied ? 'Copied' : 'Copy'}
+            </button>
+        </div>
+    );
+}
+
+function RequirementRow({ icon, label, items, highlight }: { icon: React.ReactNode; label: string; items: string[]; highlight?: boolean }) {
+    return (
+        <div className="flex items-start gap-2">
+            <span className={`mt-0.5 ${highlight ? 'text-amber-600 dark:text-amber-300' : 'text-text-secondary'}`}>{icon}</span>
+            <div className="flex-1 min-w-0">
+                <div className={`text-[11px] uppercase tracking-wide ${highlight ? 'text-amber-700 dark:text-amber-300 font-semibold' : 'text-text-secondary'}`}>
+                    {label}
+                </div>
+                <div className="mt-0.5 flex flex-wrap gap-1">
+                    {items.map((item, i) => (
+                        <span
+                            key={i}
+                            className={`text-[10px] px-1.5 py-0.5 rounded font-mono ${highlight
+                                ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300'
+                                : 'bg-bg-input text-text-secondary'
+                                }`}
+                        >
+                            {item}
+                        </span>
+                    ))}
+                </div>
             </div>
         </div>
     );
