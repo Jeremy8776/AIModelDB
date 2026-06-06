@@ -35,6 +35,9 @@ Thumbs.db
 # Test coverage
 coverage/
 
+# Test runner output
+test-results/
+
 # Electron
 *.asar
 
