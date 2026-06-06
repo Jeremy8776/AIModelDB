@@ -64,7 +64,11 @@ export function Header({
     const bgInput = "border-border bg-bg-input text-text placeholder:text-text-secondary focus-within:ring-2 focus-within:ring-accent focus-within:border-transparent transition-all";
 
     return (
-        <header className={`app-header relative z-10 ${bgHeader} border-b`}>
+        // z-[45] lifts the header's stacking context above the sticky toolbar
+        // (z-40) and the entity tabs (z-30) so the search suggestions dropdown
+        // (z-50, nested here) renders over them. Kept below the titlebar and
+        // modal layer (both z-50) so scroll + modal layering stay correct.
+        <header className={`app-header relative z-[45] ${bgHeader} border-b`}>
             <div className="flex w-full items-center justify-between gap-3 px-4 py-2">
                 <div className="relative w-full max-w-md">
                     <div className={`flex w-full items-center gap-2 rounded-xl px-3 py-2 border transition-all ${bgInput}`}>
