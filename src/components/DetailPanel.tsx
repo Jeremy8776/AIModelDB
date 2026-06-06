@@ -109,46 +109,50 @@ export function DetailPanel({ model, onClose, onDelete, triggerElement, onToggle
     }
   }, [debouncedTriggerElement]);
 
-  // Keyboard navigation for lightbox
+  // Keyboard navigation for lightbox — uses the same image array as the gallery
+  // so the fallback to `model.images` works in the lightbox too.
+  const lightboxImages: string[] = (modelDetails?.images && modelDetails.images.length > 0)
+    ? modelDetails.images
+    : (model?.images && model.images.length > 0 ? model.images : []);
   useEffect(() => {
     if (selectedImageIndex === null) return;
+    if (lightboxImages.length === 0) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (!modelDetails?.images) return;
-
       if (e.key === 'Escape') {
         setSelectedImageIndex(null);
       } else if (e.key === 'ArrowRight') {
         setSelectedImageIndex((prev) =>
-          prev === null ? null : (prev + 1) % modelDetails.images!.length
+          prev === null ? null : (prev + 1) % lightboxImages.length
         );
       } else if (e.key === 'ArrowLeft') {
         setSelectedImageIndex((prev) =>
-          prev === null ? null : (prev - 1 + modelDetails.images!.length) % modelDetails.images!.length
+          prev === null ? null : (prev - 1 + lightboxImages.length) % lightboxImages.length
         );
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedImageIndex, modelDetails?.images]);
+  }, [selectedImageIndex, lightboxImages]);
 
   if (!model) return null;
 
   const textSubtle = "text-text-secondary";
   const bgInput = "border-border bg-bg-input text-text";
+  const displayImages = lightboxImages;
 
   const handleNextImage = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (modelDetails?.images && selectedImageIndex !== null) {
-      setSelectedImageIndex((selectedImageIndex + 1) % modelDetails.images.length);
+    if (displayImages.length > 0 && selectedImageIndex !== null) {
+      setSelectedImageIndex((selectedImageIndex + 1) % displayImages.length);
     }
   };
 
   const handlePrevImage = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (modelDetails?.images && selectedImageIndex !== null) {
-      setSelectedImageIndex((selectedImageIndex - 1 + modelDetails.images.length) % modelDetails.images.length);
+    if (displayImages.length > 0 && selectedImageIndex !== null) {
+      setSelectedImageIndex((selectedImageIndex - 1 + displayImages.length) % displayImages.length);
     }
   };
 
@@ -170,10 +174,12 @@ export function DetailPanel({ model, onClose, onDelete, triggerElement, onToggle
             <div className="flex items-center gap-2">
               <h2 className="text-lg font-semibold truncate" title={model.name}>{model.name}</h2>
             </div>
+            <div className={`mt-0.5 text-[11px] font-mono break-all ${textSubtle} opacity-70`} title={model.id}>{model.id}</div>
             <div className={`mt-1 flex items-center gap-2 text-sm ${textSubtle} flex-wrap`}>
               <DomainIcon d={model.domain} />
               <span>{model.domain}</span>
               <span>· {kfmt(model.downloads || 0)} downloads</span>
+              {model.provider && <span>· {model.provider}</span>}
             </div>
             {model.description && (
               <p className={`mt-2 text-sm ${textSubtle} whitespace-pre-wrap`}>{model.description}</p>
@@ -282,9 +288,33 @@ export function DetailPanel({ model, onClose, onDelete, triggerElement, onToggle
               <div>{model.license.copyleft ? t('common.yes') : t('common.no')}</div>
             </div>
             <div>
+              <span className={textSubtle}>{t('detailPanel.shareAlike', 'Share-alike')}</span>
+              <div>{model.license.share_alike ? t('common.yes') : t('common.no')}</div>
+            </div>
+            <div>
               <span className={textSubtle}>{t('detailPanel.indemnity')}</span>
               <div>{model.indemnity || t('common.none')}</div>
             </div>
+            {model.license.url && (
+              <div>
+                <span className={textSubtle}>{t('detailPanel.licenseUrl', 'License text')}</span>
+                <div>
+                  <a
+                    href={model.license.url}
+                    onClick={(e) => handleExternalLink(e, model.license.url!)}
+                    className="inline-flex items-center gap-1 text-purple-600 dark:text-purple-300 hover:underline"
+                  >
+                    {t('detailPanel.viewLicense', 'View terms')} <ExternalLink className="size-3" />
+                  </a>
+                </div>
+              </div>
+            )}
+            {model.license.notes && (
+              <div className="col-span-2">
+                <span className={textSubtle}>{t('detailPanel.licenseNotes', 'License notes')}</span>
+                <div className="text-xs mt-0.5">{model.license.notes}</div>
+              </div>
+            )}
             {model.data_provenance && (
               <div>
                 <span className={textSubtle}>{t('detailPanel.dataProvenance', 'Data Provenance')}</span>
@@ -320,6 +350,18 @@ export function DetailPanel({ model, onClose, onDelete, triggerElement, onToggle
                   </div>
                 )}
               </div>
+              {model.hosting.providers && model.hosting.providers.length > 0 && (
+                <div className="mt-2">
+                  <span className={`text-xs ${textSubtle}`}>{t('detailPanel.providers', 'Hosted by')}</span>
+                  <div className="mt-1 flex flex-wrap gap-1">
+                    {model.hosting.providers.map(p => (
+                      <span key={p} className="text-xs px-2 py-0.5 rounded bg-bg-input text-text-secondary">
+                        {p}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Usage Restrictions */}
@@ -492,6 +534,24 @@ export function DetailPanel({ model, onClose, onDelete, triggerElement, onToggle
             </div>
           )}
 
+          {model.source_stats && Object.keys(model.source_stats).length > 0 && (
+            <div className="mt-3">
+              <div className={`text-xs font-medium mb-1 ${textSubtle}`}>{t('detailPanel.meta.perSource', 'Per-source stats')}</div>
+              <div className="space-y-1">
+                {Object.entries(model.source_stats).map(([src, stats]) => (
+                  <div key={src} className="flex items-center justify-between rounded-md px-2 py-1 border border-border text-xs">
+                    <span className="font-mono truncate pr-2">{src}</span>
+                    <span className="text-right opacity-80 tabular-nums">
+                      {stats?.downloads != null && <>{kfmt(stats.downloads)} dl</>}
+                      {stats?.downloads != null && stats?.updated_at && <span className="opacity-50"> · </span>}
+                      {stats?.updated_at && <>{fmtDate(stats.updated_at)}</>}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {model.analytics && Object.keys(model.analytics).length > 0 && (
             <div className="mt-3">
               <div className={`text-xs font-medium mb-1 ${textSubtle}`}>{t('detailPanel.meta.analytics')}</div>
@@ -567,16 +627,18 @@ export function DetailPanel({ model, onClose, onDelete, triggerElement, onToggle
           })()}
         </section>
 
-        {/* Image Gallery */}
-        {modelDetails?.images && modelDetails.images.length > 0 && (
+        {/* Image Gallery — prefers fetched detail images, falls back to
+            whatever the canonical record stored in `model.images` so users
+            still see previews when on a source we don't deep-fetch. */}
+        {displayImages && displayImages.length > 0 && (
           <section className={`mt-4 rounded-xl border p-4`}
             style={{ borderColor: theme === 'dark' ? '#27272a' : '#e4e4e7' }}>
             <div className="mb-2 flex items-center gap-2">
               <strong className="text-sm">{t('detailPanel.gallery', 'Gallery')}</strong>
-              <span className={`text-xs ${textSubtle}`}>({modelDetails.images.length})</span>
+              <span className={`text-xs ${textSubtle}`}>({displayImages.length})</span>
             </div>
             <div className="grid grid-cols-2 gap-2">
-              {modelDetails.images.map((imgUrl, i) => (
+              {displayImages.map((imgUrl, i) => (
                 <div key={i} className="relative aspect-square overflow-hidden rounded-lg group empty:hidden">
                   <GalleryImage
                     src={imgUrl}
@@ -594,7 +656,7 @@ export function DetailPanel({ model, onClose, onDelete, triggerElement, onToggle
       </div>
 
       {/* Lightbox Overlay */}
-      {selectedImageIndex !== null && modelDetails?.images && createPortal(
+      {selectedImageIndex !== null && displayImages.length > 0 && createPortal(
         <div
           className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black/45 backdrop-blur-md animate-in fade-in duration-200"
           onClick={() => setSelectedImageIndex(null)}
@@ -613,7 +675,7 @@ export function DetailPanel({ model, onClose, onDelete, triggerElement, onToggle
           {/* Main Image View Area */}
           <div className="relative flex-1 w-full flex items-center justify-center p-8 min-h-0 overflow-hidden">
             {/* Previous Button */}
-            {modelDetails.images.length > 1 && (
+            {displayImages.length > 1 && (
               <button
                 className="absolute left-4 top-1/2 -translate-y-1/2 p-3 text-white/50 hover:text-white hover:bg-white/10 rounded-full transition-all z-10"
                 onClick={handlePrevImage}
@@ -624,7 +686,7 @@ export function DetailPanel({ model, onClose, onDelete, triggerElement, onToggle
 
             {/* Image/Video View */}
             {(() => {
-              const currentSrc = modelDetails.images[selectedImageIndex];
+              const currentSrc = displayImages[selectedImageIndex];
               const isVideo = currentSrc.endsWith('.mp4') || currentSrc.endsWith('.webm') || currentSrc.endsWith('.mov');
 
               if (isVideo) {
@@ -671,7 +733,7 @@ export function DetailPanel({ model, onClose, onDelete, triggerElement, onToggle
 
             {/* Flagged Overlay for Lightbox */}
             {(() => {
-              const currentSrc = modelDetails.images[selectedImageIndex];
+              const currentSrc = displayImages[selectedImageIndex];
               if (hideNSFW && model.flaggedImageUrls?.includes(currentSrc)) {
                 return (
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
@@ -683,7 +745,7 @@ export function DetailPanel({ model, onClose, onDelete, triggerElement, onToggle
             })()}
 
             {/* Next Button */}
-            {modelDetails.images.length > 1 && (
+            {displayImages.length > 1 && (
               <button
                 className="absolute right-4 top-1/2 -translate-y-1/2 p-3 text-white/50 hover:text-white hover:bg-white/10 rounded-full transition-all z-10"
                 onClick={handleNextImage}
@@ -696,7 +758,7 @@ export function DetailPanel({ model, onClose, onDelete, triggerElement, onToggle
           {/* Carousel thumbnails */}
           <div className="h-24 w-full bg-black/40 backdrop-blur-sm border-t border-white/10 flex items-center justify-center gap-2 p-4 overflow-x-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent shrink-0"
             onClick={(e) => e.stopPropagation()}>
-            {modelDetails.images.map((img, idx) => (
+            {displayImages.map((img, idx) => (
               <button
                 key={idx}
                 onClick={() => setSelectedImageIndex(idx)}

@@ -12,15 +12,6 @@ import { useTranslation } from 'react-i18next';
 interface LoadingScreenProps {
     /** Current theme */
     theme: 'dark' | 'light';
-    /**
-     * Loading progress (optional). Retained for API compatibility but no longer
-     * rendered as a percentage — the initial load has no honest total to measure
-     * against, so we show an indeterminate bar instead.
-     */
-    progress?: {
-        current: number;
-        total: number;
-    } | null;
 }
 
 /**

@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { ThemeProvider } from "./context/ThemeContext";
 import { SettingsProvider } from "./context/SettingsContext";
 import { UpdateProvider } from "./context/UpdateContext";
@@ -18,6 +18,10 @@ import { MCPView } from "./components/views/MCPView";
 import { MCPFiltersSidebar, MCPTransportFilter, MCPRegistryFilter, MCPVerifiedFilter } from "./components/views/MCPFiltersSidebar";
 import { MCPDetailPanel } from "./components/views/MCPDetailPanel";
 import { MCPSortKey } from "./components/views/MCPTableHeader";
+import { getRuntimeLabel, getSetupRequirement, RUNTIME_SORT_WEIGHT, SETUP_SORT_WEIGHT } from "./utils/mcpDisplay";
+import { countQueryMatches } from "./utils/searchMatch";
+import { buildSearchSuggestions } from "./utils/searchSuggestions";
+import { buildDatabaseExportBundle } from "./utils/exportBundle";
 import { SkillsView } from "./components/views/SkillsView";
 import { SkillsFiltersSidebar, SkillTypeFilter, SkillOriginFilter } from "./components/views/SkillsFiltersSidebar";
 import { SkillsDetailPanel } from "./components/views/SkillsDetailPanel";
@@ -30,8 +34,10 @@ import { DetailPanel } from "./components/DetailPanel";
 import { SkeletonRow } from "./components/ModelRow";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { EmptyState } from "./components/EmptyState";
+import { SectionEmptyState } from "./components/SectionEmptyState";
 import { MCPServer } from "./types";
 import { isElectron } from "./utils/electron";
+import { shouldShowDatabaseWelcome } from "./utils/databaseVisibility";
 
 /**
  * Main content component for the AI Model Database application.
@@ -46,6 +52,8 @@ function AIModelDBContent() {
   const controller = useDashboardController();
   const mcp = useMCPServers();
   const skills = useSkills();
+  const globalSyncStartCounts = useRef<{ models: number; mcp: number; skills: number } | null>(null);
+  const globalSyncWasSyncing = useRef(false);
 
   // MCP-specific filter state (lives here so the MainLayout sidebar slot is
   // entity-agnostic; both the FiltersSidebar and MCPFiltersSidebar pull from
@@ -105,6 +113,7 @@ function AIModelDBContent() {
     setModelToFlag,
     models,
     setModels,
+    lastMergeStats,
     addModel,
     importModels,
     validateModels,
@@ -122,7 +131,6 @@ function AIModelDBContent() {
     closeValidationModal,
     validateEntireDatabase,
     isLoading,
-    loadingProgress,
     validationProgress,
     filtered,
     page,
@@ -175,12 +183,37 @@ function AIModelDBContent() {
   }, [mcp.servers, mcpTransport, mcpRegistry, mcpVerified, mcpFavoritesOnly, mcpHasPackagesOnly, mcpHasRemotesOnly, uiState.query]);
 
   // MCP pagination — same page-size semantics as Models (null = show all).
-  const mcpTotalPages = mcpPageSize ? Math.max(1, Math.ceil(mcpFiltered.length / mcpPageSize)) : 1;
+  const mcpSorted = useMemo(() => {
+    const arr = [...mcpFiltered];
+    const dir = mcpSortDirection === 'asc' ? 1 : -1;
+    return arr.sort((a, b) => {
+      const favDelta = (b.isFavorite ? 1 : 0) - (a.isFavorite ? 1 : 0);
+      if (favDelta !== 0) return favDelta;
+      if (mcpSortKey === 'name') return a.name.localeCompare(b.name) * dir;
+      if (mcpSortKey === 'runtime') {
+        const ra = getRuntimeLabel(a);
+        const rb = getRuntimeLabel(b);
+        const kindDelta = RUNTIME_SORT_WEIGHT[ra.kind] - RUNTIME_SORT_WEIGHT[rb.kind];
+        if (kindDelta !== 0) return kindDelta * dir;
+        return ra.detail.localeCompare(rb.detail) * dir;
+      }
+      if (mcpSortKey === 'setup') {
+        return (SETUP_SORT_WEIGHT[getSetupRequirement(a)] - SETUP_SORT_WEIGHT[getSetupRequirement(b)]) * dir;
+      }
+      if (mcpSortKey === 'verified') {
+        const score = (s: MCPServer) => (s.namespaceVerified ? 4 : 0) + (s.imageVerified ? 2 : 0) + (s.directoryVerified ? 1 : 0);
+        return (score(a) - score(b)) * dir;
+      }
+      return ((a.updatedAt ? Date.parse(a.updatedAt) : 0) - (b.updatedAt ? Date.parse(b.updatedAt) : 0)) * dir;
+    });
+  }, [mcpFiltered, mcpSortKey, mcpSortDirection]);
+
+  const mcpTotalPages = mcpPageSize ? Math.max(1, Math.ceil(mcpSorted.length / mcpPageSize)) : 1;
   const mcpPageItems = useMemo(() => {
-    if (!mcpPageSize) return mcpFiltered;
+    if (!mcpPageSize) return mcpSorted;
     const start = (mcpPage - 1) * mcpPageSize;
-    return mcpFiltered.slice(start, start + mcpPageSize);
-  }, [mcpFiltered, mcpPage, mcpPageSize]);
+    return mcpSorted.slice(start, start + mcpPageSize);
+  }, [mcpSorted, mcpPage, mcpPageSize]);
 
   // Snap back to page 1 if filters shrink the list below the current page.
   useEffect(() => {
@@ -207,23 +240,108 @@ function AIModelDBContent() {
     });
   }, [skills.skills, skillType, skillOrigin, skillFamily, skillFavoritesOnly, uiState.query]);
 
-  const skillTotalPages = skillPageSize ? Math.max(1, Math.ceil(skillsFiltered.length / skillPageSize)) : 1;
+  const skillsSorted = useMemo(() => {
+    const arr = [...skillsFiltered];
+    const dir = skillSortDirection === 'asc' ? 1 : -1;
+    return arr.sort((a, b) => {
+      const favDelta = (b.isFavorite ? 1 : 0) - (a.isFavorite ? 1 : 0);
+      if (favDelta !== 0) return favDelta;
+      if (skillSortKey === 'type') return a.type.localeCompare(b.type) * dir;
+      if (skillSortKey === 'family') return (a.family || 'zzz').localeCompare(b.family || 'zzz') * dir;
+      if (skillSortKey === 'origin') return a.origin.localeCompare(b.origin) * dir;
+      if (skillSortKey === 'source') return a.source.localeCompare(b.source) * dir;
+      return a.name.localeCompare(b.name) * dir;
+    });
+  }, [skillsFiltered, skillSortKey, skillSortDirection]);
+
+  const skillTotalPages = skillPageSize ? Math.max(1, Math.ceil(skillsSorted.length / skillPageSize)) : 1;
   const skillPageItems = useMemo(() => {
-    if (!skillPageSize) return skillsFiltered;
+    if (!skillPageSize) return skillsSorted;
     const start = (skillPage - 1) * skillPageSize;
-    return skillsFiltered.slice(start, start + skillPageSize);
-  }, [skillsFiltered, skillPage, skillPageSize]);
+    return skillsSorted.slice(start, start + skillPageSize);
+  }, [skillsSorted, skillPage, skillPageSize]);
 
   useEffect(() => {
     if (skillPage > skillTotalPages) setSkillPage(1);
   }, [skillPage, skillTotalPages]);
+
+  const currentMcpSelected = useMemo(
+    () => mcpSelected ? mcp.servers.find(server => server.id === mcpSelected.id) || null : null,
+    [mcpSelected, mcp.servers]
+  );
+  const currentSkillSelected = useMemo(
+    () => skillSelected ? skills.skills.find(skill => skill.id === skillSelected.id) || null : null,
+    [skillSelected, skills.skills]
+  );
+
+  // Cross-tab search match counts — must sit ABOVE the isLoading early return
+  // so hook order stays stable across loading/loaded renders.
+  const trimmedQuery = uiState.query.trim();
+  const hasActiveQuery = trimmedQuery.length > 0;
+  const matchCounts = useMemo(
+    () => countQueryMatches(models, mcp.servers, skills.skills, trimmedQuery),
+    [models, mcp.servers, skills.skills, trimmedQuery]
+  );
+  const searchSuggestions = useMemo(
+    () => buildSearchSuggestions({
+      query: uiState.query,
+      models,
+      mcp: mcp.servers,
+      skills: skills.skills,
+    }),
+    [uiState.query, models, mcp.servers, skills.skills]
+  );
+  const anyGlobalSyncing = syncState.isSyncing || mcp.isSyncing || skills.isSyncing || isSaving;
+  const databaseCounts = useMemo(() => ({
+    models: models.length,
+    mcp: mcp.servers.length,
+    skills: skills.skills.length,
+  }), [models.length, mcp.servers.length, skills.skills.length]);
+  const showDatabaseWelcome = shouldShowDatabaseWelcome(databaseCounts, anyGlobalSyncing);
+
+  useEffect(() => {
+    if (!globalSyncStartCounts.current) return;
+    if (anyGlobalSyncing) {
+      globalSyncWasSyncing.current = true;
+      return;
+    }
+    if (!globalSyncWasSyncing.current) return;
+
+    const startedWith = globalSyncStartCounts.current;
+    const modelsAdded = Math.max(0, models.length - startedWith.models);
+    const mcpAdded = Math.max(0, mcp.servers.length - startedWith.mcp);
+    const skillsAdded = Math.max(0, skills.skills.length - startedWith.skills);
+
+    modalState.setImportToast({
+      scope: 'sync',
+      found: models.length,
+      added: modelsAdded + mcpAdded + skillsAdded,
+      updated: lastMergeStats?.updated || 0,
+      flagged: syncState.syncSummary?.flagged || 0,
+      duplicates: (lastMergeStats?.duplicates || 0) + (syncState.syncSummary?.duplicates || 0),
+      entityBreakdown: {
+        models: models.length,
+        mcp: mcp.servers.length,
+        skills: skills.skills.length,
+      },
+    });
+    globalSyncStartCounts.current = null;
+    globalSyncWasSyncing.current = false;
+  }, [
+    anyGlobalSyncing,
+    models.length,
+    mcp.servers.length,
+    skills.skills.length,
+    lastMergeStats,
+    syncState.syncSummary,
+    modalState,
+  ]);
 
   // Loading screen
   if (isLoading) {
     return (
       <LoadingScreen
         theme={theme === 'dark' ? 'dark' : 'light'}
-        progress={loadingProgress}
       />
     );
   }
@@ -234,20 +352,55 @@ function AIModelDBContent() {
   // Each entity only syncs the data sources enabled in Settings; each hook also
   // guards its own in-flight state, so re-clicking is a no-op per source.
   const handleSync = () => {
+    globalSyncStartCounts.current = {
+      models: models.length,
+      mcp: mcp.servers.length,
+      skills: skills.skills.length,
+    };
+    globalSyncWasSyncing.current = false;
     handleSyncWithApiCheck();          // Models (full sync; may prompt for API check)
-    if (settings.mcpSources?.['mcp-registry'] !== false) {
-      mcp.syncOfficialRegistry();      // MCP servers (official registry)
-    }
+    mcp.syncAll();                     // MCP servers (every enabled source)
     if (settings.skillSources?.['claude-plugins-official'] !== false) {
       skills.syncOfficialMarketplace(); // Skills (official plugins marketplace)
     }
+  };
+
+  const handleGlobalExport = () => {
+    const bundle = buildDatabaseExportBundle(models, mcp.servers, skills.skills);
+    const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ai-model-db-all-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    consoleLogging.addConsoleLog(`Exported all data: ${models.length} models, ${mcp.servers.length} MCP servers, ${skills.skills.length} skills.`);
+  };
+
+  const handleGlobalDeleteDatabase = () => {
+    modalState.setConfirmationToast({
+      title: 'Delete all local database data?',
+      message: 'This removes models, MCP servers, skills, sync metadata, caches, and local database records. Settings and API keys are preserved.',
+      type: 'error',
+      confirmText: 'Delete all data',
+      onConfirm: () => {
+        window.dispatchEvent(new CustomEvent('hard-reset'));
+        mcp.clearAll();
+        skills.clearAll();
+        consoleLogging.addConsoleLog('Deleted all local database data.');
+      }
+    });
   };
 
   // ─── Build the slot contents per entity ───
 
   // Sidebar
   let sidebarNode: React.ReactNode = null;
-  if (activeEntity === 'models') {
+  if (showDatabaseWelcome) {
+    sidebarNode = null;
+  } else if (activeEntity === 'models') {
     sidebarNode = (
       <ErrorBoundary name="Filters">
         <FiltersSidebar
@@ -341,11 +494,19 @@ function AIModelDBContent() {
           <div className="space-y-2">
             {Array.from({ length: 8 }).map((_, i) => <SkeletonRow key={i} />)}
           </div>
-        ) : filtered.length === 0 ? (
-          <EmptyState
-            onSetupSources={() => modalState.setShowOnboarding(true)}
-            onImport={() => modalState.setShowImport(true)}
+        ) : models.length === 0 ? (
+          <SectionEmptyState
+            title="No models in the local database"
+            description="Use Sync All to refresh every enabled source, or import custom data when you want to manage this section manually."
+            onSyncAll={handleSync}
+            onImportCustom={() => modalState.setShowImport(true)}
           />
+        ) : filtered.length === 0 ? (
+          <div className="flex flex-col items-center justify-center min-h-[30vh] p-8 text-center">
+            <p className="text-sm text-text-secondary">
+              No models match the current filters.
+            </p>
+          </div>
         ) : (
           <ModelTable
             models={visibleItems}
@@ -386,7 +547,6 @@ function AIModelDBContent() {
           servers={mcpPageItems}
           totalCount={mcp.servers.length}
           isSyncing={mcp.isSyncing}
-          syncProgress={mcp.syncProgress}
           lastError={mcp.meta.lastError}
           sortKey={mcpSortKey}
           sortDirection={mcpSortDirection}
@@ -397,6 +557,8 @@ function AIModelDBContent() {
           activeServerId={mcpSelected?.id ?? null}
           onOpen={(server) => setMcpSelected(prev => (prev?.id === server.id ? null : server))}
           onToggleFavorite={mcp.toggleFavorite}
+          onSyncAll={handleSync}
+          onImportCustom={() => modalState.setShowImport(true)}
           selectedIds={mcpSelectedIds}
           onSelect={(server, selected) => {
             setMcpSelectedIds(prev => {
@@ -424,7 +586,6 @@ function AIModelDBContent() {
           skills={skillPageItems}
           totalCount={skills.skills.length}
           isSyncing={skills.isSyncing}
-          syncProgress={skills.syncProgress}
           lastError={skills.meta.lastError}
           sortKey={skillSortKey}
           sortDirection={skillSortDirection}
@@ -435,6 +596,8 @@ function AIModelDBContent() {
           activeSkillId={skillSelected?.id ?? null}
           onOpen={(skill) => setSkillSelected(prev => (prev?.id === skill.id ? null : skill))}
           onToggleFavorite={skills.toggleFavorite}
+          onSyncAll={handleSync}
+          onImportCustom={() => modalState.setShowImport(true)}
           selectedIds={skillSelectedIds}
           onSelect={(skill, selected) => {
             setSkillSelectedIds(prev => {
@@ -459,9 +622,14 @@ function AIModelDBContent() {
   // appears merged with the workspace beneath. No outer wrapper card — that
   // would produce double borders since ModelTable / MCPTable each already
   // render their own card chrome.
-  const contentNode = (
+  const contentNode = showDatabaseWelcome ? (
+    <EmptyState
+      onSetupSources={() => modalState.setShowOnboarding(true)}
+      onImport={() => modalState.setShowImport(true)}
+    />
+  ) : (
     <div>
-      <EntityTabs />
+      <EntityTabs matchCounts={matchCounts} hasActiveQuery={hasActiveQuery} />
       {innerContent}
     </div>
   );
@@ -493,11 +661,11 @@ function AIModelDBContent() {
         />
       </ErrorBoundary>
     );
-  } else if (activeEntity === 'mcp' && mcpSelected) {
+  } else if (activeEntity === 'mcp' && currentMcpSelected) {
     detailPanelNode = (
       <ErrorBoundary name="MCP Detail Panel" onReset={() => setMcpSelected(null)}>
         <MCPDetailPanel
-          server={mcpSelected}
+          server={currentMcpSelected}
           onClose={() => setMcpSelected(null)}
           onToggleFavorite={mcp.toggleFavorite}
           onDelete={mcp.deleteServer}
@@ -505,11 +673,11 @@ function AIModelDBContent() {
         />
       </ErrorBoundary>
     );
-  } else if (activeEntity === 'skills' && skillSelected) {
+  } else if (activeEntity === 'skills' && currentSkillSelected) {
     detailPanelNode = (
       <ErrorBoundary name="Skills Detail Panel" onReset={() => setSkillSelected(null)}>
         <SkillsDetailPanel
-          skill={skillSelected}
+          skill={currentSkillSelected}
           onClose={() => setSkillSelected(null)}
           onToggleFavorite={skills.toggleFavorite}
           onDelete={skills.deleteSkill}
@@ -557,6 +725,14 @@ function AIModelDBContent() {
           query={uiState.query}
           onQueryChange={uiState.setQuery}
           searchRef={searchRef}
+          searchSuggestions={searchSuggestions}
+          searchPlaceholder={
+            activeEntity === 'mcp'
+              ? t('header.searchPlaceholderMcp', { defaultValue: 'Search MCP servers, models, and skills…' })
+              : activeEntity === 'skills'
+                ? t('header.searchPlaceholderSkills', { defaultValue: 'Search skills, models, and MCP servers…' })
+                : t('header.searchPlaceholderAll', { defaultValue: 'Search models, MCP servers, and skills…' })
+          }
           isSyncing={syncState.isSyncing || mcp.isSyncing || skills.isSyncing || isSaving}
           onSync={handleSync}
           onAddModel={() => modalState.setShowAddModel(true)}
@@ -571,6 +747,7 @@ function AIModelDBContent() {
         {/* Fixed-height toolbar (sticks at top-8 = 32px, height 64px -> bottom at
             96px). The table headers below stick at top-[6rem] (96px) so they butt
             against the toolbar exactly with no gap for rows to bleed through. */}
+        {!showDatabaseWelcome && (
         <div className="w-full px-4 sticky top-[var(--titlebar-h)] z-40 bg-bg grid items-center py-3 lg:py-0 lg:h-16">
           {activeEntity === 'models' ? (
             <Toolbar
@@ -587,18 +764,8 @@ function AIModelDBContent() {
               onPageChange={setPage}
               totalItems={models.length}
               itemLabel={t('entityTabs.models', { defaultValue: 'models' }).toLowerCase()}
-              onExport={() => modalState.setShowExportModal(true)}
-              onDeleteDatabase={() => {
-                modalState.setConfirmationToast({
-                  title: t('settings.system.maintenance.deleteDbConfirmTitle'),
-                  message: t('settings.system.maintenance.deleteDbConfirmMessage'),
-                  type: 'error',
-                  confirmText: t('settings.system.maintenance.deleteDbConfirmButton'),
-                  onConfirm: () => {
-                    window.dispatchEvent(new CustomEvent('hard-reset'));
-                  }
-                });
-              }}
+              onExport={handleGlobalExport}
+              onDeleteDatabase={handleGlobalDeleteDatabase}
               onValidateModels={validateModels}
               theme={theme}
               hasDetailOpen={!!uiState.open}
@@ -620,16 +787,9 @@ function AIModelDBContent() {
               onPageChange={setMcpPage}
               totalItems={mcp.servers.length}
               itemLabel="servers"
-              onExport={() => mcp.exportServers?.()}
-              onDeleteDatabase={() => {
-                modalState.setConfirmationToast({
-                  title: t('mcp.clearConfirmTitle', { defaultValue: 'Clear MCP cache?' }),
-                  message: t('mcp.clearConfirmMessage', { defaultValue: 'This removes all locally cached MCP servers. You can re-sync from the registry at any time.' }),
-                  type: 'error',
-                  confirmText: t('mcp.clearConfirmButton', { defaultValue: 'Clear cache' }),
-                  onConfirm: () => mcp.clearAll(),
-                });
-              }}
+              onExport={handleGlobalExport}
+              onDeleteDatabase={handleGlobalDeleteDatabase}
+              onValidateModels={validateModels}
               theme={theme}
               hasDetailOpen={!!mcpSelected}
             />
@@ -650,21 +810,15 @@ function AIModelDBContent() {
               onPageChange={setSkillPage}
               totalItems={skills.skills.length}
               itemLabel="skills"
-              onExport={() => skills.exportSkills?.()}
-              onDeleteDatabase={() => {
-                modalState.setConfirmationToast({
-                  title: t('skills.clearConfirmTitle', { defaultValue: 'Clear skills cache?' }),
-                  message: t('skills.clearConfirmMessage', { defaultValue: 'This removes all locally cached skills. You can re-sync at any time.' }),
-                  type: 'error',
-                  confirmText: t('skills.clearConfirmButton', { defaultValue: 'Clear cache' }),
-                  onConfirm: () => skills.clearAll(),
-                });
-              }}
+              onExport={handleGlobalExport}
+              onDeleteDatabase={handleGlobalDeleteDatabase}
+              onValidateModels={validateModels}
               theme={theme}
               hasDetailOpen={!!skillSelected}
             />
           )}
         </div>
+        )}
 
         <MainLayout
           sidebar={sidebarNode}

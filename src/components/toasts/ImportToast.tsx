@@ -32,6 +32,9 @@ export interface ImportToastProps {
  * @returns JSX.Element
  */
 export function ImportToast({ importToast, onDismiss, theme }: ImportToastProps) {
+    const isSync = importToast.scope === 'sync';
+    const breakdown = importToast.entityBreakdown;
+
     return (
         <div
             className={`fixed bottom-8 left-1/2 transform -translate-x-1/2 z-[100] rounded-xl border px-3 py-3 shadow-lg flex items-start gap-3 ${theme === 'dark'
@@ -40,18 +43,30 @@ export function ImportToast({ importToast, onDismiss, theme }: ImportToastProps)
                 }`}
         >
             <Check className="h-4 w-4 text-green-500 mt-0.5" />
-            <div className="text-sm leading-tight w-48">
+            <div className="text-sm leading-tight w-56">
                 <div className="mb-2">
-                    <span className="font-medium">Discovery complete</span>
+                    <span className="font-medium">{isSync ? 'Source sync complete' : 'Import complete'}</span>
                 </div>
                 <div className="space-y-1.5 text-xs opacity-90">
                     <div className="flex items-center justify-between">
-                        <span className="opacity-70">Discovered</span>
+                        <span className="opacity-70">{isSync ? 'Models found' : 'Rows found'}</span>
                         <span className="font-medium">{importToast.found}</span>
                     </div>
+                    {breakdown && (
+                        <>
+                            <div className="flex items-center justify-between">
+                                <span className="opacity-70">MCP servers</span>
+                                <span className="font-medium">{breakdown.mcp ?? 0}</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <span className="opacity-70">Skills</span>
+                                <span className="font-medium">{breakdown.skills ?? 0}</span>
+                            </div>
+                        </>
+                    )}
                     <div className="h-px bg-current opacity-10 my-1" />
                     <div className="flex items-center justify-between text-yellow-500/90">
-                        <span>Already in DB</span>
+                        <span>Dedupe hits</span>
                         <span className="font-medium">{importToast.duplicates ?? 0}</span>
                     </div>
                     <div className="flex items-center justify-between text-red-500/90">
@@ -59,7 +74,7 @@ export function ImportToast({ importToast, onDismiss, theme }: ImportToastProps)
                         <span className="font-medium">{importToast.flagged ?? 0}</span>
                     </div>
                     <div className="flex items-center justify-between text-green-500/90">
-                        <span>Brand New</span>
+                        <span>New additions</span>
                         <span className="font-medium">{importToast.added}</span>
                     </div>
                     <div className="flex items-center justify-between text-blue-500/90">

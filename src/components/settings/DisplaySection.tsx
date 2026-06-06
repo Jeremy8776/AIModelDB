@@ -255,7 +255,12 @@ export function DisplaySection() {
                   <input
                     type="text"
                     value={(customColors[key as keyof typeof customColors] || '#000000').replace('#', '')}
-                    onChange={(e) => updateColor(key as keyof typeof customColors, `#${e.target.value.replace('#', '')} `)}
+                    onChange={(e) => {
+                      const value = e.target.value.replace('#', '').trim();
+                      if (/^[0-9a-fA-F]{0,6}$/.test(value)) {
+                        updateColor(key as keyof typeof customColors, `#${value}`);
+                      }
+                    }}
                     className="flex-1 bg-transparent text-xs font-mono text-text-secondary focus:ring-0 focus:outline-none"
                     spellCheck={false}
                   />

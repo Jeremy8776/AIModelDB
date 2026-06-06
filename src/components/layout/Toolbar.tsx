@@ -7,7 +7,7 @@
  * @module Toolbar
  */
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { RefreshCw, ChevronLeft, ChevronRight, Download as DownloadIcon, Trash2, ShieldCheck } from "lucide-react";
 import { useTranslation } from 'react-i18next';
 import { ThemedSelect } from "../ThemedSelect";
@@ -40,11 +40,15 @@ export interface ToolbarProps {
     hasDetailOpen?: boolean;
 }
 
-/** Compact relative time for the "Synced …" status line. */
-function formatRelativeTime(iso: string): string {
+/**
+ * Compact relative time for the "Synced …" status line.
+ * Returns null when the ISO string isn't a valid date so the caller can omit
+ * the trailing label rather than render "Synced " with a dangling space.
+ */
+function formatRelativeTime(iso: string, now: number): string | null {
     const then = new Date(iso).getTime();
-    if (Number.isNaN(then)) return '';
-    const diffMs = Date.now() - then;
+    if (Number.isNaN(then)) return null;
+    const diffMs = now - then;
     const m = Math.floor(diffMs / 60000);
     if (m < 1) return 'just now';
     if (m < 60) return `${m}m ago`;
@@ -53,6 +57,21 @@ function formatRelativeTime(iso: string): string {
     const d = Math.floor(h / 24);
     if (d < 7) return `${d}d ago`;
     return new Date(iso).toLocaleDateString();
+}
+
+/**
+ * Re-render the toolbar every 30s while idle so "Synced 5m ago" actually
+ * advances. We tick `Date.now()` into local state and pass it explicitly into
+ * formatRelativeTime — keeps the function pure for tests.
+ */
+function useTickEvery(intervalMs: number, enabled: boolean): number {
+    const [now, setNow] = useState(() => Date.now());
+    useEffect(() => {
+        if (!enabled) return;
+        const id = setInterval(() => setNow(Date.now()), intervalMs);
+        return () => clearInterval(id);
+    }, [intervalMs, enabled]);
+    return now;
 }
 
 /**
@@ -81,6 +100,12 @@ export function Toolbar({
     const textSubtle = "text-text-secondary";
     const pageSafe = Math.max(1, Math.min(page, totalPages));
 
+    // Tick once a minute while idle so the "Synced 5m ago" label advances
+    // without an unrelated re-render. Disabled while syncing (the sync row
+    // doesn't show relative time) and when there's no lastSync to format.
+    const now = useTickEvery(60_000, !isSyncing && !!lastSync);
+    const relSynced = lastSync ? formatRelativeTime(lastSync, now) : null;
+
     // Progress fraction across sources (when the entity reports a total).
     const sourceProgress = syncProgress && syncProgress.total > 0
         ? `${syncProgress.current}/${syncProgress.total}`
@@ -88,31 +113,33 @@ export function Toolbar({
 
     return (
         <div className="flex flex-col lg:flex-row gap-4 lg:gap-8">
-            {/* Left Zone - Status info (matches Filters sidebar width) */}
-            <div className="w-full lg:w-48 flex-shrink-0">
+            {/* Left Zone - Status info (slightly narrower than Filters sidebar) */}
+            <div className="w-full lg:w-64 flex-shrink-0 min-w-0">
                 <div className={`text-xs ${textSubtle} leading-tight space-y-0.5`}>
                     {isSyncing ? (
-                        <>
-                            <div className="flex items-center gap-2">
-                                <RefreshCw className="size-3 animate-spin text-violet-500 flex-shrink-0" />
-                                <span className="font-medium text-text">
-                                    {t('toolbar.syncing', { defaultValue: 'Syncing' })}
-                                </span>
-                                {sourceProgress && (
-                                    <span className="opacity-70 tabular-nums">{sourceProgress}</span>
-                                )}
-                            </div>
-                            {syncProgress?.source && (
-                                <div className="pl-5 truncate opacity-80" title={syncProgress.source}>
-                                    {syncProgress.source}
-                                </div>
-                            )}
+                        <div
+                            className="flex items-center gap-1.5 min-w-0"
+                            title={[
+                                t('toolbar.syncing', { defaultValue: 'Syncing' }),
+                                syncProgress?.source,
+                                syncProgress?.statusMessage,
+                                sourceProgress,
+                            ].filter(Boolean).join(' · ')}
+                        >
+                            <RefreshCw className="size-3 animate-spin text-accent flex-shrink-0" />
+                            <span className="font-medium text-text truncate">
+                                {syncProgress?.source || t('toolbar.syncing', { defaultValue: 'Syncing' })}
+                            </span>
                             {syncProgress?.statusMessage && (
-                                <div className="pl-5 truncate opacity-70" title={syncProgress.statusMessage}>
-                                    {syncProgress.statusMessage}
-                                </div>
+                                <>
+                                    <span className="opacity-40 flex-shrink-0">·</span>
+                                    <span className="opacity-70 truncate">{syncProgress.statusMessage}</span>
+                                </>
                             )}
-                        </>
+                            {sourceProgress && (
+                                <span className="opacity-70 tabular-nums flex-shrink-0">{sourceProgress}</span>
+                            )}
+                        </div>
                     ) : (
                         <>
                             <div className="flex items-center gap-1.5">
@@ -122,9 +149,12 @@ export function Toolbar({
                                     <span className="opacity-70">• {totalItems.toLocaleString()} {itemLabel}</span>
                                 )}
                             </div>
-                            <div className="pl-3 opacity-60 truncate">
-                                {lastSync
-                                    ? `${t('toolbar.synced', { defaultValue: 'Synced' })} ${formatRelativeTime(lastSync)}`
+                            <div
+                                className="pl-3 opacity-60 truncate"
+                                title={lastSync && relSynced ? new Date(lastSync).toLocaleString() : undefined}
+                            >
+                                {relSynced
+                                    ? `${t('toolbar.synced', { defaultValue: 'Synced' })} ${relSynced}`
                                     : t('toolbar.neverSynced', { defaultValue: 'Not synced yet' })}
                             </div>
                         </>
@@ -188,27 +218,27 @@ export function Toolbar({
                         className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs transition-colors border bg-bg-card border-border text-text hover:bg-bg/10"
                     >
                         <DownloadIcon className="size-3" />
-                        {t('toolbar.export')}
+                        Export All
                     </button>
                 )}
                 {onDeleteDatabase && (
                     <button
                         onClick={onDeleteDatabase}
                         className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs transition-colors border bg-bg-card border-border text-text hover:bg-bg/10"
-                        title={t('toolbar.deleteDatabase')}
+                        title={t('toolbar.deleteDatabase', { defaultValue: 'Delete all local database data' })}
                     >
                         <Trash2 className="size-3" />
-                        {t('common.delete')} DB
+                        Delete All
                     </button>
                 )}
                 {onValidateModels && (
                     <button
                         onClick={onValidateModels}
                         className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs transition-colors border bg-bg-card border-border text-text hover:bg-bg/10"
-                        title={t('toolbar.validate')}
+                        title={t('toolbar.validate', { defaultValue: 'Validate the database' })}
                     >
                         <ShieldCheck className="size-3" />
-                        {t('toolbar.validate')}
+                        Validate All
                     </button>
                 )}
             </div>
