@@ -23,7 +23,7 @@
 
   <!-- Content Security Policy -->
   <meta http-equiv="Content-Security-Policy"
-    content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: https: http:; img-src 'self' data: https: http: blob:; media-src 'self' data: https: http: blob:; worker-src 'self' blob:;" />
+    content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; connect-src 'self' http://localhost:* ws://localhost:* https://huggingface.co https://api.github.com https://github.com https://raw.githubusercontent.com https://artificialanalysis.ai https://api.openai.com https://civitai.com https://civitasbay.org https://registry.modelcontextprotocol.io https://registry.npmjs.org https://pypi.org https://ollama.com https://www.googleapis.com; img-src 'self' data: https: blob:; media-src 'self' data: https: blob:; worker-src 'self' blob:;" />
 
   <!-- Open Graph / Facebook -->
   <meta property="og:type" content="website" />

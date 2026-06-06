@@ -5,9 +5,12 @@ import { fileURLToPath } from 'url';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import * as cheerio from 'cheerio';
 import crypto from 'crypto';
+import { createRequire } from 'module';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const require = createRequire(import.meta.url);
+const { proxyValidationMiddleware } = require('./proxy-middleware.js');
 
 const app = express();
 const PORT = process.env.PORT || 5173;
@@ -120,6 +123,7 @@ app.get('/webhooks/openai/stream', (req, res) => {
 
 // JSON parser for the rest of the app
 app.use(express.json({ limit: '1mb' }));
+app.use(proxyValidationMiddleware());
 
 // Add search endpoint for model enrichment
 app.post('/search', async (req, res) => {

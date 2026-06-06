@@ -1,6 +1,7 @@
 const { app, BrowserWindow, ipcMain, shell, dialog, safeStorage, Menu, MenuItem } = require('electron');
 const path = require('path');
 const { autoUpdater } = require('electron-updater');
+const { validateExternalUrl, validateProxyRequest, validateImageUrl } = require('./security');
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require('electron-squirrel-startup')) {
@@ -158,7 +159,8 @@ function createWindow() {
 
     // Handle external links - open in default browser
     mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-        shell.openExternal(url);
+        const safeUrl = validateExternalUrl(url, { allowHttp: isDev });
+        if (safeUrl) shell.openExternal(safeUrl);
         return { action: 'deny' };
     });
 
@@ -166,7 +168,8 @@ function createWindow() {
     mainWindow.webContents.on('will-navigate', (event, url) => {
         if (!url.startsWith('http://localhost') && !url.startsWith('file://')) {
             event.preventDefault();
-            shell.openExternal(url);
+            const safeUrl = validateExternalUrl(url, { allowHttp: isDev });
+            if (safeUrl) shell.openExternal(safeUrl);
         }
     });
 
@@ -279,7 +282,8 @@ ipcMain.handle('get-platform', () => {
 
 // Handle opening external URLs
 ipcMain.on('open-external', (event, url) => {
-    shell.openExternal(url);
+    const safeUrl = validateExternalUrl(url, { allowHttp: isDev });
+    if (safeUrl) shell.openExternal(safeUrl);
 });
 
 // Handle update check request from renderer
@@ -344,16 +348,17 @@ ipcMain.handle('decrypt-string', async (event, encryptedHex) => {
 // Proxy Request Handler to bypass CORS
 ipcMain.handle('proxy-request', async (event, { url, method = 'GET', headers = {}, body = null }) => {
     try {
+        const safeRequest = validateProxyRequest({ url, method, headers, body });
         const fetchOptions = {
-            method,
-            headers,
-            body: body ? JSON.stringify(body) : undefined
+            method: safeRequest.method,
+            headers: safeRequest.headers,
+            body: safeRequest.body ? JSON.stringify(safeRequest.body) : undefined
         };
 
         if (isDev) {
-            console.log(`[Proxy] ${method} ${url}`);
+            console.log(`[Proxy] ${safeRequest.method} ${safeRequest.url}`);
         }
-        const response = await fetch(url, fetchOptions);
+        const response = await fetch(safeRequest.url, fetchOptions);
 
         if (!response.ok) {
             const text = await response.text();
@@ -383,7 +388,8 @@ ipcMain.handle('proxy-request', async (event, { url, method = 'GET', headers = {
 // This bypasses CDN restrictions that block browser requests
 ipcMain.handle('proxy-image', async (event, imageUrl) => {
     try {
-        const response = await fetch(imageUrl, {
+        const safeImageUrl = validateImageUrl(imageUrl);
+        const response = await fetch(safeImageUrl, {
             headers: {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
                 'Accept': 'image/webp,image/apng,image/*,*/*;q=0.8',
