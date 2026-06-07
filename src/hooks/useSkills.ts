@@ -1,6 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Skill } from '../types';
 import { fetchOfficialPluginsMarketplace } from '../services/api/fetchers/skills/plugins-marketplace';
+import { fetchAnthropicSkills } from '../services/api/fetchers/skills/anthropic-skills';
+import { fetchCoworkPlugins } from '../services/api/fetchers/skills/cowork-plugins';
+import { fetchSkillsFromGitHubTopics } from '../services/api/fetchers/skills/github-skills';
+import { SKILL_SOURCES } from '../services/sources/entitySources';
+import { useSettings } from '../context/SettingsContext';
+import { mergeSkillLists } from '../utils/entityMerge';
+
+const AVAILABLE_SKILL_KEYS = new Set(
+    SKILL_SOURCES.filter(source => source.status === 'available').map(source => source.key)
+);
 
 const STORAGE_KEY = 'aiModelDB_skills';
 const META_KEY = 'aiModelDB_skillsMeta';
@@ -22,10 +32,14 @@ interface SyncProgress {
  * user-edit/favorite protection on merge, abortable streaming sync.
  */
 export function useSkills() {
+    const { settings } = useSettings();
     const [skills, setSkillsState] = useState<Skill[]>(() => {
         try {
             const raw = localStorage.getItem(STORAGE_KEY);
-            if (raw) return JSON.parse(raw) as Skill[];
+            if (raw) {
+                const parsed = JSON.parse(raw);
+                return Array.isArray(parsed) ? mergeSkillLists([], parsed as Skill[]) : [];
+            }
         } catch { /* corrupt blob — start empty */ }
         return [];
     });
@@ -54,30 +68,7 @@ export function useSkills() {
 
     /** Merge incoming skills by id; preserve user edits + favorites. */
     const mergeSkills = useCallback((incoming: Skill[]) => {
-        setSkillsState(prev => {
-            const byId = new Map<string, Skill>();
-            prev.forEach(s => byId.set(s.id, s));
-            for (const inc of incoming) {
-                const existing = byId.get(inc.id);
-                if (!existing) { byId.set(inc.id, inc); continue; }
-                const edited = new Set(existing.editedFields || []);
-                const merged: Skill = {
-                    ...inc,
-                    isFavorite: existing.isFavorite ?? inc.isFavorite,
-                    editedFields: existing.editedFields,
-                };
-                for (const field of edited) {
-                    (merged as unknown as Record<string, unknown>)[field] =
-                        (existing as unknown as Record<string, unknown>)[field];
-                }
-                const sources = new Set<string>();
-                existing.source.split(',').forEach(s => sources.add(s.trim()));
-                inc.source.split(',').forEach(s => sources.add(s.trim()));
-                merged.source = Array.from(sources).sort().join(', ');
-                byId.set(inc.id, merged);
-            }
-            return Array.from(byId.values());
-        });
+        setSkillsState(prev => mergeSkillLists(prev, incoming));
     }, []);
 
     /** Pull from the official Claude plugins marketplace. */
@@ -110,6 +101,102 @@ export function useSkills() {
             abortRef.current = null;
         }
     }, [isSyncing, mergeSkills]);
+
+    const syncAll = useCallback(async () => {
+        if (isSyncing) return;
+        setIsSyncing(true);
+
+        const controller = new AbortController();
+        abortRef.current = controller;
+        const skillSources = settings.skillSources || {};
+        const gitHubToken = settings.gitHubToken || undefined;
+
+        let totalFetched = 0;
+        const setSourceProgress = (source: string, page: number) => {
+            setSyncProgress({ fetched: totalFetched, page, source });
+        };
+
+        const runOfficialMarketplace = async () => {
+            setSourceProgress('claude-plugins-official', 0);
+            await fetchOfficialPluginsMarketplace({
+                abortSignal: controller.signal,
+                onPage: (pageSkills, pageIndex) => {
+                    totalFetched += pageSkills.length;
+                    mergeSkills(pageSkills);
+                    setSourceProgress('claude-plugins-official', pageIndex + 1);
+                },
+            });
+        };
+
+        const runAnthropicSkills = async () => {
+            setSourceProgress('anthropic-skills', 0);
+            await fetchAnthropicSkills({
+                abortSignal: controller.signal,
+                onPage: (pageSkills, pageIndex) => {
+                    totalFetched += pageSkills.length;
+                    mergeSkills(pageSkills);
+                    setSourceProgress('anthropic-skills', pageIndex + 1);
+                },
+            });
+        };
+
+        const runCoworkPlugins = async () => {
+            setSourceProgress('cowork-plugins', 0);
+            await fetchCoworkPlugins({
+                abortSignal: controller.signal,
+                onPage: (pageSkills, pageIndex) => {
+                    totalFetched += pageSkills.length;
+                    mergeSkills(pageSkills);
+                    setSourceProgress('cowork-plugins', pageIndex + 1);
+                },
+            });
+        };
+
+        const runGitHubSkills = async () => {
+            setSourceProgress('github-skills', 0);
+            const found = await fetchSkillsFromGitHubTopics({
+                gitHubToken,
+                abortSignal: controller.signal,
+            });
+            if (found.length > 0) {
+                totalFetched += found.length;
+                mergeSkills(found);
+            }
+            setSourceProgress('github-skills', 1);
+        };
+
+        const runners: Array<[string, () => Promise<void>]> = [
+            ['claude-plugins-official', runOfficialMarketplace],
+            ['anthropic-skills', runAnthropicSkills],
+            ['cowork-plugins', runCoworkPlugins],
+            ['github-skills', runGitHubSkills],
+        ];
+
+        const errors: string[] = [];
+        try {
+            for (const [key, run] of runners) {
+                if (controller.signal.aborted) break;
+                if (!AVAILABLE_SKILL_KEYS.has(key)) continue;
+                if (skillSources[key] === false) continue;
+                try {
+                    await run();
+                } catch (err) {
+                    const message = err instanceof Error ? err.message : String(err);
+                    console.error(`[Skills] Source "${key}" failed:`, message);
+                    errors.push(`${key}: ${message}`);
+                }
+            }
+            setMetaState(prev => ({
+                ...prev,
+                lastSync: new Date().toISOString(),
+                lastError: errors.length > 0 ? errors.join(' | ') : null,
+            }));
+        } finally {
+            setIsSyncing(false);
+            setSyncProgress(null);
+            abortRef.current = null;
+        }
+    }, [isSyncing, mergeSkills, settings.skillSources, settings.gitHubToken]);
 
     const cancelSync = useCallback(() => {
         if (abortRef.current) abortRef.current.abort();
@@ -150,6 +237,7 @@ export function useSkills() {
         isSyncing,
         syncProgress,
         syncOfficialMarketplace,
+        syncAll,
         cancelSync,
         toggleFavorite,
         deleteSkill,

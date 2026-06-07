@@ -12,7 +12,9 @@ import {
     OllamaModelSchema,
     validateModels,
     coerceToModel,
-    safeParse
+    safeParse,
+    validateMCPServers,
+    validateSkills
 } from './schemas';
 
 describe('ModelSchema', () => {
@@ -188,5 +190,49 @@ describe('safeParse', () => {
         const defaultModel = { id: 'default', name: 'Default' };
         const result = safeParse(ModelSchema, invalidData, defaultModel as any);
         expect(result.id).toBe('default');
+    });
+});
+
+describe('MCP and Skill schema hardening', () => {
+    it('should strip unrecognized properties from ModelSchema', () => {
+        const rawModel = {
+            id: 'valid-model',
+            name: 'Valid Model',
+            extraAttackProperty: 'malicious-injected-payload',
+        };
+        const result = ModelSchema.safeParse(rawModel);
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect((result.data as any).extraAttackProperty).toBeUndefined();
+        }
+    });
+
+    it('should validate and strip unrecognized properties from MCPServerSchema', () => {
+        const rawServer = {
+            id: 'io.github.test/server',
+            name: 'Test Server',
+            source: 'mcp-registry',
+            maliciousField: 'exploit',
+        };
+        const validated = validateMCPServers([rawServer]);
+        expect(validated).toHaveLength(1);
+        expect(validated[0].id).toBe('io.github.test/server');
+        expect((validated[0] as any).maliciousField).toBeUndefined();
+    });
+
+    it('should validate and strip unrecognized properties from SkillSchema', () => {
+        const rawSkill = {
+            id: 'test-skill',
+            name: 'Test Skill',
+            type: 'skill',
+            origin: 'anthropic-official',
+            redistributable: 'yes',
+            source: 'anthropic-skills',
+            exploitPayload: 'test',
+        };
+        const validated = validateSkills([rawSkill]);
+        expect(validated).toHaveLength(1);
+        expect(validated[0].id).toBe('test-skill');
+        expect((validated[0] as any).exploitPayload).toBeUndefined();
     });
 });

@@ -1,7 +1,7 @@
 const { app, BrowserWindow, ipcMain, shell, dialog, safeStorage, Menu, MenuItem } = require('electron');
 const path = require('path');
 const { autoUpdater } = require('electron-updater');
-const { validateExternalUrl, validateProxyRequest, validateImageUrl } = require('./security');
+const { validateExternalUrl, validateProxyRequest, validateImageUrl, isPrivateHost } = require('./security');
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require('electron-squirrel-startup')) {
@@ -93,7 +93,13 @@ function createWindow() {
             menu.append(new MenuItem({
                 label: 'Save Image As...',
                 click: () => {
-                    mainWindow.webContents.downloadURL(params.srcURL);
+                    try {
+                        const safeUrl = validateImageUrl(params.srcURL);
+                        mainWindow.webContents.downloadURL(safeUrl);
+                    } catch (err) {
+                        console.error('[ContextMenu] Blocked download of invalid image URL:', err.message);
+                        dialog.showErrorBox('Download Blocked', 'The image URL is invalid or unsafe.');
+                    }
                 }
             }));
             menu.append(new MenuItem({ type: 'separator' }));
@@ -322,7 +328,8 @@ ipcMain.handle('encrypt-string', async (event, plainText) => {
         return null;
     }
     try {
-        const buffer = safeStorage.encryptString(plainText);
+        const prefixed = `ai-model-db-secret:${plainText}`;
+        const buffer = safeStorage.encryptString(prefixed);
         return buffer.toString('hex');
     } catch (error) {
         console.error('[SafeStorage] Encryption failed:', error);
@@ -338,7 +345,11 @@ ipcMain.handle('decrypt-string', async (event, encryptedHex) => {
     try {
         const buffer = Buffer.from(encryptedHex, 'hex');
         const decrypted = safeStorage.decryptString(buffer);
-        return decrypted;
+        if (!decrypted.startsWith('ai-model-db-secret:')) {
+            console.error('[SafeStorage] Context safety prefix verification failed');
+            return null;
+        }
+        return decrypted.slice('ai-model-db-secret:'.length);
     } catch (error) {
         console.error('[SafeStorage] Decryption failed:', error);
         return null; // Return null on failure (e.g. wrong key, corrupted data)
@@ -356,7 +367,14 @@ ipcMain.handle('proxy-request', async (event, { url, method = 'GET', headers = {
         };
 
         if (isDev) {
-            console.log(`[Proxy] ${safeRequest.method} ${safeRequest.url}`);
+            let logUrl = safeRequest.url;
+            try {
+                const parsed = new URL(logUrl);
+                logUrl = `${parsed.protocol}//${parsed.host}/<path-redacted>`;
+            } catch (e) {
+                logUrl = logUrl.split('?')[0] + ' (redacted)';
+            }
+            console.log(`[Proxy] ${safeRequest.method} ${logUrl}`);
         }
         const response = await fetch(safeRequest.url, fetchOptions);
 
@@ -384,6 +402,18 @@ ipcMain.handle('proxy-request', async (event, { url, method = 'GET', headers = {
     }
 });
 
+const SAFE_IMAGE_MIMES = [
+    'image/png',
+    'image/jpeg',
+    'image/jpg',
+    'image/gif',
+    'image/webp',
+    'image/bmp',
+    'image/tiff',
+    'image/x-icon',
+    'image/vnd.microsoft.icon'
+];
+
 // Image Proxy Handler - fetches images and returns as base64 data URL
 // This bypasses CDN restrictions that block browser requests
 ipcMain.handle('proxy-image', async (event, imageUrl) => {
@@ -403,7 +433,12 @@ ipcMain.handle('proxy-image', async (event, imageUrl) => {
             return { success: false, error: `HTTP ${response.status}` };
         }
 
-        const contentType = response.headers.get('content-type') || 'image/jpeg';
+        const contentType = (response.headers.get('content-type') || '').split(';')[0].trim().toLowerCase();
+        if (!SAFE_IMAGE_MIMES.includes(contentType)) {
+            console.error(`[ImageProxy] Blocked unsafe content-type: ${contentType}`);
+            return { success: false, error: `Unsafe image content-type: ${contentType}` };
+        }
+
         const buffer = await response.arrayBuffer();
         const base64 = Buffer.from(buffer).toString('base64');
         const dataUrl = `data:${contentType};base64,${base64}`;
@@ -411,6 +446,48 @@ ipcMain.handle('proxy-image', async (event, imageUrl) => {
         return { success: true, dataUrl };
     } catch (error) {
         console.error('[ImageProxy] Error:', error.message);
+        return { success: false, error: error.message };
+    }
+});
+
+// Proxy Import URL Handler - fetches CSV/JSON/XLSX with strict SSRF checks and a 10MB limit
+ipcMain.handle('proxy-import-url', async (event, targetUrl) => {
+    try {
+        const parsed = new URL(targetUrl);
+        if (parsed.protocol !== 'https:') {
+            throw new Error('URL protocol is not allowed');
+        }
+        if (parsed.username || parsed.password) {
+            throw new Error('URL credentials are not allowed');
+        }
+        if (isPrivateHost(parsed.hostname)) {
+            throw new Error('Private host is not allowed');
+        }
+
+        const response = await fetch(targetUrl);
+        if (!response.ok) {
+            throw new Error(`Request failed with status ${response.status}`);
+        }
+
+        const maxBytes = 10 * 1024 * 1024; // 10MB limit
+        const reader = response.body.getReader();
+        const chunks = [];
+        let bytesRead = 0;
+        
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            bytesRead += value.byteLength;
+            if (bytesRead > maxBytes) {
+                throw new Error('Response size limit exceeded (10MB)');
+            }
+            chunks.push(value);
+        }
+
+        const buffer = Buffer.concat(chunks.map(c => Buffer.from(c)));
+        return { success: true, base64: buffer.toString('base64'), contentType: response.headers.get('content-type') };
+    } catch (error) {
+        console.error('[ImportProxy] Error:', error.message);
         return { success: false, error: error.message };
     }
 });

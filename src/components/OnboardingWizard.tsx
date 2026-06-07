@@ -323,6 +323,19 @@ export function OnboardingWizard({ isOpen, onClose, onComplete, initialStep = 1 
                                     {(() => {
                                         const summary = getSourceCategorySummary(activeSourceCategory);
                                         const activeSources = getOnboardingSources(activeSourceCategory);
+                                        const sortedSources = [...activeSources].sort((a, b) => {
+                                            if (a.isSelectable !== b.isSelectable) {
+                                                return a.isSelectable ? -1 : 1;
+                                            }
+                                            if (a.isSelectable && b.isSelectable) {
+                                                const aEnabled = isOnboardingSourceSelected(activeSourceCategory, a);
+                                                const bEnabled = isOnboardingSourceSelected(activeSourceCategory, b);
+                                                if (aEnabled !== bEnabled) {
+                                                    return aEnabled ? -1 : 1;
+                                                }
+                                            }
+                                            return a.label.localeCompare(b.label);
+                                        });
                                         return (
                                             <>
                                                 <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
@@ -361,7 +374,7 @@ export function OnboardingWizard({ isOpen, onClose, onComplete, initialStep = 1 
                                                     </div>
                                                 </div>
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                                    {activeSources.map(source => {
+                                                    {sortedSources.map(source => {
                                                         const isSelected = isOnboardingSourceSelected(activeSourceCategory, source);
                                                         return (
                                                             <button

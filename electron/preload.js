@@ -34,6 +34,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // Proxy image - fetches images via Node.js to bypass CDN restrictions
     proxyImage: (imageUrl) => ipcRenderer.invoke('proxy-image', imageUrl),
 
+    // Proxy import URL - fetches CSV/JSON/XLSX securely from arbitrary URLs by checking private IP blocks
+    proxyImportUrl: (url) => ipcRenderer.invoke('proxy-import-url', url),
+
     // Translation
     translateText: (text, targetLang) => ipcRenderer.invoke('translate-text', text, targetLang),
 

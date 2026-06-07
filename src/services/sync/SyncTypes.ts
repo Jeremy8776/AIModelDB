@@ -5,6 +5,7 @@ import { Model, ApiDir } from "../../types";
  */
 export interface SyncOptions {
     dataSources: {
+        [key: string]: boolean | undefined;
         huggingface?: boolean;
         github?: boolean;
         artificialanalysis?: boolean;

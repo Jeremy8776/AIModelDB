@@ -3,8 +3,11 @@ import { MCPServer } from '../types';
 import { fetchOfficialMCPRegistry } from '../services/api/fetchers/mcp/official-registry';
 import { fetchMCPServersFromGitHubTopics } from '../services/api/fetchers/mcp/github-topics';
 import { fetchMCPServersFromNpm } from '../services/api/fetchers/mcp/npm-registry';
+import { fetchMCPServersFromGlama } from '../services/api/fetchers/mcp/glama';
+import { fetchMCPServersFromPyPI } from '../services/api/fetchers/mcp/pypi';
 import { MCP_SOURCES } from '../services/sources/entitySources';
 import { useSettings } from '../context/SettingsContext';
+import { mergeMCPServerLists } from '../utils/entityMerge';
 
 /**
  * Source keys the catalog marks `available`. A fetcher/runner may exist for a
@@ -43,7 +46,10 @@ export function useMCPServers() {
     const [servers, setServersState] = useState<MCPServer[]>(() => {
         try {
             const raw = localStorage.getItem(STORAGE_KEY);
-            if (raw) return JSON.parse(raw) as MCPServer[];
+            if (raw) {
+                const parsed = JSON.parse(raw);
+                return Array.isArray(parsed) ? mergeMCPServerLists([], parsed as MCPServer[]) : [];
+            }
         } catch { /* corrupt blob — fall through to empty */ }
         return [];
     });
@@ -80,39 +86,7 @@ export function useMCPServers() {
      * win — mirrors the V3 strategy from the Models merge.
      */
     const mergeServers = useCallback((incoming: MCPServer[]) => {
-        setServersState(prev => {
-            const byId = new Map<string, MCPServer>();
-            prev.forEach(s => byId.set(s.id, s));
-
-            for (const inc of incoming) {
-                const existing = byId.get(inc.id);
-                if (!existing) {
-                    byId.set(inc.id, inc);
-                    continue;
-                }
-                // Protect user edits and favorites; everything else takes incoming.
-                const edited = new Set(existing.editedFields || []);
-                const merged: MCPServer = {
-                    ...inc,
-                    isFavorite: existing.isFavorite ?? inc.isFavorite,
-                    editedFields: existing.editedFields,
-                };
-                // Restore protected fields back from existing
-                for (const field of edited) {
-                    // Type narrowing for arbitrary string indexing — kept loose since
-                    // editedFields is a freeform string set populated by the editor.
-                    (merged as unknown as Record<string, unknown>)[field] =
-                        (existing as unknown as Record<string, unknown>)[field];
-                }
-                // Sources accumulate
-                const sources = new Set<string>();
-                existing.source.split(',').forEach(s => sources.add(s.trim()));
-                inc.source.split(',').forEach(s => sources.add(s.trim()));
-                merged.source = Array.from(sources).sort().join(', ');
-                byId.set(inc.id, merged);
-            }
-            return Array.from(byId.values());
-        });
+        setServersState(prev => mergeMCPServerLists(prev, incoming));
     }, []);
 
     /**
@@ -212,6 +186,32 @@ export function useMCPServers() {
             setSourceProgress('npm', 1);
         };
 
+        const runGlama = async () => {
+            setSourceProgress('glama', 0);
+            await fetchMCPServersFromGlama({
+                maxServers: 1000,
+                abortSignal: controller.signal,
+                onPage: (pageServers, pageIndex) => {
+                    totalFetched += pageServers.length;
+                    mergeServers(pageServers);
+                    setSourceProgress('glama', pageIndex + 1);
+                },
+            });
+        };
+
+        const runPyPI = async () => {
+            setSourceProgress('pypi', 0);
+            await fetchMCPServersFromPyPI({
+                maxPackages: 120,
+                abortSignal: controller.signal,
+                onPage: (pageServers) => {
+                    totalFetched += pageServers.length;
+                    mergeServers(pageServers);
+                },
+            });
+            setSourceProgress('pypi', 1);
+        };
+
         // Source keys (from entitySources.ts) → runner, in execution priority.
         // Iteration order is meaningful (official registry first since it's
         // canonical), so this is an array of tuples rather than a plain object
@@ -221,6 +221,8 @@ export function useMCPServers() {
             ['mcp-registry', runOfficialRegistry],
             ['github', runGitHubTopics],
             ['packages', runNpm],
+            ['glama', runGlama],
+            ['pypi', runPyPI],
         ];
 
         const errors: string[] = [];

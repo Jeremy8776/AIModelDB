@@ -51,8 +51,17 @@ export function useImageContextMenu() {
                 await navigator.clipboard.writeText(url);
             } else {
                 // For images, try to copy the visual blob
-                const response = await fetch(url);
-                const blob = await response.blob();
+                let blob: Blob;
+                if (typeof window !== 'undefined' && (window as any).electronAPI?.proxyImage) {
+                    const res = await (window as any).electronAPI.proxyImage(url);
+                    if (!res.success || !res.dataUrl) throw new Error(res.error || 'Failed to proxy image');
+                    const base64Response = await fetch(res.dataUrl);
+                    blob = await base64Response.blob();
+                } else {
+                    if (!isSafeImageUrl(url)) throw new Error('Unsafe image URL');
+                    const response = await fetch(url);
+                    blob = await response.blob();
+                }
 
                 // Safari/Firefox have stricter ClipboardItem requirements, need matching mimetype
                 const item = new ClipboardItem({ [blob.type]: blob });
@@ -76,8 +85,17 @@ export function useImageContextMenu() {
      */
     const handleSaveImage = useCallback(async (url: string) => {
         try {
-            const response = await fetch(url);
-            const blob = await response.blob();
+            let blob: Blob;
+            if (typeof window !== 'undefined' && (window as any).electronAPI?.proxyImage) {
+                const res = await (window as any).electronAPI.proxyImage(url);
+                if (!res.success || !res.dataUrl) throw new Error(res.error || 'Failed to proxy image');
+                const base64Response = await fetch(res.dataUrl);
+                blob = await base64Response.blob();
+            } else {
+                if (!isSafeImageUrl(url)) throw new Error('Unsafe image URL');
+                const response = await fetch(url);
+                blob = await response.blob();
+            }
             const blobUrl = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = blobUrl;
@@ -108,4 +126,16 @@ export function useImageContextMenu() {
         handleSaveImage,
         closeContextMenu,
     };
+}
+
+function isSafeImageUrl(url: string): boolean {
+    try {
+        const parsed = new URL(url);
+        if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return false;
+        const host = parsed.hostname.toLowerCase();
+        if (host === 'localhost' || host === '127.0.0.1' || host === '::1' || host.endsWith('.local')) return false;
+        return true;
+    } catch {
+        return false;
+    }
 }

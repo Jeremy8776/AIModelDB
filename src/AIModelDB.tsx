@@ -367,9 +367,7 @@ function AIModelDBContent() {
     globalSyncWasSyncing.current = false;
     handleSyncWithApiCheck();          // Models (full sync; may prompt for API check)
     mcp.syncAll();                     // MCP servers (every enabled source)
-    if (settings.skillSources?.['claude-plugins-official'] !== false) {
-      skills.syncOfficialMarketplace(); // Skills (official plugins marketplace)
-    }
+    skills.syncAll();                  // Skills (every enabled source)
   };
 
   const handleGlobalExport = () => {

@@ -92,7 +92,7 @@ export function ImportModal({ isOpen, onClose, onImport, addConsoleLog }: Import
       // Support Google Sheets multi-tab by exporting the entire workbook as XLSX
       try {
         const u = new URL(url);
-        if (u.hostname.includes('docs.google.com') && u.pathname.includes('/spreadsheets/')) {
+        if (u.hostname === 'docs.google.com' && u.pathname.includes('/spreadsheets/')) {
           const idMatch = u.pathname.match(/\/spreadsheets\/d\/([^/]+)/);
           const sheetId = idMatch?.[1];
           if (sheetId) {
@@ -101,26 +101,65 @@ export function ImportModal({ isOpen, onClose, onImport, addConsoleLog }: Import
         }
       } catch { /* swallow — fall through to direct URL fetch */ }
 
-      if (/\.(xlsx|ods)$/i.test(effectiveUrl) || effectiveUrl.includes('/export?format=xlsx')) {
-        const resp = await fetch(effectiveUrl);
-        const buf = await resp.arrayBuffer();
-        const wb = XLSX.read(buf, { type: 'array' });
+      let arrayBuffer: ArrayBuffer;
+      let text: string;
+      const isXlsx = /\.(xlsx|ods)$/i.test(effectiveUrl) || effectiveUrl.includes('/export?format=xlsx');
+
+      if (typeof window !== 'undefined' && (window as any).electronAPI?.proxyImportUrl) {
+        const res = await (window as any).electronAPI.proxyImportUrl(effectiveUrl);
+        if (!res.success) {
+          throw new Error(res.error || 'Failed to fetch URL');
+        }
+        const binaryString = atob(res.base64);
+        if (isXlsx) {
+          const len = binaryString.length;
+          const bytes = new Uint8Array(len);
+          for (let i = 0; i < len; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+          }
+          arrayBuffer = bytes.buffer;
+        } else {
+          text = binaryString;
+        }
+      } else {
+        // Fallback for web mode
+        // Validate URL hostname is not loopback or private host to prevent SSRF
+        try {
+          const parsed = new URL(effectiveUrl);
+          const host = parsed.hostname.toLowerCase();
+          if (host === 'localhost' || host === '127.0.0.1' || host === '::1' || host.endsWith('.local')) {
+            throw new Error('Private or loopback URLs are not allowed.');
+          }
+        } catch (e: any) {
+          throw new Error(e.message || 'Invalid URL');
+        }
+
+        const response = await fetch(effectiveUrl);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        
+        if (isXlsx) {
+          arrayBuffer = await response.arrayBuffer();
+        } else {
+          text = await response.text();
+        }
+      }
+
+      if (isXlsx) {
+        const wb = XLSX.read(arrayBuffer!, { type: 'array' });
         const rows = parseWorkbookToRows(wb);
         setPreview(rows);
         return;
       }
 
-      const response = await fetch(effectiveUrl);
-      const text = await response.text();
       let data;
       if (effectiveUrl.endsWith('.csv')) {
-        data = parseCSV(text);
+        data = parseCSV(text!);
       } else if (effectiveUrl.endsWith('.tsv')) {
-        data = parseTSV(text);
+        data = parseTSV(text!);
       } else if (effectiveUrl.endsWith('.json')) {
-        data = JSON.parse(text);
+        data = JSON.parse(text!);
       } else {
-        try { data = JSON.parse(text); } catch { data = parseCSV(text); }
+        try { data = JSON.parse(text!); } catch { data = parseCSV(text!); }
       }
       setPreview(Array.isArray(data) ? data : []);
     } catch (err) {
@@ -132,6 +171,11 @@ export function ImportModal({ isOpen, onClose, onImport, addConsoleLog }: Import
   const handlePasteImport = () => {
     if (!pasteText.trim()) {
       setError(t('errors.emptyPaste'));
+      return;
+    }
+
+    if (pasteText.length > 5 * 1024 * 1024) { // 5MB limit
+      setError('Pasted text exceeds maximum size limit (5MB)');
       return;
     }
 

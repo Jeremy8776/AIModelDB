@@ -8,11 +8,12 @@ import {
 } from '../utils/license-utils';
 import { normalizeDate } from '../utils/date-utils';
 import { inferParametersFromNameTags } from '../utils/parameter-utils';
+import { hasSource } from '../../../utils/sourceHelpers';
 
 type PartialModel = Partial<Model>;
 
 export async function enrichFromHuggingFace(model: Model): Promise<PartialModel | null> {
-    const isHF = (model.source === 'HuggingFace') || (model.url?.includes('huggingface.co'));
+    const isHF = hasSource(model, 'HuggingFace') || (model.url?.includes('huggingface.co'));
     if (!isHF) return null;
     try {
         let modelId = '';

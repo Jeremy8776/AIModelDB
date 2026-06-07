@@ -10,6 +10,7 @@
 
 import { MCPServer, MCPPackage, MCPRemote, LicenseInfo } from '../../../../types';
 import { isElectron } from '../../../../utils/electron';
+import { sanitizeMeta } from '../../../../utils/sourceHelpers';
 
 const REGISTRY_BASE = 'https://registry.modelcontextprotocol.io';
 const PAGE_SIZE = 100;
@@ -184,7 +185,7 @@ export function mapRegistryEntryToMCPServer(raw: RawRegistryEntry): MCPServer {
         downloads: null,
         isFavorite: false,
         editedFields: [],
-        _meta: raw._meta,
+        _meta: sanitizeMeta(raw._meta),
     };
 }
 
@@ -227,13 +228,14 @@ export async function fetchOfficialMCPRegistry(
     options: FetchOptions = {}
 ): Promise<MCPServer[]> {
     const pageSize = Math.min(options.pageSize ?? PAGE_SIZE, 100);
-    const maxServers = options.maxServers ?? Number.POSITIVE_INFINITY;
+    const maxServers = options.maxServers ?? 10000;
+    const maxPages = 150;
 
     const all: MCPServer[] = [];
     let cursor: string | undefined = undefined;
     let pageIndex = 0;
 
-    while (all.length < maxServers) {
+    while (all.length < maxServers && pageIndex < maxPages) {
         if (options.abortSignal?.aborted) {
             throw new DOMException('MCP registry fetch aborted', 'AbortError');
         }

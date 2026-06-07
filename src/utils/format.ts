@@ -88,24 +88,30 @@ export const dedupe = (items: Model[]) => {
   const map = new Map<string, Model>();
   for (const m of items) {
     if (!m) continue;
-    const nameKeyRaw = m.name || m.id || "";
-    const key = normalizeNameForMatch(nameKeyRaw);
+    const nameKey = normalizeNameForMatch(m.name || m.id || "");
+    const providerKey = (m.provider || "").toLowerCase();
+    const key = nameKey
+      ? `${providerKey}|${nameKey}`
+      : (m.id || m.repo || m.url || Math.random().toString());
 
-    if (!key) {
-      map.set(m.id || Math.random().toString(), m);
+    const existing = map.get(key);
+    if (!existing) {
+      map.set(key, m);
       continue;
     }
 
-    if (map.has(key)) {
-      // Merge logic for dedupe utility (simple fallback)
-      const existing = map.get(key)!;
-      // Prefer the one with more info (e.g. downloads)
-      if ((m.downloads || 0) > (existing.downloads || 0)) {
-        map.set(key, { ...existing, ...m });
-      }
-    } else {
-      map.set(key, m);
-    }
+    const existingSources = new Set((existing.source || "").split(",").map(s => s.trim()).filter(Boolean));
+    (m.source || "").split(",").map(s => s.trim()).filter(Boolean).forEach(s => existingSources.add(s));
+    map.set(key, {
+      ...existing,
+      ...m,
+      id: existing.id,
+      name: existing.name,
+      provider: existing.provider,
+      source: Array.from(existingSources).sort().join(", "),
+      isFavorite: existing.isFavorite ?? m.isFavorite,
+      editedFields: existing.editedFields ?? m.editedFields,
+    });
   }
   return Array.from(map.values());
 };
@@ -127,6 +133,9 @@ export function toCSV(rows: Record<string, unknown>[]): string {
 }
 
 export function parseCSV(text: string): Record<string, string>[] {
+  if (text.length > 10 * 1024 * 1024) { // 10MB limit
+    throw new Error("CSV input size exceeds limit (10MB)");
+  }
   const out: Record<string, string>[] = [];
   const rows: string[][] = [];
   let cur = "", row: string[] = [];
@@ -174,6 +183,9 @@ export function parseCSV(text: string): Record<string, string>[] {
 }
 
 export function parseTSV(text: string): Record<string, string>[] {
+  if (text.length > 10 * 1024 * 1024) { // 10MB limit
+    throw new Error("TSV input size exceeds limit (10MB)");
+  }
   const out: Record<string, string>[] = [];
   const rows: string[][] = [];
   let cur = "", row: string[] = [];
@@ -326,30 +338,31 @@ export function riskExplainer(m: Model): string[] {
 
 export function cleanModelDescription(desc?: string | null): string {
   if (!desc) return '';
-  let s = desc;
+  // Cap length to prevent ReDoS on massive inputs
+  let s = desc.slice(0, 8192);
 
   // 1. Remove Markdown images
-  s = s.replace(/!\[([^\]]*)\]\([^)]+\)/g, '');
+  s = s.replace(/!\[([^\]]{0,500})\]\([^)]+\)/g, '');
 
   // 2. Replace Markdown links with text: [text](url) -> text
   // Handle cases where link text is empty or missing
-  s = s.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
+  s = s.replace(/\[([^\]]{1,500})\]\([^)]+\)/g, '$1');
 
   // 3. Remove header markers (start of line or after newline)
   s = s.replace(/(^|\n)#+\s+/g, '$1');
 
   // 4. Remove bold/italic
-  s = s.replace(/(\*\*|__)(.*?)\1/g, '$2');
-  s = s.replace(/(\*|_)(.*?)\1/g, '$2');
+  s = s.replace(/(\*\*|__)(.{1,100}?)\1/g, '$2');
+  s = s.replace(/(\*|_)(.{1,100}?)\1/g, '$2');
 
   // 5. Remove code blocks
   s = s.replace(/```[\s\S]*?```/g, '');
-  s = s.replace(/`([^`]+)`/g, '$1');
+  s = s.replace(/`([^`]{1,500})`/g, '$1');
 
   // 6. Fix "Key: Value" formatting if it's run-on
   // Often seen: "Subject: Photography Input Type: Images" -> "Subject: Photography\nInput Type: Images"
   // Heuristic: Look for " Key: " preceded by a word character but not a newline
-  s = s.replace(/([a-zA-Z0-9])\s+([A-Z][a-zA-Z\s]+:)/g, '$1\n$2');
+  s = s.replace(/([a-zA-Z0-9])\s+([A-Z][a-zA-Z]{1,30}:)/g, '$1\n$2');
 
   // 7. Clean up multiple spaces/newlines
   s = s.replace(/\n{3,}/g, '\n\n');

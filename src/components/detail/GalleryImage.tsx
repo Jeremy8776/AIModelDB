@@ -58,11 +58,17 @@ export function GalleryImage({
             }
 
             // If Electron is available and this looks like a CDN image, proxy it
-            if (window.electronAPI?.proxyImage && (
-                src.includes('imagecache.civitai.com') ||
-                src.includes('image.civitai.com') ||
-                src.includes('huggingface.co/')
-            )) {
+            let isCacheable = false;
+            try {
+                const u = new URL(src);
+                isCacheable = u.hostname === 'imagecache.civitai.com' ||
+                              u.hostname === 'image.civitai.com' ||
+                              u.hostname === 'huggingface.co';
+            } catch (e) {
+                // Not a valid URL
+            }
+
+            if (window.electronAPI?.proxyImage && isCacheable) {
                 try {
                     const result = await window.electronAPI.proxyImage(src);
                     if (!cancelled && result.success && result.dataUrl) {
