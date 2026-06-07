@@ -13,6 +13,7 @@ import { GalleryImage } from './detail/GalleryImage';
 import { LicenseHover } from './detail/LicenseHover';
 import { useImageContextMenu } from '../hooks/useImageContextMenu';
 import { getPricingType, isSubscriptionPricing, formatReleaseDate } from '../utils/pricing';
+import { hasSource } from '../utils/sourceHelpers';
 
 interface DetailPanelProps {
   model: Model | null;
@@ -51,10 +52,10 @@ export function DetailPanel({ model, onClose, onDelete, triggerElement, onToggle
     const loadDetails = async () => {
       setLoadingDetails(true);
       try {
-        if (model.source === 'CivitasBay' && model.url) {
+        if (hasSource(model, 'CivitasBay') && model.url) {
           const details = await fetchCivitasBayDetails(model.url);
           setModelDetails(details);
-        } else if (model.source === 'HuggingFace') {
+        } else if (hasSource(model, 'HuggingFace')) {
           const details = await fetchHuggingFaceDetails(model.id);
           // Adapt to shared interface
           if (details) {
@@ -71,7 +72,7 @@ export function DetailPanel({ model, onClose, onDelete, triggerElement, onToggle
       }
     };
 
-    if (model.source === 'CivitasBay' || model.source === 'HuggingFace') {
+    if (hasSource(model, 'CivitasBay') || hasSource(model, 'HuggingFace')) {
       loadDetails();
     }
   }, [model?.id, model?.source, model?.url]);
@@ -186,7 +187,7 @@ export function DetailPanel({ model, onClose, onDelete, triggerElement, onToggle
             )}
 
             {/* Extended Details (CivitasBay/HF) */}
-            {(model.source === 'CivitasBay' || model.source === 'HuggingFace') && (
+            {(hasSource(model, 'CivitasBay') || hasSource(model, 'HuggingFace')) && (
               <div className="mt-3">
                 {loadingDetails && (
                   <div className="flex items-center gap-2 text-sm text-blue-500">

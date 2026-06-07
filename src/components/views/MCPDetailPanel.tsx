@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { MCPServer, MCPPackage } from '../../types';
 import { openExternalUrl } from '../../utils/electron';
 import { describeRuntimeArg, getInstallCommand } from '../../utils/mcpDisplay';
+import { SourceBadges } from '../detail/SourceBadges';
 
 interface MCPDetailPanelProps {
     server: MCPServer | null;
@@ -116,13 +117,7 @@ export function MCPDetailPanel({
 
                 {/* Source attribution */}
                 <Section title={t('mcpDetail.sources', { defaultValue: 'Sources' })}>
-                    <div className="flex flex-wrap gap-1">
-                        {server.source.split(',').map(s => (
-                            <span key={s} className="text-xs px-2 py-0.5 rounded bg-bg-input text-text-secondary font-mono">
-                                {s.trim()}
-                            </span>
-                        ))}
-                    </div>
+                    <SourceBadges entity={server} />
                 </Section>
 
                 {/* Repository / website links */}

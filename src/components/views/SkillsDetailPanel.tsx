@@ -3,6 +3,7 @@ import { X, ExternalLink, Star, Copy, Check, Box, Wrench, FileText, MessageSquar
 import { useTranslation } from 'react-i18next';
 import { Skill } from '../../types';
 import { openExternalUrl } from '../../utils/electron';
+import { SourceBadges } from '../detail/SourceBadges';
 
 interface SkillsDetailPanelProps {
     skill: Skill | null;
@@ -197,11 +198,7 @@ export function SkillsDetailPanel({
                 )}
 
                 <Section title={t('skillsDetail.sources', { defaultValue: 'Sources' })}>
-                    <div className="flex flex-wrap gap-1">
-                        {skill.source.split(',').map(s => (
-                            <span key={s} className="text-xs px-2 py-0.5 rounded bg-bg-input text-text-secondary font-mono">{s.trim()}</span>
-                        ))}
-                    </div>
+                    <SourceBadges entity={skill} />
                 </Section>
 
                 {skill.updated_at && (
