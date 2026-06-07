@@ -7,6 +7,19 @@ export const fmtDate = (iso?: string | null) => {
   return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString();
 };
 
+/**
+ * Canonical release-date formatting shared across ALL entity tables
+ * (Models, MCP servers, Skills). Matches the Models column exactly —
+ * e.g. "Jun 7, 2026" — and returns "Unknown" for missing/invalid dates so
+ * every tab reads identically. Use this for any "Release Date" cell.
+ */
+export const formatReleaseDateValue = (value?: string | null): string => {
+  if (!value) return "Unknown";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "Unknown";
+  return d.toLocaleDateString("en-US", { year: 'numeric', month: 'short', day: 'numeric' });
+};
+
 export const kfmt = (n?: number | null) =>
   n == null ? "—" :
     n >= 1_000_000 ? (n / 1_000_000).toFixed(n % 1_000_000 ? 1 : 0) + "m" :

@@ -73,7 +73,7 @@ export function MCPTableHeader({
             </div>
 
             {renderSortButton('name', t('mcpTable.name', { defaultValue: 'Name' }), 'col-span-3')}
-            {renderSortButton('updatedAt', t('mcpTable.updated', { defaultValue: 'Updated' }), 'col-span-2')}
+            {renderSortButton('updatedAt', t('mcpTable.releaseDate', { defaultValue: 'Release Date' }), 'col-span-2')}
             {renderSortButton(
                 'runtime',
                 t('mcpTable.runtime', { defaultValue: 'How to run' }),

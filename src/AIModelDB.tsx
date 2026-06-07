@@ -204,7 +204,10 @@ function AIModelDBContent() {
         const score = (s: MCPServer) => (s.namespaceVerified ? 4 : 0) + (s.imageVerified ? 2 : 0) + (s.directoryVerified ? 1 : 0);
         return (score(a) - score(b)) * dir;
       }
-      return ((a.updatedAt ? Date.parse(a.updatedAt) : 0) - (b.updatedAt ? Date.parse(b.updatedAt) : 0)) * dir;
+      // Default sort = release date (published preferred, fallback updated).
+      const aV = a.publishedAt ?? a.updatedAt;
+      const bV = b.publishedAt ?? b.updatedAt;
+      return ((aV ? Date.parse(aV) : 0) - (bV ? Date.parse(bV) : 0)) * dir;
     });
   }, [mcpFiltered, mcpSortKey, mcpSortDirection]);
 
@@ -246,10 +249,14 @@ function AIModelDBContent() {
     return arr.sort((a, b) => {
       const favDelta = (b.isFavorite ? 1 : 0) - (a.isFavorite ? 1 : 0);
       if (favDelta !== 0) return favDelta;
+      if (skillSortKey === 'release_date') {
+        const aT = a.updated_at ? Date.parse(a.updated_at) : 0;
+        const bT = b.updated_at ? Date.parse(b.updated_at) : 0;
+        return (aT - bT) * dir;
+      }
       if (skillSortKey === 'type') return a.type.localeCompare(b.type) * dir;
       if (skillSortKey === 'family') return (a.family || 'zzz').localeCompare(b.family || 'zzz') * dir;
       if (skillSortKey === 'origin') return a.origin.localeCompare(b.origin) * dir;
-      if (skillSortKey === 'source') return a.source.localeCompare(b.source) * dir;
       return a.name.localeCompare(b.name) * dir;
     });
   }, [skillsFiltered, skillSortKey, skillSortDirection]);

@@ -3,7 +3,7 @@ import { ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { RoundCheckbox } from '../RoundCheckbox';
 
-export type SkillSortKey = 'name' | 'type' | 'family' | 'origin' | 'source';
+export type SkillSortKey = 'name' | 'release_date' | 'type' | 'family' | 'origin';
 
 export interface SkillsTableHeaderProps {
     sortKey: SkillSortKey;
@@ -65,10 +65,10 @@ export function SkillsTableHeader({
                 />
             </div>
             {renderSortButton('name', t('skillsTable.name', { defaultValue: 'Name' }), 'col-span-3')}
+            {renderSortButton('release_date', t('skillsTable.releaseDate', { defaultValue: 'Release Date' }), 'col-span-2')}
             {renderSortButton('type', t('skillsTable.type', { defaultValue: 'Type' }), 'col-span-2')}
             {renderSortButton('family', t('skillsTable.family', { defaultValue: 'Category' }), 'col-span-2')}
             {renderSortButton('origin', t('skillsTable.origin', { defaultValue: 'Origin' }), 'col-span-2')}
-            {renderSortButton('source', t('skillsTable.source', { defaultValue: 'Source' }), 'col-span-2')}
         </div>
     );
 }
