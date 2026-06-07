@@ -345,11 +345,11 @@ ipcMain.handle('decrypt-string', async (event, encryptedHex) => {
     try {
         const buffer = Buffer.from(encryptedHex, 'hex');
         const decrypted = safeStorage.decryptString(buffer);
-        if (!decrypted.startsWith('ai-model-db-secret:')) {
-            console.error('[SafeStorage] Context safety prefix verification failed');
-            return null;
+        if (decrypted.startsWith('ai-model-db-secret:')) {
+            return decrypted.slice('ai-model-db-secret:'.length);
         }
-        return decrypted.slice('ai-model-db-secret:'.length);
+        // Fallback for backward compatibility to avoid losing keys on upgrade
+        return decrypted;
     } catch (error) {
         console.error('[SafeStorage] Decryption failed:', error);
         return null; // Return null on failure (e.g. wrong key, corrupted data)
