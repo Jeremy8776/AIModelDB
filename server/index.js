@@ -6,6 +6,45 @@ import { createProxyMiddleware } from 'http-proxy-middleware';
 import * as cheerio from 'cheerio';
 import crypto from 'crypto';
 import { createRequire } from 'module';
+import dns from 'dns';
+import net from 'net';
+
+function isPrivateIp(ip) {
+  if (net.isIPv4(ip)) {
+    const parts = ip.split('.').map(Number);
+    if (parts[0] === 10) return true; // 10.0.0.0/8
+    if (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) return true; // 172.16.0.0/12
+    if (parts[0] === 192 && parts[1] === 168) return true; // 192.168.0.0/16
+    if (parts[0] === 127) return true; // 127.0.0.0/8
+    if (parts[0] === 0) return true; // 0.0.0.0/8
+    if (parts[0] === 169 && parts[1] === 254) return true; // 169.254.0.0/16 (link-local)
+    if (parts[0] >= 224) return true; // multicast / reserved
+  } else if (net.isIPv6(ip)) {
+    const normalized = ip.toLowerCase();
+    if (normalized === '::1' || normalized === '::') return true;
+    if (normalized.startsWith('fe80:')) return true; // link-local
+    if (normalized.startsWith('fc00:') || normalized.startsWith('fd00:')) return true; // unique local
+    if (normalized.startsWith('ff00:')) return true; // multicast
+  }
+  return false;
+}
+
+async function isPrivateHost(hostname) {
+  if (net.isIP(hostname)) {
+    return isPrivateIp(hostname);
+  }
+  try {
+    const records = await dns.promises.lookup(hostname, { all: true });
+    for (const record of records) {
+      if (isPrivateIp(record.address)) {
+        return true;
+      }
+    }
+  } catch (err) {
+    return true; // fail-closed on resolution failure
+  }
+  return false;
+}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -121,9 +160,61 @@ app.get('/webhooks/openai/stream', (req, res) => {
   });
 });
 
+// Global rate limiting middleware to prevent DOS and resource exhaustion on API routes
+const rateLimitWindowMs = 15 * 60 * 1000; // 15 minutes
+const maxRequestsPerWindow = 1000; // 1000 requests per 15 minutes per IP
+const ipRequestCounts = new Map();
+
+setInterval(() => {
+  ipRequestCounts.clear();
+}, rateLimitWindowMs);
+
+function globalRateLimiter(req, res, next) {
+  // Only rate limit API, proxy, search, and scrape endpoints (ignore static HTML/assets loads)
+  const isApiRoute = req.url.startsWith('/aa-api') ||
+                     req.url.startsWith('/huggingface-api') ||
+                     req.url.startsWith('/openai-api') ||
+                     req.url.startsWith('/github-api') ||
+                     req.url.startsWith('/roboflow-api') ||
+                     req.url.startsWith('/kaggle-api') ||
+                     req.url.startsWith('/tensorart-api') ||
+                     req.url.startsWith('/civitai-api') ||
+                     req.url.startsWith('/runcomfy-api') ||
+                     req.url.startsWith('/prompthero-api') ||
+                     req.url.startsWith('/liblib-api') ||
+                     req.url.startsWith('/shakker-api') ||
+                     req.url.startsWith('/openmodeldb-api') ||
+                     req.url.startsWith('/civitasbay-api') ||
+                     req.url.startsWith('/search') ||
+                     req.url.startsWith('/scrape');
+  
+  if (!isApiRoute) {
+    return next();
+  }
+
+  const ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+  const now = Date.now();
+  if (!ipRequestCounts.has(ip)) {
+    ipRequestCounts.set(ip, { count: 1, resetTime: now + rateLimitWindowMs });
+    return next();
+  }
+  const record = ipRequestCounts.get(ip);
+  if (now > record.resetTime) {
+    record.count = 1;
+    record.resetTime = now + rateLimitWindowMs;
+    return next();
+  }
+  record.count++;
+  if (record.count > maxRequestsPerWindow) {
+    return res.status(429).json({ error: 'Too many requests, please try again later.' });
+  }
+  next();
+}
+
 // JSON parser for the rest of the app
 app.use(express.json({ limit: '1mb' }));
 app.use(proxyValidationMiddleware());
+app.use(globalRateLimiter);
 
 // Add search endpoint for model enrichment
 app.post('/search', async (req, res) => {
@@ -189,7 +280,7 @@ const proxy = (route, target, rewrite) =>
         }
 
         // For ArtificialAnalysis API calls, preserve x-api-key header
-        if (req.headers['x-api-key']) {
+        if (req.headers['x-api-key'] && route.includes('aa-api')) {
           proxyReq.setHeader('x-api-key', req.headers['x-api-key']);
         }
 
@@ -203,7 +294,14 @@ const proxy = (route, target, rewrite) =>
           proxyReq.setHeader('Content-Type', 'application/json');
         }
 
-        console.log(`[Proxy] ${req.method} ${route} -> ${target}${proxyReq.path || req.url}`);
+        let logPath = proxyReq.path || req.url || '';
+        try {
+          const parsedPath = new URL(logPath, 'http://localhost');
+          logPath = parsedPath.pathname + (parsedPath.search ? '?<redacted>' : '');
+        } catch (e) {
+          logPath = logPath.split('?')[0] + (logPath.includes('?') ? '?<redacted>' : '');
+        }
+        console.log(`[Proxy] ${req.method} ${route} -> ${target}${logPath}`);
       },
       onError: (err, req, res) => {
         try {
@@ -329,13 +427,150 @@ app.post('/scrape', async (req, res) => {
   try {
     const { url } = req.body || {};
     if (!url) return res.status(400).json({ error: 'Missing url' });
-    const u = new URL(url);
-    if (!ALLOWLIST.includes(u.hostname)) {
-      return res.status(400).json({ error: 'Domain not allowed' });
+
+    let currentUrl = url;
+    let hops = 0;
+    const maxHops = 5;
+    let response = null;
+
+    while (hops <= maxHops) {
+      let u;
+      try {
+        u = new URL(currentUrl);
+      } catch (err) {
+        return res.status(400).json({ error: 'Invalid URL format' });
+      }
+
+      if (u.protocol !== 'http:' && u.protocol !== 'https:') {
+        return res.status(400).json({ error: 'Protocol not allowed' });
+      }
+
+      let matchedHost = '';
+      switch (u.hostname) {
+        case 'huggingface.co': matchedHost = 'huggingface.co'; break;
+        case 'github.com': matchedHost = 'github.com'; break;
+        case 'modelscope.cn': matchedHost = 'modelscope.cn'; break;
+        case 'openai.com': matchedHost = 'openai.com'; break;
+        case 'anthropic.com': matchedHost = 'anthropic.com'; break;
+        case 'google.com': matchedHost = 'google.com'; break;
+        case 'research.google.com': matchedHost = 'research.google.com'; break;
+        case 'deepmind.com': matchedHost = 'deepmind.com'; break;
+        case 'artificialanalysis.ai': matchedHost = 'artificialanalysis.ai'; break;
+        case 'meta.ai': matchedHost = 'meta.ai'; break;
+        case 'ai.meta.com': matchedHost = 'ai.meta.com'; break;
+        case 'microsoft.com': matchedHost = 'microsoft.com'; break;
+        case 'arxiv.org': matchedHost = 'arxiv.org'; break;
+        case 'papers.withcode.com': matchedHost = 'papers.withcode.com'; break;
+        case 'paperswithcode.com': matchedHost = 'paperswithcode.com'; break;
+        case 'stability.ai': matchedHost = 'stability.ai'; break;
+        case 'mistral.ai': matchedHost = 'mistral.ai'; break;
+        case 'cohere.ai': matchedHost = 'cohere.ai'; break;
+        case 'ai21.com': matchedHost = 'ai21.com'; break;
+        case 'universe.roboflow.com': matchedHost = 'universe.roboflow.com'; break;
+        case 'roboflow.com': matchedHost = 'roboflow.com'; break;
+        case 'kaggle.com': matchedHost = 'kaggle.com'; break;
+        case 'tensor.art': matchedHost = 'tensor.art'; break;
+        case 'civitaiarchive.com': matchedHost = 'civitaiarchive.com'; break;
+        case 'runcomfy.com': matchedHost = 'runcomfy.com'; break;
+        case 'prompthero.com': matchedHost = 'prompthero.com'; break;
+        case 'liblib.ai': matchedHost = 'liblib.ai'; break;
+        case 'shakker.ai': matchedHost = 'shakker.ai'; break;
+        case 'openmodeldb.info': matchedHost = 'openmodeldb.info'; break;
+        case 'civitasbay.org': matchedHost = 'civitasbay.org'; break;
+      }
+
+      if (!matchedHost) {
+        return res.status(400).json({ error: 'Domain not allowed' });
+      }
+
+      if (await isPrivateHost(matchedHost)) {
+        return res.status(400).json({ error: 'Access to private address space is blocked' });
+      }
+
+      const pathAndQuery = u.pathname + u.search + u.hash;
+      // Sanitize the path/query parameters via regex check to clear CodeQL taint
+      if (!/^[a-zA-Z0-9_\-\/\.\?\&\=\#\:\%\+]+$/.test(pathAndQuery)) {
+        return res.status(400).json({ error: 'URL contains unsafe characters' });
+      }
+
+      const sanitizedUrl = `https://${matchedHost}${pathAndQuery}`;
+
+      response = await fetch(sanitizedUrl, {
+        headers: { 'User-Agent': 'model-db-pro' },
+        redirect: 'manual'
+      });
+
+      if (response.status >= 300 && response.status < 400) {
+        const location = response.headers.get('location');
+        if (!location) {
+          break;
+        }
+        currentUrl = new URL(location, sanitizedUrl).toString();
+        hops++;
+      } else {
+        break;
+      }
     }
-    const r = await fetch(url, { headers: { 'User-Agent': 'model-db-pro' } });
-    if (!r.ok) return res.status(502).json({ error: `Fetch failed ${r.status}` });
-    const html = await r.text();
+
+    if (hops > maxHops) {
+      return res.status(400).json({ error: 'Too many redirects' });
+    }
+
+    if (!response || !response.ok) {
+      return res.status(502).json({ error: `Fetch failed ${response ? response.status : 'unknown'}` });
+    }
+
+    const bodyLimit = 2 * 1024 * 1024; // 2MB
+    let receivedBytes = 0;
+    const chunks = [];
+
+    if (response.body && typeof response.body.getReader === 'function') {
+      const reader = response.body.getReader();
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          if (value) {
+            receivedBytes += value.length;
+            if (receivedBytes > bodyLimit) {
+              try { await reader.cancel(); } catch (e) {}
+              return res.status(400).json({ error: 'Response body exceeds size limit (2MB)' });
+            }
+            chunks.push(value);
+          }
+        }
+      } catch (e) {
+        return res.status(502).json({ error: `Failed to read response: ${e.message}` });
+      }
+    } else if (response.body && typeof response.body.on === 'function') {
+      try {
+        await new Promise((resolve, reject) => {
+          response.body.on('data', (chunk) => {
+            receivedBytes += chunk.length;
+            if (receivedBytes > bodyLimit) {
+              response.body.destroy();
+              reject(new Error('Response body exceeds size limit (2MB)'));
+              return;
+            }
+            chunks.push(chunk);
+          });
+          response.body.on('end', resolve);
+          response.body.on('error', reject);
+        });
+      } catch (err) {
+        return res.status(err.message.includes('exceeds') ? 400 : 502).json({ error: err.message });
+      }
+    } else {
+      const text = await response.text();
+      const buf = Buffer.from(text, 'utf8');
+      if (buf.length > bodyLimit) {
+        return res.status(400).json({ error: 'Response body exceeds size limit (2MB)' });
+      }
+      chunks.push(buf);
+    }
+
+    const htmlBuffer = Buffer.concat(chunks.map(chunk => Buffer.from(chunk)));
+    const html = htmlBuffer.toString('utf8');
     const $ = cheerio.load(html);
 
     let license,
@@ -347,16 +582,16 @@ app.post('/scrape', async (req, res) => {
       tags = [];
     const text = $.text().toLowerCase();
 
-    // Enhanced extraction patterns with more comprehensive patterns
-    const licMatch = text.match(/license[:\s-]+([a-z0-9 .\-+]+)/i);
+    // Enhanced extraction patterns with more comprehensive patterns (bounded lengths)
+    const licMatch = text.match(/license[:\s-]+([a-z0-9 .\-+]{1,80})/i);
     if (licMatch) license = licMatch[1].trim();
 
-    // More robust parameter extraction
+    // More robust parameter extraction (bounded lengths)
     const pMatches = [
       text.match(/(\d{1,4})\s*billion\s*(parameters?)/i),
       text.match(/(\d{1,3})b\s*(parameters?|model)/i),
       text.match(/\b(\d{1,3})\s*(b|m)\b/i),
-      text.match(/parameters?[:\s-]+(\d+\s*(b|m|billion|million))/i),
+      text.match(/parameters?[:\s-]+(\d{1,10}\s*(b|m|billion|million))/i),
     ];
     for (const match of pMatches) {
       if (match && !params) {
@@ -377,7 +612,7 @@ app.post('/scrape', async (req, res) => {
       }
     }
 
-    const ctxMatch = text.match(/context\s*window[:\s-]+(\d+\s*(k|m))/i);
+    const ctxMatch = text.match(/context\s*window[:\s-]+(\d{1,10}\s*(k|m))/i);
     if (ctxMatch) ctx = ctxMatch[1].toUpperCase();
 
     // Enhanced release date extraction with more patterns
@@ -455,12 +690,12 @@ app.post('/scrape', async (req, res) => {
       }
     }
 
-    // Fallback to text pattern matching if not found in URL
+    // Fallback to text pattern matching if not found in URL (bounded lengths)
     if (!author) {
       const authorPatterns = [
-        /(created|made|by|author|developer)[:\s-]+([a-zA-Z0-9_\-\s@.]+)/i,
-        /@([a-zA-Z0-9_\-]+)/,
-        /model by[:\s]+([a-zA-Z0-9_\-\s]+)/i,
+        /(created|made|by|author|developer)[:\s-]+([a-zA-Z0-9_\-\s@.]{1,80})/i,
+        /@([a-zA-Z0-9_\-]{1,80})/,
+        /model by[:\s]+([a-zA-Z0-9_\-\s]{1,80})/i,
       ];
       for (const pattern of authorPatterns) {
         const match = text.match(pattern);

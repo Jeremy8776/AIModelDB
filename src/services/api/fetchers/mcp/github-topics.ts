@@ -48,9 +48,10 @@ const TOPIC_QUERIES = [
 ];
 
 async function fetchSearchPage(query: string, token?: string): Promise<GitHubRepo[]> {
-    const url = proxyUrl(
+    const githubUrl = `https://api.github.com/search/repositories?q=${encodeURIComponent(query)}&sort=updated&order=desc&per_page=100`;
+    const url = isElectron() ? githubUrl : proxyUrl(
         `/github-api/search/repositories?q=${encodeURIComponent(query)}&sort=updated&order=desc&per_page=100`,
-        `https://api.github.com/search/repositories?q=${encodeURIComponent(query)}&sort=updated&order=desc&per_page=100`
+        githubUrl
     );
     const headers: Record<string, string> = {
         Accept: 'application/vnd.github+json',
@@ -59,14 +60,13 @@ async function fetchSearchPage(query: string, token?: string): Promise<GitHubRep
     };
     if (token) headers.Authorization = `Bearer ${token}`;
 
-    let response: Response;
     if (isElectron() && window.electronAPI?.proxyRequest) {
         const res = await window.electronAPI.proxyRequest({ method: 'GET', url, headers });
         if (!res.success) throw new Error(res.error || 'GitHub search failed');
         const data = (typeof res.data === 'string' ? JSON.parse(res.data) : res.data) as GitHubSearchResponse;
         return data.items || [];
     }
-    response = await fetch(url, { headers });
+    const response = await fetch(url, { headers });
     if (!response.ok) {
         throw new Error(`GitHub search failed: ${response.status} ${response.statusText}`);
     }
@@ -74,7 +74,7 @@ async function fetchSearchPage(query: string, token?: string): Promise<GitHubRep
     return data.items || [];
 }
 
-function repoToMCPServer(repo: GitHubRepo): MCPServer {
+export function repoToMCPServer(repo: GitHubRepo): MCPServer {
     const owner = repo.owner?.login ?? repo.full_name.split('/')[0] ?? 'unknown';
     const repoName = repo.name || repo.full_name.split('/')[1] || 'unknown';
     const id = `io.github.${owner}/${repoName}`.toLowerCase();

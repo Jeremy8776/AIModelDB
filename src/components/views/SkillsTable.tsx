@@ -48,10 +48,14 @@ export function SkillsTable({
             if (favDelta !== 0) return favDelta;
             switch (sortKey) {
                 case 'name': return a.name.localeCompare(b.name) * dir;
+                case 'release_date': {
+                    const aT = a.updated_at ? new Date(a.updated_at).getTime() : 0;
+                    const bT = b.updated_at ? new Date(b.updated_at).getTime() : 0;
+                    return (aT - bT) * dir;
+                }
                 case 'type': return a.type.localeCompare(b.type) * dir;
                 case 'family': return (a.family || 'zzz').localeCompare(b.family || 'zzz') * dir;
                 case 'origin': return a.origin.localeCompare(b.origin) * dir;
-                case 'source': return a.source.localeCompare(b.source) * dir;
                 default: return 0;
             }
         });

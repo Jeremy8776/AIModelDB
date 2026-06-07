@@ -58,6 +58,22 @@ export {
     ollamaLibraryFetcher // Export wrapper
 } from './fetchers';
 
+// Hosted provider model catalogs
+export {
+    openRouterFetcher,
+    anthropicFetcher,
+    mistralFetcher,
+    openAICompatProviderFetchers,
+    openAIFetcher,
+    groqFetcher,
+    xaiFetcher,
+    cerebrasFetcher,
+    perplexityFetcher,
+    togetherFetcher,
+    fireworksFetcher,
+    deepinfraFetcher,
+} from './fetchers';
+
 // ============================================================================
 // Model Enrichment
 // ============================================================================

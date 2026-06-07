@@ -1,6 +1,7 @@
 import React, { memo } from 'react';
 import { Skill } from '../../types';
 import { RoundCheckbox } from '../RoundCheckbox';
+import { formatReleaseDateValue } from '../../utils/format';
 
 interface SkillsRowProps {
     skill: Skill;
@@ -61,6 +62,10 @@ export const SkillsRow = memo(function SkillsRow({
                 </div>
             </div>
 
+            <div className={`col-span-2 truncate text-sm ${textSecondary}`}>
+                {formatReleaseDateValue(skill.updated_at)}
+            </div>
+
             <div className={`col-span-2 text-sm ${textSecondary}`}>
                 <span className="text-[10px] px-1.5 py-0.5 rounded bg-bg-input font-mono capitalize">{skill.type}</span>
             </div>
@@ -71,10 +76,6 @@ export const SkillsRow = memo(function SkillsRow({
 
             <div className={`col-span-2 truncate text-sm ${textSecondary} capitalize`} title={originLabel}>
                 {originLabel}
-            </div>
-
-            <div className={`col-span-2 truncate text-xs ${textSecondary} font-mono`} title={skill.source}>
-                {skill.source}
             </div>
         </div>
     );

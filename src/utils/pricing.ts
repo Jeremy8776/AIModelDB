@@ -1,5 +1,6 @@
 import { Model } from '../types';
 import { formatCurrency, convertCurrency, detectCurrency, validateModelCost, factCheckModelCost } from './currency';
+import { formatReleaseDateValue } from './format';
 
 /**
  * Checks if a pricing entry is subscription-based.
@@ -66,6 +67,7 @@ export const formatReleaseDate = (model: Model) => {
         return "Unreleased";
     }
 
-    const date = new Date(model.release_date);
-    return date.toLocaleDateString("en-US", { year: 'numeric', month: 'short', day: 'numeric' });
+    // Delegate to the shared formatter so every entity table renders dates
+    // identically.
+    return formatReleaseDateValue(model.release_date);
 };

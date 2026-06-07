@@ -265,6 +265,7 @@ export function DataSourcesSection({ onSync, addConsoleLog }: DataSourcesSection
         >
           {(() => {
             const summary = getSourceCategorySummary(activeSourceCategory);
+            const enabledMap = getEnabledMap(activeSourceCategory);
             return (
               <>
                 <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
@@ -305,7 +306,21 @@ export function DataSourcesSection({ onSync, addConsoleLog }: DataSourcesSection
                   </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {getSourcesForSurface('settings', activeSourceCategory).map(renderSourceCard)}
+                  {[...getSourcesForSurface('settings', activeSourceCategory)]
+                    .sort((a, b) => {
+                      if (a.isSelectable !== b.isSelectable) {
+                        return a.isSelectable ? -1 : 1;
+                      }
+                      if (a.isSelectable && b.isSelectable) {
+                        const aEnabled = enabledMap[a.key] ?? false;
+                        const bEnabled = enabledMap[b.key] ?? false;
+                        if (aEnabled !== bEnabled) {
+                          return aEnabled ? -1 : 1;
+                        }
+                      }
+                      return a.label.localeCompare(b.label);
+                    })
+                    .map(renderSourceCard)}
                 </div>
               </>
             );

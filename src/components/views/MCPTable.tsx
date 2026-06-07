@@ -62,8 +62,11 @@ export function MCPTable({
                 case 'name':
                     return a.name.localeCompare(b.name) * dir;
                 case 'updatedAt': {
-                    const aT = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
-                    const bT = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+                    // Release date — published preferred, fallback to updated.
+                    const aV = a.publishedAt ?? a.updatedAt;
+                    const bV = b.publishedAt ?? b.updatedAt;
+                    const aT = aV ? new Date(aV).getTime() : 0;
+                    const bT = bV ? new Date(bV).getTime() : 0;
                     return (aT - bT) * dir;
                 }
                 case 'runtime': {

@@ -6,6 +6,7 @@
  */
 
 import { z } from 'zod';
+import { MCPServer, Skill } from '../../types';
 
 // ============================================================================
 // Common Schemas
@@ -23,7 +24,7 @@ export const LicenseSchema = z.object({
     copyleft: z.boolean().optional().default(false),
     url: z.string().optional(),
     notes: z.string().optional(),
-}).passthrough();
+});
 
 /**
  * Hosting information schema
@@ -33,7 +34,7 @@ export const HostingSchema = z.object({
     api_available: z.boolean().optional().default(false),
     on_premise_friendly: z.boolean().optional().default(false),
     providers: z.array(z.string()).optional(),
-}).passthrough();
+});
 
 /**
  * Pricing entry schema
@@ -45,7 +46,7 @@ export const PricingSchema = z.object({
     output: z.number().nullable().optional(),
     flat: z.number().nullable().optional(),
     currency: z.string().optional().default('USD'),
-}).passthrough();
+});
 
 /**
  * Model domain enumeration
@@ -87,7 +88,7 @@ export const ModelSchema = z.object({
     isFavorite: z.boolean().optional(),
     isNSFWFlagged: z.boolean().optional(),
     flaggedImageUrls: z.array(z.string()).optional(),
-}).passthrough();
+});
 
 export type ValidatedModel = z.infer<typeof ModelSchema>;
 
@@ -112,7 +113,7 @@ export const HuggingFaceModelSchema = z.object({
     license: z.string().optional().nullable(),
     params: z.union([z.string(), z.number()]).optional().nullable(),
     pipeline_tag: z.string().optional(),
-}).passthrough();
+});
 
 export const HuggingFaceResponseSchema = z.union([
     z.array(HuggingFaceModelSchema),
@@ -137,7 +138,7 @@ export const OllamaModelSchema = z.object({
         format: z.string().optional(),
         family: z.string().optional(),
     }).optional(),
-}).passthrough();
+});
 
 export const OllamaResponseSchema = z.object({
     models: z.array(OllamaModelSchema),
@@ -151,7 +152,7 @@ export const OpenAIModelSchema = z.object({
     object: z.literal('model').optional(),
     created: z.number().optional(),
     owned_by: z.string().optional(),
-}).passthrough();
+});
 
 export const OpenAIModelsResponseSchema = z.object({
     data: z.array(OpenAIModelSchema),
@@ -165,7 +166,7 @@ export const AnthropicModelSchema = z.object({
     id: z.string(),
     display_name: z.string().optional(),
     created_at: z.string().optional(),
-}).passthrough();
+});
 
 export const AnthropicModelsResponseSchema = z.object({
     data: z.array(AnthropicModelSchema),
@@ -181,7 +182,7 @@ export const GeminiModelSchema = z.object({
     inputTokenLimit: z.number().optional(),
     outputTokenLimit: z.number().optional(),
     supportedGenerationMethods: z.array(z.string()).optional(),
-}).passthrough();
+});
 
 export const GeminiModelsResponseSchema = z.object({
     models: z.array(GeminiModelSchema),
@@ -251,6 +252,16 @@ export function validateModels(models: unknown[]): ValidatedModel[] {
 /**
  * Coerce a value to a model, applying defaults for missing fields
  */
+function hashString(s: string): string {
+    let hash = 0;
+    for (let i = 0; i < s.length; i++) {
+        const char = s.charCodeAt(i);
+        hash = (hash << 5) - hash + char;
+        hash |= 0;
+    }
+    return Math.abs(hash).toString(36);
+}
+
 export function coerceToModel(data: unknown): ValidatedModel | null {
     // First try direct parse
     const result = ModelSchema.safeParse(data);
@@ -261,10 +272,35 @@ export function coerceToModel(data: unknown): ValidatedModel | null {
     // Try to salvage by providing required fields
     if (typeof data === 'object' && data !== null) {
         const obj = data as Record<string, unknown>;
+        const name = String(obj.name || obj.id || 'Unknown Model').trim();
+        const provider = String(obj.provider || 'unknown').trim();
+        const derivedId = String(obj.id || obj.modelId || `generated-${hashString(`${provider}-${name}`)}`);
+
         const patched = {
-            id: obj.id || obj.modelId || `generated-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-            name: obj.name || obj.id || 'Unknown Model',
-            ...obj,
+            id: derivedId,
+            name: name,
+            provider: obj.provider !== undefined && obj.provider !== null ? String(obj.provider) : undefined,
+            domain: obj.domain !== undefined && obj.domain !== null ? String(obj.domain) : undefined,
+            source: obj.source !== undefined && obj.source !== null ? String(obj.source) : undefined,
+            url: obj.url !== undefined && obj.url !== null ? String(obj.url) : undefined,
+            repo: obj.repo !== undefined && obj.repo !== null ? String(obj.repo) : undefined,
+            description: obj.description !== undefined && obj.description !== null ? String(obj.description) : undefined,
+            license: obj.license,
+            hosting: obj.hosting,
+            pricing: obj.pricing,
+            downloads: obj.downloads !== undefined && obj.downloads !== null ? Number(obj.downloads) : undefined,
+            updated_at: obj.updated_at !== undefined && obj.updated_at !== null ? String(obj.updated_at) : undefined,
+            release_date: obj.release_date !== undefined && obj.release_date !== null ? String(obj.release_date) : undefined,
+            tags: Array.isArray(obj.tags) ? obj.tags.map(String) : undefined,
+            parameters: obj.parameters !== undefined && obj.parameters !== null ? String(obj.parameters) : undefined,
+            context_window: obj.context_window !== undefined && obj.context_window !== null ? String(obj.context_window) : undefined,
+            indemnity: obj.indemnity !== undefined && obj.indemnity !== null ? String(obj.indemnity) : undefined,
+            data_provenance: obj.data_provenance !== undefined && obj.data_provenance !== null ? String(obj.data_provenance) : undefined,
+            usage_restrictions: Array.isArray(obj.usage_restrictions) ? obj.usage_restrictions.map(String) : undefined,
+            images: Array.isArray(obj.images) ? obj.images.map(String) : undefined,
+            isFavorite: obj.isFavorite !== undefined && obj.isFavorite !== null ? Boolean(obj.isFavorite) : undefined,
+            isNSFWFlagged: obj.isNSFWFlagged !== undefined && obj.isNSFWFlagged !== null ? Boolean(obj.isNSFWFlagged) : undefined,
+            flaggedImageUrls: Array.isArray(obj.flaggedImageUrls) ? obj.flaggedImageUrls.map(String) : undefined,
         };
 
         const retryResult = ModelSchema.safeParse(patched);
@@ -274,4 +310,154 @@ export function coerceToModel(data: unknown): ValidatedModel | null {
     }
 
     return null;
+}
+
+// ============================================================================
+// MCP Server Schemas
+// ============================================================================
+
+export const MCPPackageSchema = z.object({
+    registryType: z.enum(["npm", "pypi", "oci", "nuget", "other"]),
+    identifier: z.string(),
+    version: z.string().nullable().optional(),
+    runtimeHint: z.enum(["node", "python", "docker", "binary"]).nullable().optional(),
+    transport: z.object({ type: z.string() }).optional(),
+    runtimeArguments: z.array(z.unknown()).optional(),
+    environmentVariables: z.array(z.object({
+        name: z.string(),
+        description: z.string().optional(),
+        isRequired: z.boolean().optional(),
+        isSecret: z.boolean().optional(),
+        default: z.string().optional(),
+    })).optional(),
+});
+
+export const MCPRemoteSchema = z.object({
+    type: z.enum(["stdio", "sse", "streamable-http", "websocket"]),
+    url: z.string().nullable().optional(),
+    headers: z.array(z.object({
+        name: z.string(),
+        isRequired: z.boolean().optional(),
+        isSecret: z.boolean().optional(),
+    })).optional(),
+});
+
+export const MCPServerSchema = z.object({
+    id: z.string(),
+    name: z.string(),
+    description: z.string().nullable().optional(),
+    version: z.string().nullable().optional(),
+    repository: z.object({ url: z.string(), source: z.string() }).nullable().optional(),
+    websiteUrl: z.string().nullable().optional(),
+    packages: z.array(MCPPackageSchema).optional(),
+    remotes: z.array(MCPRemoteSchema).optional(),
+    capabilities: z.array(z.string()).optional(),
+    source: z.string(),
+    publishedAt: z.string().nullable().optional(),
+    updatedAt: z.string().nullable().optional(),
+    namespaceVerified: z.boolean().optional(),
+    imageVerified: z.boolean().optional(),
+    directoryVerified: z.boolean().optional(),
+    license: LicenseSchema.optional(),
+    tags: z.array(z.string()).optional().default([]),
+    downloads: z.number().nullable().optional(),
+    isFavorite: z.boolean().optional(),
+    editedFields: z.array(z.string()).optional(),
+    _meta: z.record(z.string(), z.unknown()).optional(),
+});
+
+/**
+ * Validate an array of MCP servers, filtering out invalid entries
+ */
+export function validateMCPServers(servers: unknown[]): MCPServer[] {
+    const validated: MCPServer[] = [];
+    for (const server of servers) {
+        const result = MCPServerSchema.safeParse(server);
+        if (result.success) {
+            validated.push(result.data as MCPServer);
+        } else {
+            console.warn('[Validation] Invalid MCP Server skipped:',
+                (server as any)?.id || (server as any)?.name || 'unknown',
+                result.error.issues[0]?.message
+            );
+        }
+    }
+    return validated;
+}
+
+// ============================================================================
+// Skill Schemas
+// ============================================================================
+
+export const SkillTypeSchema = z.enum(["skill", "plugin", "rule", "prompt", "recipe", "app"]);
+export const SkillOriginSchema = z.enum([
+    "anthropic-official",
+    "cowork-official",
+    "agentskills-spec",
+    "community-curated",
+    "open-submission",
+    "third-party"
+]);
+export const SkillRedistributionSchema = z.enum(["yes", "metadata-only", "no"]);
+export const SkillRuntimeSchema = z.enum([
+    "claude-code",
+    "claude-ai",
+    "codex",
+    "cursor",
+    "windsurf",
+    "roo",
+    "cline",
+    "goose",
+    "generic"
+]);
+
+export const SkillSchema = z.object({
+    id: z.string(),
+    name: z.string(),
+    description: z.string().nullable().optional(),
+    type: SkillTypeSchema,
+    origin: SkillOriginSchema,
+    family: z.string().nullable().optional(),
+    triggers: z.array(z.string()).optional(),
+    capabilities: z.array(z.string()).optional(),
+    requires: z.object({
+        mcps: z.array(z.string()).optional(),
+        plugins: z.array(z.string()).optional(),
+        api_keys: z.array(z.string()).optional(),
+        runtimes: z.array(SkillRuntimeSchema).optional(),
+    }).optional(),
+    install_command: z.string().nullable().optional(),
+    source: z.string(),
+    source_repo: z.object({
+        owner: z.string(),
+        repo: z.string(),
+        path: z.string(),
+        sha: z.string().optional(),
+    }).nullable().optional(),
+    redistributable: SkillRedistributionSchema,
+    license: LicenseSchema.optional(),
+    tags: z.array(z.string()).optional().default([]),
+    updated_at: z.string().nullable().optional(),
+    isFavorite: z.boolean().optional(),
+    editedFields: z.array(z.string()).optional(),
+    _meta: z.record(z.string(), z.unknown()).optional(),
+});
+
+/**
+ * Validate an array of Skills, filtering out invalid entries
+ */
+export function validateSkills(skills: unknown[]): Skill[] {
+    const validated: Skill[] = [];
+    for (const skill of skills) {
+        const result = SkillSchema.safeParse(skill);
+        if (result.success) {
+            validated.push(result.data as Skill);
+        } else {
+            console.warn('[Validation] Invalid Skill skipped:',
+                (skill as any)?.id || (skill as any)?.name || 'unknown',
+                result.error.issues[0]?.message
+            );
+        }
+    }
+    return validated;
 }

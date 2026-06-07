@@ -72,7 +72,7 @@ async function fetchPage(query: string, from: number, size: number): Promise<Npm
     return data.objects || [];
 }
 
-function npmObjectToMCPServer(obj: NpmSearchObject): MCPServer {
+export function npmObjectToMCPServer(obj: NpmSearchObject): MCPServer {
     const p = obj.package;
     const owner = (p.publisher?.username || p.maintainers?.[0]?.username || 'npm').toLowerCase();
     const cleanName = p.name.replace(/^@/, '').replace(/\//g, '-');

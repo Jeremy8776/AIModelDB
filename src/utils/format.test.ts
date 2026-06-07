@@ -7,7 +7,8 @@ import {
     parseTSV,
     mapDomain,
     cleanModelDescription,
-    riskScore
+    riskScore,
+    formatReleaseDateValue
 } from '../utils/format';
 import { Model, LicenseInfo, Hosting } from '../types';
 
@@ -37,6 +38,26 @@ function createModel(overrides: Partial<Model> = {}): Model {
         ...overrides,
     };
 }
+
+describe('formatReleaseDateValue', () => {
+    it('formats a valid ISO date as "Mon D, YYYY" (en-US)', () => {
+        expect(formatReleaseDateValue('2026-06-07T00:00:00Z')).toBe('Jun 7, 2026');
+    });
+
+    it('formats a plain date string', () => {
+        expect(formatReleaseDateValue('2025-01-15')).toBe('Jan 15, 2025');
+    });
+
+    it('returns "Unknown" for null/undefined/empty', () => {
+        expect(formatReleaseDateValue(null)).toBe('Unknown');
+        expect(formatReleaseDateValue(undefined)).toBe('Unknown');
+        expect(formatReleaseDateValue('')).toBe('Unknown');
+    });
+
+    it('returns "Unknown" for an unparseable date', () => {
+        expect(formatReleaseDateValue('not-a-date')).toBe('Unknown');
+    });
+});
 
 describe('dedupe', () => {
     it('should remove duplicate models by provider+name', () => {

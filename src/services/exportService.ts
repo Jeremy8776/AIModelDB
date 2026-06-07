@@ -267,7 +267,13 @@ function escapeTSV(str: string): string {
 }
 
 function escapeMarkdownCell(str: string): string {
-    return str.replace(/\|/g, '\\|').replace(/[\r\n]+/g, ' ');
+    return str
+        .replace(/\\/g, '\\\\')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/\|/g, '\\|')
+        .replace(/[\r\n]+/g, ' ');
 }
 
 /**

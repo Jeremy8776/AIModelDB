@@ -9,6 +9,10 @@ import {
     fetchCivitai,
     fetchCivitasBay,
     fetchPopularGenerativeRepos,
+    openRouterFetcher,
+    anthropicFetcher,
+    mistralFetcher,
+    openAICompatProviderFetchers,
     // Legacy imports referenced in adapters
     fetchOpenModelDB, // Keeping if needed for types, but we use the fetcher object
     fetchOllamaLibrary
@@ -16,8 +20,7 @@ import {
 import { runLLMDiscovery } from "./DiscoveryService";
 import { runTranslation } from "./TranslationService";
 import { runSafetyCheck } from "./SafetyService";
-import { normalizeNameForMatch } from "../../utils/format";
-import { mergeRecords } from "../../utils/mergeLogic";
+import { performMergeBatch } from "../../utils/mergeLogic";
 
 /**
  * Orchestrates the synchronization process across multiple sources.
@@ -43,6 +46,10 @@ export async function orchestrateSync(
         registry.register(huggingFaceFetcher);
         registry.register(openModelDBFetcher);
         registry.register(ollamaLibraryFetcher);
+        registry.register(openRouterFetcher);
+        registry.register(anthropicFetcher);
+        registry.register(mistralFetcher);
+        openAICompatProviderFetchers.forEach(fetcher => registry.register(fetcher));
 
         // Register Adapters for Legacy Fetchers (to be converted later)
 
@@ -253,31 +260,6 @@ export async function orchestrateSync(
  * Helper to deduplicate and merge models from different sources
  */
 function deduplicateModels(models: Model[], ignoredModels?: string[]): Model[] {
-    const map = new Map<string, Model>();
-
-    for (const model of models) {
-        const key = model.id
-            || model.repo
-            || model.url
-            || [
-                normalizeNameForMatch(model.name),
-                model.domain || '',
-                (model.provider || '').toLowerCase(),
-            ].join('|');
-
-        if (!key) {
-            map.set(model.id, model); // Fallback to ID if name normalization fails
-            continue;
-        }
-
-        if (map.has(key)) {
-            const existing = map.get(key)!;
-            console.log(`[Sync] Merging duplicate: "${model.name}" -> "${existing.name}" (Key: ${key})`);
-            map.set(key, mergeRecords(existing, model));
-        } else {
-            map.set(key, { ...model });
-        }
-    }
-
-    return Array.from(map.values());
+    void ignoredModels;
+    return performMergeBatch([], models, true).models;
 }

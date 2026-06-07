@@ -47,7 +47,7 @@ function parseLogLine(line: string): ParsedEntry {
   if (line.startsWith("[RES ")) {
     const id = line.slice(5, 11);
     const afterBracket = line.slice(line.indexOf("]") + 1).trim();
-    const statusMatch = afterBracket.match(/^(\d{3})\s+([A-ZA-z]+)/);
+    const statusMatch = afterBracket.match(/^(\d{3})\s+([A-Za-z]+)/);
     const urlMatch = afterBracket.match(/\d{3}\s+[A-Za-z]+\s+(\S+)/);
     const bodyStart = afterBracket.indexOf("\n");
     const body = bodyStart >= 0 ? afterBracket.slice(bodyStart + 1) : '';

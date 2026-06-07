@@ -29,10 +29,10 @@ export function SkillsDetailPanel({
     const meta = (skill._meta || {}) as { author?: { name?: string }; version?: string; homepage?: string };
     const requires = skill.requires || {};
     const hasRequirements =
-        (requires.mcps && requires.mcps.length > 0)
-        || (requires.plugins && requires.plugins.length > 0)
-        || (requires.api_keys && requires.api_keys.length > 0)
-        || (requires.runtimes && requires.runtimes.length > 0);
+        (Array.isArray(requires.mcps) && requires.mcps.length > 0)
+        || (Array.isArray(requires.plugins) && requires.plugins.length > 0)
+        || (Array.isArray(requires.api_keys) && requires.api_keys.length > 0)
+        || (Array.isArray(requires.runtimes) && requires.runtimes.length > 0);
 
     return (
         <div className={`rounded-2xl border border-border bg-bg-card flex flex-col ${className}`}>
@@ -100,19 +100,19 @@ export function SkillsDetailPanel({
                     </Section>
                 )}
 
-                {hasRequirements && (
+                 {hasRequirements && (
                     <Section title={t('skillsDetail.requirements', { defaultValue: 'Requires' })}>
                         <div className="space-y-2">
-                            {requires.api_keys && requires.api_keys.length > 0 && (
+                            {Array.isArray(requires.api_keys) && requires.api_keys.length > 0 && (
                                 <RequirementRow icon={<Key size={12} />} label={t('skillsDetail.apiKeys', { defaultValue: 'API keys' })} items={requires.api_keys} highlight />
                             )}
-                            {requires.runtimes && requires.runtimes.length > 0 && (
+                            {Array.isArray(requires.runtimes) && requires.runtimes.length > 0 && (
                                 <RequirementRow icon={<Cpu size={12} />} label={t('skillsDetail.runtimes', { defaultValue: 'Runtimes' })} items={requires.runtimes} />
                             )}
-                            {requires.mcps && requires.mcps.length > 0 && (
+                            {Array.isArray(requires.mcps) && requires.mcps.length > 0 && (
                                 <RequirementRow icon={<Zap size={12} />} label={t('skillsDetail.mcps', { defaultValue: 'MCP servers' })} items={requires.mcps} />
                             )}
-                            {requires.plugins && requires.plugins.length > 0 && (
+                            {Array.isArray(requires.plugins) && requires.plugins.length > 0 && (
                                 <RequirementRow icon={<Plug size={12} />} label={t('skillsDetail.plugins', { defaultValue: 'Plugins' })} items={requires.plugins} />
                             )}
                         </div>

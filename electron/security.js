@@ -1,10 +1,13 @@
 const net = require('net');
 
 const ALLOWED_PROXY_HOSTS = new Set([
-    'api.github.com', 'api.openai.com', 'artificialanalysis.ai', 'civitai.com',
+    'api.anthropic.com', 'api.github.com', 'api.openai.com', 'api.mistral.ai',
+    'api.groq.com', 'api.x.ai', 'api.cerebras.ai', 'api.perplexity.ai',
+    'api.together.xyz', 'api.fireworks.ai', 'api.deepinfra.com',
+    'artificialanalysis.ai', 'civitai.com',
     'civitasbay.org', 'github.com', 'huggingface.co', 'raw.githubusercontent.com',
-    'registry.modelcontextprotocol.io', 'registry.npmjs.org', 'ollama.com', 'pypi.org',
-    'www.googleapis.com',
+    'registry.modelcontextprotocol.io', 'registry.npmjs.org', 'ollama.com', 'openrouter.ai',
+    'pypi.org', 'glama.ai', 'www.googleapis.com',
 ]);
 
 const ALLOWED_IMAGE_HOSTS = new Set([
@@ -12,7 +15,15 @@ const ALLOWED_IMAGE_HOSTS = new Set([
 ]);
 
 const ALLOWED_METHODS = new Set(['GET', 'POST']);
-const ALLOWED_HEADERS = new Set(['accept', 'authorization', 'content-type', 'user-agent', 'x-api-key']);
+const ALLOWED_HEADERS = new Set([
+    'accept',
+    'anthropic-version',
+    'authorization',
+    'content-type',
+    'user-agent',
+    'x-api-key',
+    'x-github-api-version',
+]);
 
 function isPrivateHost(hostname) {
     const host = hostname.toLowerCase();
@@ -72,4 +83,5 @@ module.exports = {
     validateExternalUrl,
     validateProxyRequest,
     validateImageUrl,
+    isPrivateHost,
 };

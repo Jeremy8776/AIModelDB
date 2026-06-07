@@ -2,6 +2,7 @@ import React, { memo } from 'react';
 import { MCPServer } from '../../types';
 import { RoundCheckbox } from '../RoundCheckbox';
 import { getRuntimeLabel, getSetupRequirement, getSetupTooltip } from '../../utils/mcpDisplay';
+import { formatReleaseDateValue } from '../../utils/format';
 
 interface MCPRowProps {
     server: MCPServer;
@@ -40,9 +41,9 @@ export const MCPRow = memo(function MCPRow({
     const setup = getSetupRequirement(server);
     const setupTooltip = getSetupTooltip(server);
     const primaryPackage = server.packages?.[0];
-    const updatedLabel = server.updatedAt
-        ? new Date(server.updatedAt).toLocaleDateString()
-        : (server.publishedAt ? new Date(server.publishedAt).toLocaleDateString() : '—');
+    // Release date — published date preferred, falling back to last update.
+    // Same formatter as the Models tab so all entities read identically.
+    const releaseLabel = formatReleaseDateValue(server.publishedAt ?? server.updatedAt);
     const hasProvenance = server.namespaceVerified || server.imageVerified || server.directoryVerified;
 
     const runtimeKindLabel = runtime.kind === 'local'
@@ -93,8 +94,7 @@ export const MCPRow = memo(function MCPRow({
             </div>
 
             <div className={`col-span-2 truncate text-sm ${textSecondary}`}>
-                {updatedLabel}
-                {server.version && <span className="ml-1 text-xs opacity-70">v{server.version}</span>}
+                {releaseLabel}
             </div>
 
             <div className={`col-span-2 flex items-center gap-1 text-sm ${textSecondary} overflow-hidden flex-wrap`} title={runtimeTooltip}>
