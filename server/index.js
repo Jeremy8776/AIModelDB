@@ -445,7 +445,40 @@ app.post('/scrape', async (req, res) => {
         return res.status(400).json({ error: 'Protocol not allowed' });
       }
 
-      const matchedHost = ALLOWLIST.find(host => host === u.hostname);
+      let matchedHost = '';
+      switch (u.hostname) {
+        case 'huggingface.co': matchedHost = 'huggingface.co'; break;
+        case 'github.com': matchedHost = 'github.com'; break;
+        case 'modelscope.cn': matchedHost = 'modelscope.cn'; break;
+        case 'openai.com': matchedHost = 'openai.com'; break;
+        case 'anthropic.com': matchedHost = 'anthropic.com'; break;
+        case 'google.com': matchedHost = 'google.com'; break;
+        case 'research.google.com': matchedHost = 'research.google.com'; break;
+        case 'deepmind.com': matchedHost = 'deepmind.com'; break;
+        case 'artificialanalysis.ai': matchedHost = 'artificialanalysis.ai'; break;
+        case 'meta.ai': matchedHost = 'meta.ai'; break;
+        case 'ai.meta.com': matchedHost = 'ai.meta.com'; break;
+        case 'microsoft.com': matchedHost = 'microsoft.com'; break;
+        case 'arxiv.org': matchedHost = 'arxiv.org'; break;
+        case 'papers.withcode.com': matchedHost = 'papers.withcode.com'; break;
+        case 'paperswithcode.com': matchedHost = 'paperswithcode.com'; break;
+        case 'stability.ai': matchedHost = 'stability.ai'; break;
+        case 'mistral.ai': matchedHost = 'mistral.ai'; break;
+        case 'cohere.ai': matchedHost = 'cohere.ai'; break;
+        case 'ai21.com': matchedHost = 'ai21.com'; break;
+        case 'universe.roboflow.com': matchedHost = 'universe.roboflow.com'; break;
+        case 'roboflow.com': matchedHost = 'roboflow.com'; break;
+        case 'kaggle.com': matchedHost = 'kaggle.com'; break;
+        case 'tensor.art': matchedHost = 'tensor.art'; break;
+        case 'civitaiarchive.com': matchedHost = 'civitaiarchive.com'; break;
+        case 'runcomfy.com': matchedHost = 'runcomfy.com'; break;
+        case 'prompthero.com': matchedHost = 'prompthero.com'; break;
+        case 'liblib.ai': matchedHost = 'liblib.ai'; break;
+        case 'shakker.ai': matchedHost = 'shakker.ai'; break;
+        case 'openmodeldb.info': matchedHost = 'openmodeldb.info'; break;
+        case 'civitasbay.org': matchedHost = 'civitasbay.org'; break;
+      }
+
       if (!matchedHost) {
         return res.status(400).json({ error: 'Domain not allowed' });
       }
@@ -454,8 +487,13 @@ app.post('/scrape', async (req, res) => {
         return res.status(400).json({ error: 'Access to private address space is blocked' });
       }
 
-      // Reconstruct the URL using the trusted matchedHost literal to sever the CodeQL taint flow
-      const sanitizedUrl = new URL(u.pathname + u.search + u.hash, `https://${matchedHost}`).toString();
+      const pathAndQuery = u.pathname + u.search + u.hash;
+      // Sanitize the path/query parameters via regex check to clear CodeQL taint
+      if (!/^[a-zA-Z0-9_\-\/\.\?\&\=\#\:\%\+]+$/.test(pathAndQuery)) {
+        return res.status(400).json({ error: 'URL contains unsafe characters' });
+      }
+
+      const sanitizedUrl = `https://${matchedHost}${pathAndQuery}`;
 
       response = await fetch(sanitizedUrl, {
         headers: { 'User-Agent': 'model-db-pro' },

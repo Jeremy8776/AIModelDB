@@ -268,6 +268,7 @@ function escapeTSV(str: string): string {
 
 function escapeMarkdownCell(str: string): string {
     return str
+        .replace(/\\/g, '\\\\')
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
