@@ -170,28 +170,6 @@ setInterval(() => {
 }, rateLimitWindowMs);
 
 function globalRateLimiter(req, res, next) {
-  // Only rate limit API, proxy, search, and scrape endpoints (ignore static HTML/assets loads)
-  const isApiRoute = req.url.startsWith('/aa-api') ||
-                     req.url.startsWith('/huggingface-api') ||
-                     req.url.startsWith('/openai-api') ||
-                     req.url.startsWith('/github-api') ||
-                     req.url.startsWith('/roboflow-api') ||
-                     req.url.startsWith('/kaggle-api') ||
-                     req.url.startsWith('/tensorart-api') ||
-                     req.url.startsWith('/civitai-api') ||
-                     req.url.startsWith('/runcomfy-api') ||
-                     req.url.startsWith('/prompthero-api') ||
-                     req.url.startsWith('/liblib-api') ||
-                     req.url.startsWith('/shakker-api') ||
-                     req.url.startsWith('/openmodeldb-api') ||
-                     req.url.startsWith('/civitasbay-api') ||
-                     req.url.startsWith('/search') ||
-                     req.url.startsWith('/scrape');
-  
-  if (!isApiRoute) {
-    return next();
-  }
-
   const ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
   const now = Date.now();
   if (!ipRequestCounts.has(ip)) {
