@@ -4,7 +4,11 @@
  * Tests the security middleware for Model DB proxy endpoints
  */
 
-const { proxyValidationMiddleware, getRateLimitStats } = require('../proxy-middleware.js');
+import { vi } from 'vitest';
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
+const { proxyValidationMiddleware, getRateLimitStats, getClientIp } = require('../proxy-middleware.js');
 
 describe('Proxy Validation Middleware', () => {
     let middleware;
@@ -30,13 +34,13 @@ describe('Proxy Validation Middleware', () => {
 
         // Mock response object
         res = {
-            status: jest.fn().mockReturnThis(),
-            json: jest.fn().mockReturnThis(),
-            setHeader: jest.fn(),
+            status: vi.fn().mockReturnThis(),
+            json: vi.fn().mockReturnThis(),
+            setHeader: vi.fn(),
         };
 
         // Mock next function
-        next = jest.fn();
+        next = vi.fn();
     });
 
     describe('Origin Validation', () => {
@@ -156,5 +160,23 @@ describe('Proxy Validation Middleware', () => {
             expect(stats).toHaveProperty('entries');
             expect(stats.totalEntries).toBeGreaterThan(0);
         });
+    });
+});
+
+describe('getClientIp', () => {
+    const req = (headers, address = '10.1.2.3') => ({ headers, socket: { remoteAddress: address } });
+
+    afterEach(() => {
+        delete process.env.TRUST_PROXY;
+    });
+
+    it('ignores client-controlled forwarding headers by default', () => {
+        expect(getClientIp(req({ 'x-forwarded-for': '1.1.1.1', 'x-real-ip': '2.2.2.2' }))).toBe('10.1.2.3');
+    });
+
+    it('uses the last forwarded entry only when TRUST_PROXY=true', () => {
+        process.env.TRUST_PROXY = 'true';
+        expect(getClientIp(req({ 'x-forwarded-for': 'spoofed, 9.9.9.9' }))).toBe('9.9.9.9');
+        expect(getClientIp(req({}))).toBe('10.1.2.3');
     });
 });

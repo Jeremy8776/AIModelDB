@@ -1,10 +1,10 @@
 import React from 'react';
-import { AlertTriangle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { MCPServer } from '../../types';
 import { MCPTable } from './MCPTable';
 import { MCPSortKey } from './MCPTableHeader';
 import { SectionEmptyState } from '../SectionEmptyState';
+import { SyncErrorBanner } from '../SyncErrorBanner';
 
 /**
  * MCP tab content. Slots into MainLayout's content area exactly where
@@ -55,7 +55,7 @@ export function MCPView({
     if (lastError) {
         return (
             <div className="space-y-2">
-                <ErrorBanner message={lastError} />
+                <SyncErrorBanner message={lastError} theme={theme} onRetry={onSyncAll} isSyncing={isSyncing} />
                 {servers.length > 0 && (
                     <MCPTable
                         servers={servers}
@@ -69,6 +69,14 @@ export function MCPView({
                         onSelectAll={onSelectAll}
                         activeServerId={activeServerId}
                         onToggleFavorite={onToggleFavorite}
+                    />
+                )}
+                {totalCount === 0 && !isSyncing && (
+                    <SectionEmptyState
+                        title={t('mcp.empty.title', { defaultValue: 'No MCP servers in the local database' })}
+                        description={t('mcp.empty.desc', { defaultValue: 'Use Sync All to refresh every enabled source, or import custom data when you want to manage this section manually.' })}
+                        onSyncAll={onSyncAll}
+                        onImportCustom={onImportCustom}
                     />
                 )}
             </div>
@@ -111,15 +119,6 @@ export function MCPView({
                 activeServerId={activeServerId}
                 onToggleFavorite={onToggleFavorite}
             />
-        </div>
-    );
-}
-
-function ErrorBanner({ message }: { message: string }) {
-    return (
-        <div className="flex items-center gap-2 p-3 rounded-lg border border-red-500/30 bg-red-500/10 text-red-700 text-sm">
-            <AlertTriangle size={16} />
-            <span>{message}</span>
         </div>
     );
 }

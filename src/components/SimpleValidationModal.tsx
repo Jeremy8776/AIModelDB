@@ -19,11 +19,13 @@ interface SimpleValidationModalProps {
   isBusy?: boolean;
 }
 
+const NO_MODELS: Model[] = [];
+
 export function SimpleValidationModal({
   isOpen,
   onClose,
   onValidateAll,
-  models,
+  models: allModels,
   hasApiProvider,
   onCancel,
   isBusy
@@ -31,6 +33,10 @@ export function SimpleValidationModal({
   const { theme } = useContext(ThemeContext);
   const { t } = useTranslation();
   const { settings } = useSettings();
+  // This modal stays mounted while closed, and every sync changes `models`. Without this the
+  // filters below (and a CSV of the whole database) were recomputed for every update, which
+  // was the biggest single cost of a sync (about 10 s of main-thread time).
+  const models = isOpen ? allModels : NO_MODELS;
   const [isValidating, setIsValidating] = useState(false);
   const [result, setResult] = useState<{ success: boolean; message: string; summary?: ValidationSummary } | null>(null);
 
@@ -162,8 +168,7 @@ export function SimpleValidationModal({
   const totalCandidateCount = filteredCandidates.length; // Count matching filters (before limit)
 
   // Calculations for display
-  const fullCsv = convertModelsToCSV(targetModels);
-  const estimatedTokensFull = Math.ceil(fullCsv.length / 4);
+  const estimatedTokensFull = useMemo(() => Math.ceil(convertModelsToCSV(targetModels).length / 4), [targetModels]);
   const tokenSoftLimit = 180000;
   const modelCountSoftLimit = 250;
   const autoHybridMode: 'single' | 'batch' = (estimatedTokensFull > tokenSoftLimit || targetModels.length > modelCountSoftLimit) ? 'batch' : 'single';

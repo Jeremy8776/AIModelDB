@@ -154,17 +154,117 @@ export function mergeMCPRecords(existing: MCPServer, incoming: MCPServer): MCPSe
     return merged;
 }
 
-export function mergeMCPServerLists(existing: MCPServer[], incoming: MCPServer[]): MCPServer[] {
-    const validExisting = validateMCPServers(existing);
-    const validIncoming = validateMCPServers(incoming);
-    const base: MCPServer[] = validExisting.map(server => ({ ...server, _meta: sanitizeMeta(server._meta) }));
-    for (const server of validIncoming) {
+/** Smallest index wins: mirrors `findIndex` returning the first match in array order. */
+function setFirst(map: Map<string, number>, key: string | null | undefined, index: number) {
+    if (!key) return;
+    const current = map.get(key);
+    if (current === undefined || index < current) map.set(key, index);
+}
+
+/**
+ * Hash lookups equivalent to `matchMCPIndex` (id, then repo, then package keys),
+ * so merging M servers into N is O(N + M) instead of O(N*M). Repo and package keys
+ * can change when two records merge, so a hit is re-verified against the live
+ * record and, on the rare mismatch, we fall back to the linear scan.
+ */
+class MCPMatchIndex {
+    private byId = new Map<string, number>();
+    private byRepo = new Map<string, number>();
+    private byPackage = new Map<string, number>();
+
+    constructor(servers: MCPServer[]) {
+        servers.forEach((server, index) => this.add(server, index));
+    }
+
+    add(server: MCPServer, index: number) {
+        setFirst(this.byId, server.id?.toLowerCase(), index);
+        setFirst(this.byRepo, normalizeRepoUrl(server.repository?.url), index);
+        mcpPackageKeys(server).forEach(key => setFirst(this.byPackage, key, index));
+    }
+
+    find(base: MCPServer[], incoming: MCPServer): number {
+        if (incoming.id) {
+            const hit = this.byId.get(incoming.id.toLowerCase());
+            if (hit !== undefined) return hit;
+        }
+
+        const incomingRepo = normalizeRepoUrl(incoming.repository?.url);
+        if (incomingRepo) {
+            const hit = this.byRepo.get(incomingRepo);
+            if (hit !== undefined) {
+                if (normalizeRepoUrl(base[hit].repository?.url) === incomingRepo) return hit;
+                return matchMCPIndex(base, incoming);
+            }
+        }
+
+        const incomingKeys = mcpPackageKeys(incoming);
+        let best = -1;
+        for (const key of incomingKeys) {
+            const hit = this.byPackage.get(key);
+            if (hit === undefined) continue;
+            if (!mcpPackageKeys(base[hit]).includes(key)) return matchMCPIndex(base, incoming);
+            if (best === -1 || hit < best) best = hit;
+        }
+        return best;
+    }
+}
+
+function mergeCleanMCP(base: MCPServer[], incoming: MCPServer[]): MCPServer[] {
+    const index = new MCPMatchIndex(base);
+    for (const server of incoming) {
         const cleanServer: MCPServer = { ...server, editedFields: safeEditedFields(server.editedFields, MCP_EDITABLE_FIELDS), _meta: sanitizeMeta(server._meta) };
-        const idx = matchMCPIndex(base, cleanServer);
-        if (idx === -1) base.push(cleanServer);
-        else base[idx] = mergeMCPRecords(base[idx], cleanServer);
+        const idx = index.find(base, cleanServer);
+        if (idx === -1) {
+            base.push(cleanServer);
+            index.add(cleanServer, base.length - 1);
+        } else {
+            base[idx] = mergeMCPRecords(base[idx], cleanServer);
+            index.add(base[idx], idx);
+        }
     }
     return base;
+}
+
+const arrayOr = <T>(value: unknown, fallback: T[] | undefined): T[] | undefined => (Array.isArray(value) ? (value as T[]) : fallback);
+
+/** Re-assert the array fields the UI maps over, which the schema normally guarantees. */
+function cleanStoredMCP(server: MCPServer): MCPServer {
+    return {
+        ...server,
+        tags: arrayOr<string>(server.tags, []) as string[],
+        packages: arrayOr(server.packages, undefined),
+        remotes: arrayOr(server.remotes, undefined),
+        capabilities: arrayOr(server.capabilities, undefined),
+        _meta: sanitizeMeta(server._meta),
+    };
+}
+
+/** Merge two untrusted lists: both sides are schema-validated. Used for imports and tests. */
+export function mergeMCPServerLists(existing: MCPServer[], incoming: MCPServer[]): MCPServer[] {
+    return mergeCleanMCP(validateMCPServers(existing).map(cleanStoredMCP), validateMCPServers(incoming));
+}
+
+/**
+ * Merge freshly fetched servers into a list that already went through this module
+ * (state is always the output of one of these functions), so only the incoming side
+ * is re-validated. Validating thousands of existing records per page was the main
+ * cost of an MCP sync.
+ */
+export function appendMCPServers(trustedExisting: MCPServer[], incoming: MCPServer[]): MCPServer[] {
+    return mergeCleanMCP([...trustedExisting], validateMCPServers(incoming));
+}
+
+/**
+ * Load the persisted list at startup. Each record was schema-validated before it
+ * was saved, so this only applies the structural guards that matter if the blob was
+ * tampered with (shape, `_meta` and `editedFields` sanitising, duplicate ids)
+ * instead of running the full schema over every record on the first render.
+ */
+export function restoreMCPServers(stored: unknown): MCPServer[] {
+    if (!Array.isArray(stored)) return [];
+    const records = stored.filter((item): item is MCPServer =>
+        !!item && typeof item === 'object' && typeof (item as MCPServer).id === 'string' && typeof (item as MCPServer).name === 'string');
+    return mergeCleanMCP([], records.map(cleanStoredMCP));
 }
 
 function skillRepoKey(skill: Skill): string {
@@ -248,15 +348,78 @@ export function mergeSkillRecords(existing: Skill, incoming: Skill): Skill {
     return merged;
 }
 
-export function mergeSkillLists(existing: Skill[], incoming: Skill[]): Skill[] {
-    const validExisting = validateSkills(existing);
-    const validIncoming = validateSkills(incoming);
-    const base: Skill[] = validExisting.map(skill => ({ ...skill, _meta: sanitizeMeta(skill._meta) }));
-    for (const skill of validIncoming) {
+/** Hash lookups equivalent to `matchSkillIndex` (id, then repo); see MCPMatchIndex. */
+class SkillMatchIndex {
+    private byId = new Map<string, number>();
+    private byRepo = new Map<string, number>();
+
+    constructor(skills: Skill[]) {
+        skills.forEach((skill, index) => this.add(skill, index));
+    }
+
+    add(skill: Skill, index: number) {
+        setFirst(this.byId, skill.id?.toLowerCase(), index);
+        setFirst(this.byRepo, skillRepoKey(skill), index);
+    }
+
+    find(base: Skill[], incoming: Skill): number {
+        if (incoming.id) {
+            const hit = this.byId.get(incoming.id.toLowerCase());
+            if (hit !== undefined) return hit;
+        }
+        const incomingRepo = skillRepoKey(incoming);
+        if (incomingRepo) {
+            const hit = this.byRepo.get(incomingRepo);
+            if (hit !== undefined) {
+                if (skillRepoKey(base[hit]) === incomingRepo) return hit;
+                return matchSkillIndex(base, incoming);
+            }
+        }
+        return -1;
+    }
+}
+
+function mergeCleanSkills(base: Skill[], incoming: Skill[]): Skill[] {
+    const index = new SkillMatchIndex(base);
+    for (const skill of incoming) {
         const cleanSkill: Skill = { ...skill, editedFields: safeEditedFields(skill.editedFields, SKILL_EDITABLE_FIELDS), _meta: sanitizeMeta(skill._meta) };
-        const idx = matchSkillIndex(base, cleanSkill);
-        if (idx === -1) base.push(cleanSkill);
-        else base[idx] = mergeSkillRecords(base[idx], cleanSkill);
+        const idx = index.find(base, cleanSkill);
+        if (idx === -1) {
+            base.push(cleanSkill);
+            index.add(cleanSkill, base.length - 1);
+        } else {
+            base[idx] = mergeSkillRecords(base[idx], cleanSkill);
+            index.add(base[idx], idx);
+        }
     }
     return base;
+}
+
+function cleanStoredSkill(skill: Skill): Skill {
+    return {
+        ...skill,
+        tags: arrayOr<string>(skill.tags, []) as string[],
+        triggers: arrayOr(skill.triggers, undefined),
+        capabilities: arrayOr(skill.capabilities, undefined),
+        _meta: sanitizeMeta(skill._meta),
+    };
+}
+
+/** Merge two untrusted lists: both sides are schema-validated. */
+export function mergeSkillLists(existing: Skill[], incoming: Skill[]): Skill[] {
+    return mergeCleanSkills(validateSkills(existing).map(cleanStoredSkill), validateSkills(incoming));
+}
+
+/** Merge fetched skills into state that already went through this module (see appendMCPServers). */
+export function appendSkills(trustedExisting: Skill[], incoming: Skill[]): Skill[] {
+    return mergeCleanSkills([...trustedExisting], validateSkills(incoming));
+}
+
+/** Load the persisted list at startup with structural guards only (see restoreMCPServers). */
+export function restoreSkills(stored: unknown): Skill[] {
+    if (!Array.isArray(stored)) return [];
+    const records = stored.filter((item): item is Skill =>
+        !!item && typeof item === 'object' && typeof (item as Skill).id === 'string' && typeof (item as Skill).name === 'string'
+        && typeof (item as Skill).type === 'string' && typeof (item as Skill).origin === 'string');
+    return mergeCleanSkills([], records.map(cleanStoredSkill));
 }

@@ -218,6 +218,8 @@ export interface FetchOptions {
     onPage?: (servers: MCPServer[], pageIndex: number) => void;
     /** Optional abort signal for cancellation mid-pagination. */
     abortSignal?: AbortSignal;
+    /** ISO date: only servers updated since then (the registry's `updated_since` filter). */
+    updatedSince?: string;
 }
 
 /**
@@ -242,6 +244,7 @@ export async function fetchOfficialMCPRegistry(
 
         const params = new URLSearchParams({ limit: String(pageSize) });
         if (cursor) params.set('cursor', cursor);
+        if (options.updatedSince) params.set('updated_since', options.updatedSince);
         const url = `${REGISTRY_BASE}/v0/servers?${params.toString()}`;
 
         const data: RegistryResponse = await fetchJson(url);

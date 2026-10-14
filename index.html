@@ -23,7 +23,7 @@
 
   <!-- Content Security Policy -->
   <meta http-equiv="Content-Security-Policy"
-    content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; connect-src 'self' http://localhost:* ws://localhost:* https://huggingface.co https://api.github.com https://github.com https://raw.githubusercontent.com https://artificialanalysis.ai https://api.openai.com https://civitai.com https://civitasbay.org https://registry.modelcontextprotocol.io https://registry.npmjs.org https://pypi.org https://ollama.com https://www.googleapis.com; img-src 'self' data: https: blob:; media-src 'self' data: https: blob:; worker-src 'self' blob:;" />
+    content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; connect-src 'self' http://localhost:* http://127.0.0.1:11434 ws://localhost:* https://huggingface.co https://api.github.com https://github.com https://raw.githubusercontent.com https://artificialanalysis.ai https://api.openai.com https://civitai.com https://civitasbay.org https://registry.modelcontextprotocol.io https://registry.npmjs.org https://pypi.org https://ollama.com https://www.googleapis.com https://api.anthropic.com https://api.mistral.ai https://api.groq.com https://api.x.ai https://api.cerebras.ai https://api.perplexity.ai https://api.together.xyz https://api.fireworks.ai https://api.deepinfra.com https://api.deepseek.com https://api.cohere.com https://generativelanguage.googleapis.com https://openrouter.ai https://glama.ai https://openmodeldb.info; img-src 'self' data: https: blob:; media-src 'self' data: https: blob:; worker-src 'self' blob:;" />
 
   <!-- Open Graph / Facebook -->
   <meta property="og:type" content="website" />
@@ -58,7 +58,6 @@
     "description": "The ultimate desktop app for tracking, managing, and validating AI models from multiple sources including Hugging Face, Civitai, OpenModelDB, and more.",
     "url": "https://github.com/Jeremy8776/AIModelDB",
     "downloadUrl": "https://github.com/Jeremy8776/AIModelDB/releases",
-    "softwareVersion": "0.4.4",
     "author": {
       "@type": "Person",
       "name": "Jeremy8776"
@@ -77,14 +76,16 @@
       "Secure API key storage",
       "Dark mode UI"
     ],
-    "screenshot": "https://raw.githubusercontent.com/Jeremy8776/AIModelDB/main/docs/screenshots/main-view.png",
-    "aggregateRating": {
-      "@type": "AggregateRating",
-      "ratingValue": "5",
-      "ratingCount": "1"
-    }
+    "screenshot": "https://raw.githubusercontent.com/Jeremy8776/AIModelDB/main/docs/screenshots/main-view.png"
   }
   </script>
+
+  <style>
+    html, body { background: #0a0a0b; margin: 0; }
+    #root > .boot { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; }
+    #root > .boot i { width: 10px; height: 10px; border-radius: 50%; background: #8b5cf6; animation: boot-pulse 1s ease-in-out infinite alternate; }
+    @keyframes boot-pulse { from { opacity: .25; transform: scale(.8); } to { opacity: 1; transform: scale(1.1); } }
+  </style>
 
   <!-- Favicon -->
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -96,9 +97,8 @@
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link
-    href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=VT323&family=Inter:wght@400;500;600;700&display=swap"
-    rel="stylesheet">
+  <!-- Fonts load after first paint (see public/font-loader.js) so a slow network cannot block rendering -->
+  <script src="./font-loader.js" defer></script>
 </head>
 
 <body>
@@ -112,7 +112,7 @@
       </filter>
     </defs>
   </svg>
-  <div id="root"></div>
+  <div id="root"><div class="boot"><i></i></div></div>
   <script type="module" src="/src/main.tsx"></script>
 </body>
 

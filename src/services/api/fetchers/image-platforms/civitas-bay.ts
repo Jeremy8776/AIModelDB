@@ -3,6 +3,7 @@ import { proxyUrl } from '../../config';
 import { isModelComplete } from '../../filtering';
 import { normalizeDate, normalizeLicenseName, determineType, determineCommercialUse } from '../../utils';
 import { fetchWrapper } from '../../../../utils/fetch-wrapper';
+import { commitSourceSync, planSourceSync } from '../../../sync/syncCursor';
 
 // Note: NSFW filtering is now handled by the global sync service based on user settings
 // Individual fetchers return all models, and filtering happens in syncService.ts if enabled
@@ -17,20 +18,30 @@ import { fetchWrapper } from '../../../../utils/fetch-wrapper';
  * @param apiConfig - Optional API configuration for filtering
  * @param onLog - Optional callback to receive progress updates for UI display
  * @param onConfirmLLMCheck - Optional callback to confirm large LLM checks
+ * @param sync - `fullRefresh` ignores the saved cursor. Otherwise only items published since the
+ *               last successful pull are fetched: the feed is newest first, so the crawl stops
+ *               at the first page where everything is older than the cutoff.
  * @returns Object containing complete and flagged models
  */
 export async function fetchCivitasBay(
     apiConfig?: ApiDir,
     onLog?: (message: string) => void,
-    onConfirmLLMCheck?: (modelCount: number, estimatedTimeMs: number) => Promise<boolean>
+    onConfirmLLMCheck?: (modelCount: number, estimatedTimeMs: number) => Promise<boolean>,
+    sync: { fullRefresh?: boolean } = {}
 ): Promise<{ complete: Model[], flagged: Model[] }> {
     const log = (msg: string) => {
         console.log(msg);
         if (onLog) onLog(msg);
     };
 
+    const startedAt = Date.now();
+    const plan = planSourceSync('civitasbay', { fullRefresh: sync.fullRefresh });
+    // A page that failed looks like an empty page (end of feed), so track failures separately:
+    // the cursor must not advance past data we never saw.
+    let hadFailure = false;
+
     try {
-        log('[CivitasBay] Fetching models from RSS feed...');
+        log(`[CivitasBay] Fetching models from RSS feed (${plan.mode}: ${plan.reason})...`);
 
         const models: Model[] = [];
         const seenIds = new Set<string>();
@@ -61,12 +72,16 @@ export async function fetchCivitasBay(
 
                             if (!result.success) {
                                 console.error(`[CivitasBay] Proxy error on page ${p}: ${result.error}`);
+                                hadFailure = true;
                                 return { page: p, items: [] };
                             }
                             xmlText = typeof result.data === 'string' ? result.data : JSON.stringify(result.data);
                         } else {
                             const response = await fetchWrapper(url);
-                            if (!response.ok) return { page: p, items: [] };
+                            if (!response.ok) {
+                                hadFailure = true;
+                                return { page: p, items: [] };
+                            }
                             xmlText = await response.text();
                         }
 
@@ -77,6 +92,7 @@ export async function fetchCivitasBay(
                         return { page: p, items: Array.from(xmlItems) };
                     } catch (e) {
                         console.error(`[CivitasBay] Error on page ${p}:`, e);
+                        hadFailure = true;
                         return { page: p, items: [] };
                     }
                 })(page + i));
@@ -90,6 +106,13 @@ export async function fetchCivitasBay(
                     keepFetching = false;
                     log(`[CivitasBay] Reached end at page ${result.page}`);
                     // Don't break immediately, process earlier pages in batch, but stop future batches
+                } else if (plan.cutoffMs !== null && result.items.every(item => {
+                    const published = Date.parse(item.querySelector('pubDate')?.textContent || '');
+                    return Number.isFinite(published) && published < plan.cutoffMs!;
+                })) {
+                    // Newest first: everything from here on was already seen in an earlier sync.
+                    keepFetching = false;
+                    log(`[CivitasBay] Caught up at page ${result.page} (nothing newer than ${plan.cutoffIso})`);
                 } else {
                     log(`[CivitasBay] Found ${result.items.length} items on page ${result.page}`);
 
@@ -231,6 +254,7 @@ export async function fetchCivitasBay(
         }
 
         log(`[CivitasBay] Processed ${models.length} total models from RSS feed`);
+        if (!hadFailure) commitSourceSync('civitasbay', plan, startedAt);
 
         // Skip internal corporate filtering - let the global sync service handle it once at the end
         // This prevents double LLM checks and popups

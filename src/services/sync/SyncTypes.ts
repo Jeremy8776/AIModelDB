@@ -25,6 +25,8 @@ export interface SyncOptions {
     preferredModelProvider?: string | null;
     systemPrompt?: string;
     ignoredModels?: string[];
+    /** Ignore saved sync cursors and pull everything (the "incremental sync" setting turned off). */
+    fullRefresh?: boolean;
 }
 
 /**

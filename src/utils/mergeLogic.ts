@@ -247,17 +247,104 @@ export const mergeRecords = (existing: Model, incoming: Model): Model => {
     return merged;
 };
 
+/**
+ * Lookup tables that make `matchExistingIndex` O(1) per incoming record.
+ *
+ * `matchExistingIndex` scans the whole array up to four times per record, and its
+ * fuzzy name pass re-normalises every existing name each time, so merging M records
+ * into N costs O(N*M). With tens of thousands of models that froze the UI for
+ * seconds per sync. This index returns exactly what `matchExistingIndex` would
+ * (first match in array order, same predicates) from hash lookups:
+ *
+ *  - id / repo / url: first index holding that value
+ *  - name: ascending indices per normalised name, filtered by the same
+ *    domain/provider rules as the linear scan
+ *
+ * Invariants: indices are only ever appended or filled in (mergeRecords never
+ * clears a url/repo and never changes id, name or provider), so maps stay valid
+ * as the batch mutates `base`. Call `add` for every pushed record and `refresh`
+ * after replacing one with its merge result.
+ */
+class ModelMatchIndex {
+    private byId = new Map<string, number>();
+    private byRepo = new Map<string, number>();
+    private byUrl = new Map<string, number>();
+    private byName = new Map<string, number[]>();
+    private nameOf: string[] = [];
+
+    constructor(models: Model[]) {
+        models.forEach((model, index) => this.add(model, index));
+    }
+
+    private static setFirst(map: Map<string, number>, key: string | null | undefined, index: number) {
+        if (!key) return;
+        const current = map.get(key);
+        if (current === undefined || index < current) map.set(key, index);
+    }
+
+    add(model: Model, index: number) {
+        ModelMatchIndex.setFirst(this.byId, model.id, index);
+        ModelMatchIndex.setFirst(this.byRepo, model.repo, index);
+        ModelMatchIndex.setFirst(this.byUrl, model.url, index);
+        const base = normalizeNameForMatch(model.name);
+        this.nameOf[index] = base;
+        const bucket = this.byName.get(base);
+        if (bucket) bucket.push(index);
+        else this.byName.set(base, [index]);
+    }
+
+    /** Re-register url/repo that a merge may have filled in (name and id never change). */
+    refresh(model: Model, index: number) {
+        ModelMatchIndex.setFirst(this.byRepo, model.repo, index);
+        ModelMatchIndex.setFirst(this.byUrl, model.url, index);
+    }
+
+    find(arr: Model[], inc: Model, autoMergeDuplicates: boolean): number {
+        if (inc.id) {
+            const hit = this.byId.get(inc.id);
+            if (hit !== undefined) return hit;
+        }
+        if (inc.repo) {
+            const hit = this.byRepo.get(inc.repo);
+            if (hit !== undefined) return hit;
+        }
+        if (inc.url) {
+            const hit = this.byUrl.get(inc.url);
+            if (hit !== undefined) return hit;
+        }
+        if (!autoMergeDuplicates) return -1;
+
+        const incBase = normalizeNameForMatch(inc.name);
+        if (!incBase || incBase.length < 3) return -1;
+        const bucket = this.byName.get(incBase);
+        if (!bucket) return -1;
+
+        const incProv = (inc.provider || '').toString().toLowerCase();
+        for (const idx of bucket) {
+            const e = arr[idx];
+            const sameDomain = !inc.domain || !e.domain ? true : inc.domain === e.domain;
+            if (!sameDomain) continue;
+            const exProv = (e.provider || '').toString().toLowerCase();
+            const provOk = incProv === exProv || !incProv || !exProv || incProv.includes(exProv) || exProv.includes(incProv);
+            if (provOk) return idx;
+            if (incBase.length > 8) return idx;
+        }
+        return -1;
+    }
+}
+
 export const performMergeBatch = (currentModels: Model[], newModels: Model[], autoMergeDuplicates: boolean) => {
     const base = [...currentModels];
+    const index = new ModelMatchIndex(base);
     let added = 0;
     let updated = 0;
     let duplicates = 0;
 
     // Apply future-date tags ('unreleased', 'future-release') based on release_date
+    const now = new Date();
     const applyFutureDateTags = (model: Model): Model => {
         if (model.release_date) {
             const releaseDate = new Date(model.release_date);
-            const now = new Date();
             if (releaseDate > now) {
                 const tags = [...(model.tags || [])];
                 if (!tags.includes('unreleased')) tags.push('unreleased');
@@ -269,14 +356,17 @@ export const performMergeBatch = (currentModels: Model[], newModels: Model[], au
     };
 
     newModels.forEach(inc => {
-        const idx = matchExistingIndex(base, inc, autoMergeDuplicates);
+        const idx = index.find(base, inc, autoMergeDuplicates);
         if (idx === -1) {
-            base.push(applyFutureDateTags(inc));
+            const tagged = applyFutureDateTags(inc);
+            base.push(tagged);
+            index.add(tagged, base.length - 1);
             added++;
         } else {
-            // Match found — merge and count as updated. The match itself proves
+            // Match found: merge and count as updated. The match itself proves
             // the incoming record was a duplicate that needed reconciling.
             base[idx] = mergeRecords(base[idx], inc);
+            index.refresh(base[idx], idx);
             updated++;
             duplicates++;
         }

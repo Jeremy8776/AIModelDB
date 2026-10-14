@@ -1,4 +1,5 @@
 // Type declarations for Electron API exposed via preload script
+import { isHttpUrl } from './external-links';
 
 export interface UpdateStatus {
     status: 'checking-for-update' | 'update-available' | 'update-not-available' | 'download-progress' | 'update-downloaded' | 'update-error';
@@ -41,8 +42,8 @@ export function isElectron(): boolean {
  */
 export function openExternalUrl(url: string): void {
     if (isElectron() && window.electronAPI?.openExternal) {
-        window.electronAPI.openExternal(url);
-    } else {
+        window.electronAPI.openExternal(url); // main validates the scheme
+    } else if (isHttpUrl(url)) {
         window.open(url, '_blank', 'noopener,noreferrer');
     }
 }
@@ -54,7 +55,7 @@ export async function getAppVersion(): Promise<string> {
     if (isElectron() && window.electronAPI?.getAppVersion) {
         return window.electronAPI.getAppVersion();
     }
-    return '0.2.1'; // Fallback for web
+    return __APP_VERSION__; // Fallback for web (injected from package.json at build time)
 }
 
 /**

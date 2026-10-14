@@ -9,6 +9,9 @@ import { useEffect, useRef } from 'react';
 import { Model } from '../types';
 import { detectNSFW } from '../utils/nsfw';
 
+/** Longest stretch of scanning before yielding to the UI. */
+const NSFW_SLICE_MS = 8;
+
 interface UseNSFWScanOptions {
     /** Current models in the database */
     models: Model[];
@@ -36,41 +39,57 @@ export function useNSFWScan({
 }: UseNSFWScanOptions) {
     const hasRunNSFWScan = useRef(false);
 
+    const unmounted = useRef(false);
+    useEffect(() => {
+        unmounted.current = false;
+        return () => { unmounted.current = true; };
+    }, []);
+
     useEffect(() => {
         // Only run once after initial load
         if (hasRunNSFWScan.current || models.length === 0 || isLoading) return;
         hasRunNSFWScan.current = true;
 
-        // Re-evaluate ALL models to catch new ones and fix false positives
-        const modelsToFlag: Model[] = [];
-        const modelsToUnflag: Model[] = [];
+        // Re-evaluate ALL models to catch new ones and fix false positives. The scan is cut into
+        // short slices so the first screen stays responsive; it used to run as one long task.
+        // (It is deliberately not cancelled when `models` changes: the result is applied by id.)
+        const snapshot = models;
+        const keywords = customNSFWKeywords || [];
 
-        for (const model of models) {
-            // Run NSFW detection
-            const nsfwCheck = detectNSFW(model, customNSFWKeywords || []);
+        const scan = async () => {
+            const modelsToFlag: Model[] = [];
+            const modelsToUnflag: Model[] = [];
+            let sliceStart = performance.now();
 
-            if (nsfwCheck.isNSFW) {
-                // Should be flagged - check if it already is
-                if (!model.isNSFWFlagged && !model.tags?.includes('nsfw')) {
-                    modelsToFlag.push({
-                        ...model,
-                        isNSFWFlagged: true,
-                        tags: [...new Set([...(model.tags || []), 'nsfw'])]
-                    });
-                }
-            } else {
-                // Should NOT be flagged - unflag if it was a false positive
-                if (model.isNSFWFlagged || model.tags?.includes('nsfw')) {
+            for (const model of snapshot) {
+                const nsfwCheck = detectNSFW(model, keywords);
+
+                if (nsfwCheck.isNSFW) {
+                    // Should be flagged - check if it already is
+                    if (!model.isNSFWFlagged && !model.tags?.includes('nsfw')) {
+                        modelsToFlag.push({
+                            ...model,
+                            isNSFWFlagged: true,
+                            tags: [...new Set([...(model.tags || []), 'nsfw'])]
+                        });
+                    }
+                } else if (model.isNSFWFlagged || model.tags?.includes('nsfw')) {
+                    // Should NOT be flagged - unflag if it was a false positive
                     modelsToUnflag.push({
                         ...model,
                         isNSFWFlagged: false,
                         tags: (model.tags || []).filter(t => t !== 'nsfw')
                     });
                 }
-            }
-        }
 
-        if (modelsToFlag.length > 0 || modelsToUnflag.length > 0) {
+                if (performance.now() - sliceStart > NSFW_SLICE_MS) {
+                    await new Promise<void>(resolve => setTimeout(resolve, 0));
+                    if (unmounted.current) return;
+                    sliceStart = performance.now();
+                }
+            }
+
+            if (modelsToFlag.length === 0 && modelsToUnflag.length === 0) return;
             if (modelsToFlag.length > 0) {
                 addConsoleLog(`[NSFW Scan] Tagged ${modelsToFlag.length} models as NSFW`);
             }
@@ -78,33 +97,20 @@ export function useNSFWScan({
                 addConsoleLog(`[NSFW Scan] Untagged ${modelsToUnflag.length} false positives`);
             }
 
-            setModels(prev => {
-                const flaggedIds = new Set(modelsToFlag.map(m => m.id));
-                const unflaggedIds = new Set(modelsToUnflag.map(m => m.id));
+            // Index by id once; looking each model up with find() was O(flagged x models).
+            const flaggedById = new Map(modelsToFlag.map(m => [m.id, m] as const));
+            const unflaggedById = new Map(modelsToUnflag.map(m => [m.id, m] as const));
 
-                return prev.map(m => {
-                    if (flaggedIds.has(m.id)) {
-                        const flaggedModel = modelsToFlag.find(u => u.id === m.id)!;
-                        // Preserve existing user flags while updating with flagged model data
-                        return {
-                            ...flaggedModel,
-                            isFavorite: m.isFavorite,
-                            flaggedImageUrls: m.flaggedImageUrls
-                        };
-                    }
-                    if (unflaggedIds.has(m.id)) {
-                        const unflaggedModel = modelsToUnflag.find(u => u.id === m.id)!;
-                        // Preserve existing user flags while updating with unflagged model data
-                        return {
-                            ...unflaggedModel,
-                            isFavorite: m.isFavorite,
-                            flaggedImageUrls: m.flaggedImageUrls
-                        };
-                    }
-                    return m;
-                });
-            });
-        }
+            setModels(prev => prev.map(m => {
+                // Preserve existing user flags while updating with the re-evaluated model data
+                const updated = flaggedById.get(m.id) ?? unflaggedById.get(m.id);
+                return updated
+                    ? { ...updated, isFavorite: m.isFavorite, flaggedImageUrls: m.flaggedImageUrls }
+                    : m;
+            }));
+        };
+
+        void scan();
     }, [models, models.length, isLoading, customNSFWKeywords, setModels, addConsoleLog]);
 
     /**

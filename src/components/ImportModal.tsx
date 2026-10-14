@@ -4,7 +4,7 @@ import { Model } from "../types";
 import { parseCSV, safeJsonFromText, parseTSV } from "../utils/format";
 import { X, Upload, AlertTriangle, Download, FileText, Globe, Clipboard } from "lucide-react";
 import ThemeContext from "../context/ThemeContext";
-import * as XLSX from "xlsx";
+import type { WorkBook } from "xlsx";
 import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
 
 interface ImportModalProps {
@@ -12,6 +12,20 @@ interface ImportModalProps {
   onClose: () => void;
   onImport: (models: Model[]) => void;
   addConsoleLog: (msg: string) => void;
+}
+
+/** xlsx is large, so it is only loaded when a spreadsheet is actually imported. */
+async function readWorkbookRows(data: ArrayBuffer): Promise<any[]> {
+  const XLSX = await import("xlsx");
+  const wb: WorkBook = XLSX.read(data, { type: 'array' });
+  const all: any[] = [];
+  wb.SheetNames.forEach((sheetName) => {
+    const ws = wb.Sheets[sheetName];
+    if (!ws) return;
+    const rows = XLSX.utils.sheet_to_json(ws, { defval: "" }) as any[];
+    rows.forEach(r => all.push({ ...r, __sheetName: sheetName }));
+  });
+  return all;
 }
 
 export function ImportModal({ isOpen, onClose, onImport, addConsoleLog }: ImportModalProps) {
@@ -30,17 +44,6 @@ export function ImportModal({ isOpen, onClose, onImport, addConsoleLog }: Import
 
   if (!isOpen) return null;
 
-  const parseWorkbookToRows = (wb: XLSX.WorkBook) => {
-    const all: any[] = [];
-    wb.SheetNames.forEach((sheetName) => {
-      const ws = wb.Sheets[sheetName];
-      if (!ws) return;
-      const rows = XLSX.utils.sheet_to_json(ws, { defval: "" }) as any[];
-      rows.forEach(r => all.push({ ...r, __sheetName: sheetName }));
-    });
-    return all;
-  };
-
   // Handle file upload
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -50,14 +53,13 @@ export function ImportModal({ isOpen, onClose, onImport, addConsoleLog }: Import
       const f = e.target.files[0];
       const isBinary = /\.(xlsx|ods)$/i.test(f.name);
       const reader = new FileReader();
-      reader.onload = (evt) => {
+      reader.onload = async (evt) => {
         try {
           if (!evt.target) return;
           let data: any[] = [];
           if (isBinary) {
             const buf = evt.target.result as ArrayBuffer;
-            const wb = XLSX.read(buf, { type: 'array' });
-            data = parseWorkbookToRows(wb);
+            data = await readWorkbookRows(buf);
           } else if (typeof evt.target.result === 'string') {
             const text = evt.target.result as string;
             if (f.name.endsWith('.csv')) {
@@ -145,8 +147,7 @@ export function ImportModal({ isOpen, onClose, onImport, addConsoleLog }: Import
       }
 
       if (isXlsx) {
-        const wb = XLSX.read(arrayBuffer!, { type: 'array' });
-        const rows = parseWorkbookToRows(wb);
+        const rows = await readWorkbookRows(arrayBuffer!);
         setPreview(rows);
         return;
       }

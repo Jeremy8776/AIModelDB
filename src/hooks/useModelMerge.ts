@@ -1,10 +1,18 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { Model } from '../types';
 import { useSettings } from '../context/SettingsContext';
-import { mapDomain, cleanModelDescription } from '../utils/format';
 import { toNormalizedModel } from '../utils/importNormalization';
 import { performMergeBatch } from '../utils/mergeLogic';
 
+/**
+ * Merges synced or imported models into the database.
+ *
+ * The merge runs on the main thread. `performMergeBatch` is index based (tens of
+ * milliseconds for thousands of records), so a web worker no longer pays for
+ * itself: structured-cloning the whole list to the worker and back cost more than
+ * the merge, and the result then had to be merged a second time on the main thread
+ * to reconcile concurrent edits.
+ */
 export function useModelMerge(
     models: Model[],
     setModels: React.Dispatch<React.SetStateAction<Model[]>>,
@@ -12,121 +20,42 @@ export function useModelMerge(
 ) {
     const { settings } = useSettings();
     const [lastMergeStats, setLastMergeStats] = useState<{ added: number; updated: number; duplicates?: number } | null>(null);
-    const workerRef = useRef<Worker | null>(null);
-    const requestIdRef = useRef(0);
-    const pendingMergeRef = useRef(new Map<number, { baseIds: Set<string>; autoMergeDuplicates: boolean }>());
-
-    // Use ref to track the save callback so we don't recreate the worker when it changes
-    const saveCallbackRef = useRef(onSaveModelsNow);
-    useEffect(() => {
-        saveCallbackRef.current = onSaveModelsNow;
-    }, [onSaveModelsNow]);
-
-    // Use ref to track setModels to avoid recreating worker
-    const setModelsRef = useRef(setModels);
-    useEffect(() => {
-        setModelsRef.current = setModels;
-    }, [setModels]);
-
-    useEffect(() => {
-        try {
-            // Initialize the worker ONCE - don't depend on callbacks that change frequently
-            workerRef.current = new Worker(new URL('../workers/modelProcessor.worker.ts', import.meta.url), { type: 'module' });
-
-            // Set up listener for worker responses
-            workerRef.current.onmessage = (event) => {
-                const { type, payload, error } = event.data;
-                if (type === 'MERGE_COMPLETE') {
-                    const { models: workerModels, added, updated, duplicates, requestId } = payload;
-                    const pending = pendingMergeRef.current.get(requestId);
-                    pendingMergeRef.current.delete(requestId);
-
-                    setModelsRef.current(latestModels => {
-                        const deletedSinceStart = new Set(
-                            [...(pending?.baseIds || [])].filter(id => !latestModels.some(model => model.id === id))
-                        );
-                        const candidates = workerModels.filter((model: Model) => !deletedSinceStart.has(model.id));
-                        const reconciled = performMergeBatch(
-                            latestModels,
-                            candidates,
-                            pending?.autoMergeDuplicates ?? false
-                        ).models;
-                        if (saveCallbackRef.current) {
-                            saveCallbackRef.current(reconciled);
-                        }
-                        return reconciled;
-                    });
-                    setLastMergeStats({ added, updated, duplicates });
-                } else if (type === 'ERROR') {
-                    console.error('Worker error:', error);
-                }
-            };
-
-            return () => {
-                workerRef.current?.terminate();
-                workerRef.current = null;
-            };
-        } catch (error) {
-            console.error("Failed to initialize model processor worker:", error);
-        }
-    }, []); // Empty deps - worker is created once and uses refs for callbacks
 
     const modelsRef = useRef(models);
     useEffect(() => {
         modelsRef.current = models;
     }, [models]);
 
-    const postWorkerMerge = useCallback((incomingList: Model[]) => {
-        if (!incomingList || incomingList.length === 0) return;
-        const currentModels = modelsRef.current;
-        const autoMergeDuplicates = settings.autoMergeDuplicates ?? false;
+    // Ref keeps mergeList stable when the save callback changes identity.
+    const saveCallbackRef = useRef(onSaveModelsNow);
+    useEffect(() => {
+        saveCallbackRef.current = onSaveModelsNow;
+    }, [onSaveModelsNow]);
 
-        if (workerRef.current) {
-            const requestId = ++requestIdRef.current;
-            pendingMergeRef.current.set(requestId, {
-                baseIds: new Set(currentModels.map(model => model.id)),
-                autoMergeDuplicates
-            });
-            workerRef.current.postMessage({
-                type: 'MERGE_MODELS',
-                payload: {
-                    requestId,
-                    currentModels,
-                    newModels: incomingList,
-                    autoMergeDuplicates
-                }
-            });
-        } else {
-            console.warn('Worker not ready, falling back to main thread');
-            try {
-                setModels(prev => {
-                    const result = performMergeBatch(prev, incomingList, autoMergeDuplicates);
-                    if (saveCallbackRef.current) saveCallbackRef.current(result.models);
-                    setLastMergeStats({
-                        added: result.added,
-                        updated: result.updated,
-                        duplicates: result.duplicates
-                    });
-                    return result.models;
-                });
-            } catch (err) {
-                console.error("Main thread merge failed:", err);
-            }
+    const autoMergeDuplicates = settings.autoMergeDuplicates ?? false;
+
+    const mergeList = useCallback((incomingList: Model[]) => {
+        if (!incomingList || incomingList.length === 0) return;
+        try {
+            const base = modelsRef.current;
+            const result = performMergeBatch(base, incomingList, autoMergeDuplicates);
+            // Usually nothing else touched the list, so the merge result is final. If a queued
+            // update changed it meanwhile, redo the merge against the latest list instead.
+            setModels(prev => (prev === base ? result.models : performMergeBatch(prev, incomingList, autoMergeDuplicates).models));
+            setLastMergeStats({ added: result.added, updated: result.updated, duplicates: result.duplicates });
+            if (saveCallbackRef.current) void saveCallbackRef.current(result.models);
+        } catch (err) {
+            console.error('Model merge failed:', err);
         }
-    }, [settings.autoMergeDuplicates, setModels]);
+    }, [autoMergeDuplicates, setModels]);
 
     const mergeInModels = useCallback((incomingList: Model[]) => {
-        postWorkerMerge(incomingList);
-    }, [postWorkerMerge]);
+        mergeList(incomingList);
+    }, [mergeList]);
 
     const importModels = useCallback((newModels: Model[]) => {
-        const normalized: Model[] = (newModels || []).map((m: any, idx: number) => toNormalizedModel(m, idx));
-
-        // Turn this off for large imports if using main thread to prevent freeze? 
-        // For now we assume safety.
-
-        postWorkerMerge(normalized);
-    }, [postWorkerMerge]);
+        mergeList((newModels || []).map((m: any, idx: number) => toNormalizedModel(m, idx)));
+    }, [mergeList]);
 
     return {
         importModels,

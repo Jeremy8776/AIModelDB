@@ -7,6 +7,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getAppVersion: () => ipcRenderer.invoke('get-app-version'),
     getPlatform: () => ipcRenderer.invoke('get-platform'),
 
+    // Tell the main process React has mounted, so it can reveal the window
+    signalReady: () => ipcRenderer.send('renderer-ready'),
+
     // Open external URLs in default browser
     openExternal: (url) => ipcRenderer.send('open-external', url),
 

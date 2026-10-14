@@ -4,6 +4,7 @@ import { DEFAULT_API_DIR } from '../services/api';
 import { CurrencyCode } from '../utils/currency';
 import { LanguageCode } from '../i18n';
 import { DEFAULT_MCP_SOURCES, DEFAULT_MODEL_SOURCES, DEFAULT_SKILL_SOURCES } from '../services/sources/entitySources';
+import { protectSecret, revealSecret } from '../utils/secretStorage';
 
 export interface Settings {
   apiConfig: ApiDir;
@@ -54,6 +55,8 @@ export interface Settings {
   // External API keys (user-provided)
   artificialAnalysisApiKey: string;
   gitHubToken: string;  // Optional: For higher GitHub API rate limits
+  glamaApiKey: string;  // Required for the Glama MCP source (glama.ai/settings/api-keys)
+  incrementalSync: boolean;  // Only fetch what changed since each source's last successful sync (full refresh every 14 days)
   // UI preferences
   language: LanguageCode;
   theme: 'auto' | 'light' | 'dark';
@@ -132,6 +135,8 @@ const defaultSettings: Settings = {
   // External API keys (user-provided)
   artificialAnalysisApiKey: "",
   gitHubToken: "",  // Optional: For higher GitHub API rate limits
+  glamaApiKey: "",
+  incrementalSync: true,
   // UI preferences
   language: 'en',
   theme: 'auto',
@@ -175,6 +180,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [settings, setSettings] = useState<Settings>(defaultSettings);
   const settingsRef = useRef(defaultSettings);
   const saveVersionRef = useRef(0);
+  const loadPromiseRef = useRef<Promise<void>>(Promise.resolve());
 
   // Load settings from localStorage on initial mount
   useEffect(() => {
@@ -221,34 +227,34 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
           if (decryptedSettings.apiConfig) {
             const apiConfig = { ...decryptedSettings.apiConfig };
             for (const [key, config] of Object.entries(apiConfig) as [keyof ApiDir, any][]) {
-              if (config.apiKey && window.electronAPI?.decryptString) {
-                const decryptedKey = await window.electronAPI.decryptString(config.apiKey);
-                apiConfig[key] = {
-                  ...config,
-                  apiKey: decryptedKey || ""
-                };
+              if (config.apiKey) {
+                apiConfig[key] = { ...config, apiKey: await revealSecret(config.apiKey) };
               }
             }
             decryptedSettings.apiConfig = apiConfig;
           }
 
           // Decrypt standalone keys
-          if (decryptedSettings.artificialAnalysisApiKey && window.electronAPI?.decryptString) {
-            decryptedSettings.artificialAnalysisApiKey = await window.electronAPI.decryptString(decryptedSettings.artificialAnalysisApiKey) || "";
+          if (decryptedSettings.artificialAnalysisApiKey) {
+            decryptedSettings.artificialAnalysisApiKey = await revealSecret(decryptedSettings.artificialAnalysisApiKey);
           }
-          if (decryptedSettings.gitHubToken && window.electronAPI?.decryptString) {
-            decryptedSettings.gitHubToken = await window.electronAPI.decryptString(decryptedSettings.gitHubToken) || "";
+          if (decryptedSettings.gitHubToken) {
+            decryptedSettings.gitHubToken = await revealSecret(decryptedSettings.gitHubToken);
+          }
+          if (decryptedSettings.glamaApiKey) {
+            decryptedSettings.glamaApiKey = await revealSecret(decryptedSettings.glamaApiKey);
           }
 
           settingsRef.current = decryptedSettings;
-          setSettings(decryptedSettings);
+          // New object: the early setSettings above used the same reference, which React would ignore.
+          setSettings({ ...decryptedSettings });
         }
       } catch (error) {
         console.error('Error loading settings from localStorage:', error);
       }
     };
 
-    loadSettings();
+    loadPromiseRef.current = loadSettings();
   }, []);
 
   // Sync i18n language when language setting changes
@@ -266,6 +272,9 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
   // Save settings to localStorage whenever they change
   const saveSettings = async (newSettings: Partial<Settings>) => {
     try {
+      // A save during startup would otherwise encrypt still-encrypted keys, or overwrite them with defaults.
+      await loadPromiseRef.current;
+
       // 1. Update state immediately for UI responsiveness
       const nextSettings = mergeSettings(settingsRef.current, newSettings);
       settingsRef.current = nextSettings;
@@ -279,23 +288,22 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
       if (storageSettings.apiConfig) {
         const apiConfig = { ...storageSettings.apiConfig };
         for (const [key, config] of Object.entries(apiConfig) as [keyof ApiDir, any][]) {
-          if (config.apiKey && window.electronAPI?.encryptString) {
-            const encryptedKey = await window.electronAPI.encryptString(config.apiKey);
-            apiConfig[key] = {
-              ...config,
-              apiKey: encryptedKey || ""
-            };
+          if (config.apiKey) {
+            apiConfig[key] = { ...config, apiKey: await protectSecret(config.apiKey) };
           }
         }
         storageSettings.apiConfig = apiConfig;
       }
 
       // Encrypt standalone keys
-      if (storageSettings.artificialAnalysisApiKey && window.electronAPI?.encryptString) {
-        storageSettings.artificialAnalysisApiKey = await window.electronAPI.encryptString(storageSettings.artificialAnalysisApiKey) || "";
+      if (storageSettings.artificialAnalysisApiKey) {
+        storageSettings.artificialAnalysisApiKey = await protectSecret(storageSettings.artificialAnalysisApiKey);
       }
-      if (storageSettings.gitHubToken && window.electronAPI?.encryptString) {
-        storageSettings.gitHubToken = await window.electronAPI.encryptString(storageSettings.gitHubToken) || "";
+      if (storageSettings.gitHubToken) {
+        storageSettings.gitHubToken = await protectSecret(storageSettings.gitHubToken);
+      }
+      if (storageSettings.glamaApiKey) {
+        storageSettings.glamaApiKey = await protectSecret(storageSettings.glamaApiKey);
       }
 
       if (saveVersion === saveVersionRef.current) {

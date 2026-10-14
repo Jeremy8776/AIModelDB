@@ -1,8 +1,10 @@
 /**
  * Glama MCP fetcher (glama.ai).
  *
- * Glama runs one of the largest community MCP indexes. Its REST API is public
- * and unauthenticated:
+ * Glama runs one of the largest community MCP indexes. Its REST API needs a free
+ * API key sent as `Authorization: Bearer <key>` (unauthenticated calls return 401),
+ * and its terms ask for visible attribution plus a link back to each record's
+ * Glama listing (kept in `_meta['ai.glama'].url`):
  *
  *   GET https://glama.ai/api/mcp/v1/servers?first=100[&after=<cursor>]
  *
@@ -141,17 +143,28 @@ export function mapGlamaServerToMCPServer(raw: GlamaServer): MCPServer {
     };
 }
 
-async function fetchJson<T>(url: string): Promise<T> {
+/** Raised when Glama rejects or is missing the API key, so callers can say what to fix. */
+export class GlamaAuthError extends Error {
+    constructor(message: string) {
+        super(message);
+        this.name = 'GlamaAuthError';
+    }
+}
+
+const AUTH_HELP = 'Add a Glama API key in Settings > Data Sources (create one at glama.ai/settings/api-keys).';
+
+async function fetchJson<T>(url: string, apiKey: string): Promise<T> {
+    const headers = { Accept: 'application/json', Authorization: `Bearer ${apiKey}` };
     if (isElectron() && window.electronAPI?.proxyRequest) {
-        const res = await window.electronAPI.proxyRequest({
-            method: 'GET',
-            url,
-            headers: { Accept: 'application/json' },
-        });
-        if (!res.success) throw new Error(res.error || 'Glama proxy request failed');
+        const res = await window.electronAPI.proxyRequest({ method: 'GET', url, headers });
+        if (!res.success) {
+            if (/\b40[13]\b/.test(res.error || '')) throw new GlamaAuthError(`Glama rejected the API key. ${AUTH_HELP}`);
+            throw new Error(res.error || 'Glama proxy request failed');
+        }
         return (typeof res.data === 'string' ? JSON.parse(res.data) : res.data) as T;
     }
-    const r = await fetch(url, { headers: { Accept: 'application/json' } });
+    const r = await fetch(url, { headers });
+    if (r.status === 401 || r.status === 403) throw new GlamaAuthError(`Glama rejected the API key. ${AUTH_HELP}`);
     if (!r.ok) throw new Error(`Glama request failed: ${r.status} ${r.statusText}`);
     return (await r.json()) as T;
 }
@@ -163,6 +176,8 @@ export interface GlamaFetchOptions {
     pageSize?: number;
     /** Optional callback after each page; useful for streaming UI updates. */
     onPage?: (servers: MCPServer[], pageIndex: number) => void;
+    /** Glama's API requires a bearer token (free, created in the Glama account settings). */
+    apiKey?: string;
     abortSignal?: AbortSignal;
 }
 
@@ -174,6 +189,8 @@ export interface GlamaFetchOptions {
 export async function fetchMCPServersFromGlama(
     options: GlamaFetchOptions = {}
 ): Promise<MCPServer[]> {
+    const apiKey = options.apiKey?.trim();
+    if (!apiKey) throw new GlamaAuthError(`Glama needs an API key. ${AUTH_HELP}`);
     const pageSize = options.pageSize ?? PAGE_SIZE;
     const maxServers = options.maxServers ?? 1000;
 
@@ -190,7 +207,7 @@ export async function fetchMCPServersFromGlama(
         if (cursor) params.set('after', cursor);
         const url = `${GLAMA_BASE}?${params.toString()}`;
 
-        const data: GlamaResponse = await fetchJson(url);
+        const data: GlamaResponse = await fetchJson(url, apiKey);
         const servers = data.servers ?? [];
         if (servers.length === 0) break;
 

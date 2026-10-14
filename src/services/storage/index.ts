@@ -8,6 +8,7 @@
 export {
     isIndexedDBAvailable,
     saveModels,
+    applyModelChanges,
     loadModels,
     upsertModel,
     deleteModel,

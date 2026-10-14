@@ -3,11 +3,13 @@ import { MCPServer } from '../types';
 import { fetchOfficialMCPRegistry } from '../services/api/fetchers/mcp/official-registry';
 import { fetchMCPServersFromGitHubTopics } from '../services/api/fetchers/mcp/github-topics';
 import { fetchMCPServersFromNpm } from '../services/api/fetchers/mcp/npm-registry';
-import { fetchMCPServersFromGlama } from '../services/api/fetchers/mcp/glama';
+import { fetchMCPServersFromGlama, GlamaAuthError } from '../services/api/fetchers/mcp/glama';
 import { fetchMCPServersFromPyPI } from '../services/api/fetchers/mcp/pypi';
 import { MCP_SOURCES } from '../services/sources/entitySources';
+import { commitSourceSync, planSourceSync } from '../services/sync/syncCursor';
 import { useSettings } from '../context/SettingsContext';
-import { mergeMCPServerLists } from '../utils/entityMerge';
+import { appendMCPServers, restoreMCPServers } from '../utils/entityMerge';
+import { useBatchedMerge, useEntityList } from './useEntityStore';
 
 /**
  * Source keys the catalog marks `available`. A fetcher/runner may exist for a
@@ -43,16 +45,7 @@ interface SyncProgress {
  */
 export function useMCPServers() {
     const { settings } = useSettings();
-    const [servers, setServersState] = useState<MCPServer[]>(() => {
-        try {
-            const raw = localStorage.getItem(STORAGE_KEY);
-            if (raw) {
-                const parsed = JSON.parse(raw);
-                return Array.isArray(parsed) ? mergeMCPServerLists([], parsed as MCPServer[]) : [];
-            }
-        } catch { /* corrupt blob — fall through to empty */ }
-        return [];
-    });
+    const { items: servers, setItems: setServersState, isLoading, persistError } = useEntityList<MCPServer>(STORAGE_KEY, restoreMCPServers);
 
     const [meta, setMetaState] = useState<MCPMeta>(() => {
         try {
@@ -66,14 +59,6 @@ export function useMCPServers() {
     const [syncProgress, setSyncProgress] = useState<SyncProgress | null>(null);
     const abortRef = useRef<AbortController | null>(null);
 
-    // Persist on every change. Debouncing isn't critical here — MCP lists are
-    // smaller than the models store and changes are infrequent (sync-driven).
-    useEffect(() => {
-        try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(servers));
-        } catch { /* quota or disabled — non-fatal */ }
-    }, [servers]);
-
     useEffect(() => {
         try {
             localStorage.setItem(META_KEY, JSON.stringify(meta));
@@ -85,9 +70,7 @@ export function useMCPServers() {
      * User flags (isFavorite, editedFields) on the existing record always
      * win — mirrors the V3 strategy from the Models merge.
      */
-    const mergeServers = useCallback((incoming: MCPServer[]) => {
-        setServersState(prev => mergeMCPServerLists(prev, incoming));
-    }, []);
+    const { enqueue: mergeServers, flush: flushServers } = useBatchedMerge(setServersState, appendMCPServers);
 
     /**
      * Pull from the official MCP registry. Streams pages into state so the
@@ -103,8 +86,11 @@ export function useMCPServers() {
 
         try {
             let fetchedTotal = 0;
+            const plan = planSourceSync('mcp-registry', { fullRefresh: settings.incrementalSync === false });
+            const startedAt = Date.now();
             await fetchOfficialMCPRegistry({
                 pageSize: 100,
+                updatedSince: plan.cutoffIso ?? undefined,
                 abortSignal: controller.signal,
                 onPage: (pageServers, pageIndex) => {
                     fetchedTotal += pageServers.length;
@@ -116,6 +102,8 @@ export function useMCPServers() {
                     });
                 },
             });
+            commitSourceSync('mcp-registry', plan, startedAt);
+            flushServers();
             setMetaState(prev => ({ ...prev, lastSync: new Date().toISOString(), lastError: null }));
         } catch (e: unknown) {
             const message = e instanceof Error ? e.message : String(e);
@@ -126,7 +114,7 @@ export function useMCPServers() {
             setSyncProgress(null);
             abortRef.current = null;
         }
-    }, [isSyncing, mergeServers]);
+    }, [isSyncing, mergeServers, flushServers, settings.incrementalSync]);
 
     /**
      * Run every MCP source the user has toggled on. Sources are executed in
@@ -141,6 +129,7 @@ export function useMCPServers() {
         abortRef.current = controller;
         const mcpSources = settings.mcpSources || {};
         const gitHubToken = settings.gitHubToken || undefined;
+        const glamaApiKey = settings.glamaApiKey || undefined;
 
         let totalFetched = 0;
 
@@ -150,8 +139,13 @@ export function useMCPServers() {
 
         const runOfficialRegistry = async () => {
             setSourceProgress('mcp-registry', 0);
+            // Only what changed since the last successful pull, unless incremental sync is off
+            // or a full refresh is due (see services/sync/syncCursor.ts).
+            const plan = planSourceSync('mcp-registry', { fullRefresh: settings.incrementalSync === false });
+            const startedAt = Date.now();
             await fetchOfficialMCPRegistry({
                 pageSize: 100,
+                updatedSince: plan.cutoffIso ?? undefined,
                 abortSignal: controller.signal,
                 onPage: (pageServers, pageIndex) => {
                     totalFetched += pageServers.length;
@@ -159,6 +153,7 @@ export function useMCPServers() {
                     setSourceProgress('mcp-registry', pageIndex + 1);
                 },
             });
+            commitSourceSync('mcp-registry', plan, startedAt);
         };
 
         const runGitHubTopics = async () => {
@@ -187,8 +182,15 @@ export function useMCPServers() {
         };
 
         const runGlama = async () => {
+            // Glama needs a key. Without one the source is skipped quietly (it is on by default),
+            // rather than reporting a 401 on every sync.
+            if (!glamaApiKey) {
+                console.info('[MCP] Skipping Glama: no API key set in Settings > Data Sources');
+                return;
+            }
             setSourceProgress('glama', 0);
             await fetchMCPServersFromGlama({
+                apiKey: glamaApiKey,
                 maxServers: 1000,
                 abortSignal: controller.signal,
                 onPage: (pageServers, pageIndex) => {
@@ -244,7 +246,9 @@ export function useMCPServers() {
                 } catch (err) {
                     const message = err instanceof Error ? err.message : String(err);
                     console.error(`[MCP] Source "${key}" failed:`, message);
-                    errors.push(`${key}: ${message}`);
+                    errors.push(err instanceof GlamaAuthError ? message : `${key}: ${message}`);
+                } finally {
+                    flushServers();
                 }
             }
             setMetaState(prev => ({
@@ -257,7 +261,7 @@ export function useMCPServers() {
             setSyncProgress(null);
             abortRef.current = null;
         }
-    }, [isSyncing, mergeServers, settings.mcpSources, settings.gitHubToken]);
+    }, [isSyncing, mergeServers, flushServers, settings.mcpSources, settings.gitHubToken, settings.glamaApiKey, settings.incrementalSync]);
 
     const cancelSync = useCallback(() => {
         if (abortRef.current) abortRef.current.abort();
@@ -267,16 +271,16 @@ export function useMCPServers() {
         setServersState(prev =>
             prev.map(s => (s.id === id ? { ...s, isFavorite: !s.isFavorite } : s))
         );
-    }, []);
+    }, [setServersState]);
 
     const deleteServer = useCallback((id: string) => {
         setServersState(prev => prev.filter(s => s.id !== id));
-    }, []);
+    }, [setServersState]);
 
     const clearAll = useCallback(() => {
         setServersState([]);
         setMetaState({ lastSync: null });
-    }, []);
+    }, [setServersState]);
 
     /**
      * Export the current MCP server cache as a JSON download. Mirrors the
@@ -301,6 +305,8 @@ export function useMCPServers() {
 
     return {
         servers,
+        isLoading,
+        persistError,
         meta,
         isSyncing,
         syncProgress,

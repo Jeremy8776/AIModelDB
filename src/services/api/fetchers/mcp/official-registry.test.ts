@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { mapRegistryEntryToMCPServer } from './official-registry';
+import { afterEach, describe, it, expect, vi } from 'vitest';
+import { fetchOfficialMCPRegistry, mapRegistryEntryToMCPServer } from './official-registry';
 
 describe('mapRegistryEntryToMCPServer', () => {
     it('maps a minimal entry (remote-only, no packages) into the canonical shape', () => {
@@ -135,5 +135,32 @@ describe('mapRegistryEntryToMCPServer', () => {
         };
         const result = mapRegistryEntryToMCPServer(raw);
         expect(result.packages?.[0].registryType).toBe('other');
+    });
+});
+
+describe('fetchOfficialMCPRegistry updatedSince', () => {
+    afterEach(() => vi.unstubAllGlobals());
+
+    const page = (names: string[], nextCursor?: string) => new Response(JSON.stringify({
+        servers: names.map(name => ({ server: { name, description: 'd', version: '1.0.0' }, _meta: {} })),
+        metadata: nextCursor ? { nextCursor, count: names.length } : { count: names.length },
+    }), { status: 200 });
+
+    it('sends the registry\'s updated_since filter on every page, and omits it for a full pull', async () => {
+        const urls: string[] = [];
+        vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+            urls.push(url);
+            return urls.length === 1 ? page(['a/one'], 'a/one:1.0.0') : page(['b/two']);
+        }));
+
+        const servers = await fetchOfficialMCPRegistry({ updatedSince: '2026-10-01T00:00:00.000Z' });
+        expect(servers.map(s => s.id)).toEqual(['a/one', 'b/two']);
+        expect(urls).toHaveLength(2);
+        for (const url of urls) expect(new URL(url).searchParams.get('updated_since')).toBe('2026-10-01T00:00:00.000Z');
+        expect(new URL(urls[1]).searchParams.get('cursor')).toBe('a/one:1.0.0');
+
+        urls.length = 0;
+        await fetchOfficialMCPRegistry({});
+        expect(new URL(urls[0]).searchParams.has('updated_since')).toBe(false);
     });
 });

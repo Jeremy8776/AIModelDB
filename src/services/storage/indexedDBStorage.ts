@@ -13,6 +13,7 @@
 
 import { Model } from '../../types';
 import { loggers } from '../../utils/logger';
+import { deleteHistoryDatabase } from './historyStorage';
 
 const logger = loggers.storage;
 
@@ -26,16 +27,6 @@ interface StorageMetadata {
     key: string;
     value: string;
     updatedAt: string;
-}
-
-export interface HistoryEntry {
-    id: string;
-    timestamp: number;
-    dateStr: string;
-    modelCount: number;
-    description: string;
-    sizeBytes: number;
-    models: Model[]; // Stored directly in the entry
 }
 
 let dbInstance: IDBDatabase | null = null;
@@ -159,6 +150,32 @@ export async function saveModels(models: Model[]): Promise<void> {
                 logger.warn(`${addErrors} models failed to save`);
             }
         };
+    });
+}
+
+/**
+ * Apply an incremental change set (see modelDiff.ts) in one transaction.
+ */
+export async function applyModelChanges(puts: Model[], deleteIds: string[]): Promise<void> {
+    if (puts.length === 0 && deleteIds.length === 0) return;
+    const db = await openDatabase();
+
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction([MODELS_STORE], 'readwrite');
+        const store = transaction.objectStore(MODELS_STORE);
+
+        transaction.onerror = () => {
+            logger.error('Transaction error:', transaction.error);
+            reject(transaction.error);
+        };
+        transaction.onabort = () => reject(transaction.error ?? new Error('IndexedDB transaction aborted'));
+        transaction.oncomplete = () => {
+            logger.debug(`Saved ${puts.length} changed and removed ${deleteIds.length} models`);
+            resolve();
+        };
+
+        for (const id of deleteIds) store.delete(id);
+        for (const model of puts) store.put(model);
     });
 }
 
@@ -403,97 +420,8 @@ export async function deleteDatabase(): Promise<void> {
 
         request.onsuccess = () => {
             logger.info('Database deleted successfully');
-            resolve();
-        };
-    });
-}
-
-/**
- * Save a snapshot to history
- */
-export async function saveSnapshot(item: HistoryEntry): Promise<void> {
-    const db = await openDatabase();
-
-    return new Promise((resolve, reject) => {
-        const transaction = db.transaction([HISTORY_STORE], 'readwrite');
-        const store = transaction.objectStore(HISTORY_STORE);
-        const request = store.put(item);
-
-        request.onerror = () => {
-            reject(request.error);
-        };
-
-        request.onsuccess = () => {
-            resolve();
-        };
-    });
-}
-
-/**
- * Get all history snapshots
- */
-export async function getSnapshots(): Promise<HistoryEntry[]> {
-    const db = await openDatabase();
-
-    return new Promise((resolve, reject) => {
-        const transaction = db.transaction([HISTORY_STORE], 'readonly');
-        const store = transaction.objectStore(HISTORY_STORE);
-        const request = store.getAll();
-
-        request.onerror = () => {
-            reject(request.error);
-        };
-
-        request.onsuccess = () => {
-            const results = request.result as HistoryEntry[];
-            if (results) {
-                results.sort((a, b) => b.timestamp - a.timestamp);
-                resolve(results);
-            } else {
-                resolve([]);
-            }
-        };
-    });
-}
-
-/**
- * Delete a snapshot
- */
-export async function deleteSnapshot(id: string): Promise<void> {
-    const db = await openDatabase();
-
-    return new Promise((resolve, reject) => {
-        const transaction = db.transaction([HISTORY_STORE], 'readwrite');
-        const store = transaction.objectStore(HISTORY_STORE);
-        const request = store.delete(id);
-
-        request.onerror = () => {
-            reject(request.error);
-        };
-
-        request.onsuccess = () => {
-            resolve();
-        };
-    });
-}
-
-/**
- * Clear all snapshots
- */
-export async function clearSnapshots(): Promise<void> {
-    const db = await openDatabase();
-
-    return new Promise((resolve, reject) => {
-        const transaction = db.transaction([HISTORY_STORE], 'readwrite');
-        const store = transaction.objectStore(HISTORY_STORE);
-        const request = store.clear();
-
-        request.onerror = () => {
-            reject(request.error);
-        };
-
-        request.onsuccess = () => {
-            resolve();
+            // Snapshots live in their own database; "delete everything" removes them too.
+            deleteHistoryDatabase().then(() => resolve(), reject);
         };
     });
 }

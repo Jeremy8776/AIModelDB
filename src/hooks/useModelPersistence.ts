@@ -5,6 +5,7 @@ import { DEFAULT_API_DIR } from '../services/api';
 import {
     isIndexedDBAvailable,
     saveModels as saveModelsToIDB,
+    applyModelChanges,
     loadModels as loadModelsFromIDB,
     clearModels as clearModelsFromIDB,
     saveMetadata,
@@ -12,6 +13,7 @@ import {
     deleteDatabase,
     migrateFromLocalStorage
 } from '../services/storage';
+import { diffModels, shouldRewriteAll } from '../services/storage/modelDiff';
 
 // Storage threshold - use IndexedDB if more than 500 models (to stay well under localStorage limits)
 const INDEXEDDB_THRESHOLD = 500;
@@ -26,6 +28,7 @@ export function useModelPersistence() {
     const [lastSync, setLastSync] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const [saveError, setSaveError] = useState<string | null>(null);
     const [loadingProgress, setLoadingProgress] = useState<{ current: number; total: number } | null>(null);
     const [apiConfig, setApiConfig] = useState<ApiDir>(DEFAULT_API_DIR);
     const [storageType, setStorageType] = useState<'indexeddb' | 'localstorage'>('indexeddb');
@@ -120,6 +123,8 @@ export function useModelPersistence() {
                     const { models: loadedModels, lastSync: loadedSync } = await loadFromIndexedDB();
 
                     if (loadedModels.length > 0) {
+                        // What was just read is what is on disk: remember it so the first save only writes real changes.
+                        lastSavedModels.current = loadedModels;
                         setModels(loadedModels);
                         setLastSync(loadedSync);
                         console.log(`[Persistence] Loaded ${loadedModels.length} models from IndexedDB`);
@@ -157,7 +162,8 @@ export function useModelPersistence() {
                     setLastSync(lsSync);
                     setStorageType('localstorage');
                 } catch {
-                    setModels([]);
+                    lastSavedModels.current = [];
+            setModels([]);
                 }
                 initialized.current = true;
                 setIsLoading(false);
@@ -175,8 +181,14 @@ export function useModelPersistence() {
         setIsSaving(true);
         try {
             if (storageType === 'indexeddb') {
-                await saveModelsToIDB(modelsToSave);
-                console.log(`[Persistence] Saved ${modelsToSave.length} models to IndexedDB`);
+                const changes = diffModels(lastSavedModels.current, modelsToSave);
+                if (shouldRewriteAll(lastSavedModels.current.length, modelsToSave.length, changes)) {
+                    await saveModelsToIDB(modelsToSave);
+                    console.log(`[Persistence] Saved ${modelsToSave.length} models to IndexedDB`);
+                } else {
+                    await applyModelChanges(changes.puts, changes.deletes);
+                    console.log(`[Persistence] Saved ${changes.puts.length} changed, removed ${changes.deletes.length} models`);
+                }
             } else {
                 // Fall back to localStorage (will fail if data is too large)
                 try {
@@ -195,8 +207,10 @@ export function useModelPersistence() {
                 }
             }
             lastSavedModels.current = modelsToSave;
+            setSaveError(null);
         } catch (error) {
             console.error('Error saving models:', error);
+            setSaveError(error instanceof Error ? error.message : String(error));
         } finally {
             setIsSaving(false);
         }
@@ -248,6 +262,24 @@ export function useModelPersistence() {
         };
     }, [models, saveModelsInternal]);
 
+    // Closing the window inside the debounce delay would otherwise drop the last edit.
+    useEffect(() => {
+        const flush = () => {
+            if (!initialized.current || !pendingSave.current) return;
+            clearTimeout(pendingSave.current);
+            pendingSave.current = null;
+            if (modelsForCleanupRef.current !== lastSavedModels.current) {
+                void saveModelsInternal(modelsForCleanupRef.current);
+            }
+        };
+        window.addEventListener('pagehide', flush);
+        window.addEventListener('beforeunload', flush);
+        return () => {
+            window.removeEventListener('pagehide', flush);
+            window.removeEventListener('beforeunload', flush);
+        };
+    }, [saveModelsInternal]);
+
     // Save lastSync when it changes
     useEffect(() => {
         if (!initialized.current || !lastSync) return;
@@ -273,6 +305,7 @@ export function useModelPersistence() {
                 await clearModelsFromIDB();
             }
             localStorage.removeItem('aiModelDB_models');
+            lastSavedModels.current = [];
             setModels([]);
         } catch (error) {
             console.error('Error clearing models:', error);
@@ -287,6 +320,7 @@ export function useModelPersistence() {
             localStorage.removeItem('aiModelDB_models');
             localStorage.removeItem('aiModelDB_lastSync');
             localStorage.removeItem('aiModelDB_apiConfig');
+            lastSavedModels.current = [];
             setModels([]);
             setLastSync(null);
             setApiConfig(DEFAULT_API_DIR);
@@ -322,7 +356,8 @@ export function useModelPersistence() {
             }
         } catch { /* best-effort cleanup — ignore failures */ }
 
-        setModels([]);
+        lastSavedModels.current = [];
+            setModels([]);
         setLastSync(null);
         setApiConfig(DEFAULT_API_DIR);
     }, []);
@@ -379,6 +414,7 @@ export function useModelPersistence() {
         setLastSync,
         isLoading,
         isSaving,
+        saveError,
         loadingProgress,
         apiConfig,
         setApiConfig,

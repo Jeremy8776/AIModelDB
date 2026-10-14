@@ -1,16 +1,17 @@
-const { app, BrowserWindow, ipcMain, shell, dialog, safeStorage, Menu, MenuItem } = require('electron');
+const { app, BrowserWindow, ipcMain, session, shell, dialog, safeStorage, Menu, MenuItem } = require('electron');
 const path = require('path');
 const { autoUpdater } = require('electron-updater');
-const { validateExternalUrl, validateProxyRequest, validateImageUrl, isPrivateHost } = require('./security');
+const { pathToFileURL } = require('url');
+const { validateExternalUrl, validateImageUrl, isTrustedSenderUrl } = require('./security');
+const { registerProxyHandlers } = require('./ipc-proxy');
 
-// Handle creating/removing shortcuts on Windows when installing/uninstalling.
-if (require('electron-squirrel-startup')) {
-    app.quit();
-}
+// Longest we wait for the renderer to report it has mounted before showing the window anyway.
+const RENDERER_READY_TIMEOUT_MS = 6000;
 
 // Keep a global reference of the window object
 let mainWindow = null;
 let splashWindow = null;
+let revealState = null;
 
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
 
@@ -56,6 +57,17 @@ function createSplashWindow() {
     });
 }
 
+function revealMainWindow(force = false) {
+    const state = revealState;
+    if (!state || state.shown || !mainWindow || mainWindow.isDestroyed()) return;
+    if (!force && !(state.painted && state.mounted)) return;
+    state.shown = true;
+    clearTimeout(state.timer);
+    if (splashWindow && !splashWindow.isDestroyed()) splashWindow.close();
+    mainWindow.show();
+    mainWindow.focus();
+}
+
 function createWindow() {
     // Create the browser window with themed title bar
     mainWindow = new BrowserWindow({
@@ -70,6 +82,7 @@ function createWindow() {
         webPreferences: {
             nodeIntegration: false,
             contextIsolation: true,
+            sandbox: true,
             preload: path.join(__dirname, 'preload.js'),
         },
         // Use hidden title bar with NO overlay to allow custom controls
@@ -151,16 +164,14 @@ function createWindow() {
         }, 3000); // Wait 3 seconds after startup
     }
 
-    // When main window is ready, close splash and show main
+    // Show the window once Chromium has painted AND the renderer reports React has
+    // mounted, so the user never sees an empty page. A timeout covers a renderer
+    // that never reports (crash, script error).
+    revealState = { painted: false, mounted: false, shown: false, timer: null };
+    revealState.timer = setTimeout(() => revealMainWindow(true), RENDERER_READY_TIMEOUT_MS);
     mainWindow.once('ready-to-show', () => {
-        // Add small delay for smoother transition
-        setTimeout(() => {
-            if (splashWindow && !splashWindow.isDestroyed()) {
-                splashWindow.close();
-            }
-            mainWindow.show();
-            mainWindow.focus();
-        }, isDev ? 500 : 1500); // Shorter delay in dev mode
+        revealState.painted = true;
+        revealMainWindow();
     });
 
     // Handle external links - open in default browser
@@ -171,12 +182,13 @@ function createWindow() {
     });
 
     // Handle link clicks that should open externally
+    // The app window never navigates away from its own page; anything else opens externally.
+    const appPage = isDev ? 'http://localhost:5173/' : pathToFileURL(path.join(__dirname, '../dist/index.html')).toString();
     mainWindow.webContents.on('will-navigate', (event, url) => {
-        if (!url.startsWith('http://localhost') && !url.startsWith('file://')) {
-            event.preventDefault();
-            const safeUrl = validateExternalUrl(url, { allowHttp: isDev });
-            if (safeUrl) shell.openExternal(safeUrl);
-        }
+        if (url.split('#')[0] === appPage.split('#')[0]) return;
+        event.preventDefault();
+        const safeUrl = validateExternalUrl(url, { allowHttp: isDev });
+        if (safeUrl) shell.openExternal(safeUrl);
     });
 
     mainWindow.on('closed', () => {
@@ -255,6 +267,10 @@ function sendStatusToWindow(status, data = {}) {
 
 // This method will be called when Electron has finished initialization
 app.whenReady().then(() => {
+    // The app needs no browser permissions (camera, mic, geolocation, notifications...).
+    session.defaultSession.setPermissionRequestHandler((_wc, _permission, callback) => callback(false));
+    registerProxyHandlers({ isDev });
+
     // Show splash in production, skip in dev for faster iteration
     if (!isDev) {
         createSplashWindow();
@@ -286,30 +302,45 @@ ipcMain.handle('get-platform', () => {
     return process.platform;
 });
 
+// Privileged IPC is only for our own page (never a navigated-away frame).
+const isTrusted = (event) => isTrustedSenderUrl(event.senderFrame && event.senderFrame.url, { isDev });
+
+// Renderer reports React has mounted; this is what reveals the main window.
+ipcMain.on('renderer-ready', (event) => {
+    if (mainWindow && event.sender === mainWindow.webContents && revealState) {
+        revealState.mounted = true;
+        revealMainWindow();
+    }
+});
+
 // Handle opening external URLs
 ipcMain.on('open-external', (event, url) => {
+    if (!isTrusted(event)) return;
     const safeUrl = validateExternalUrl(url, { allowHttp: isDev });
     if (safeUrl) shell.openExternal(safeUrl);
 });
 
 // Handle update check request from renderer
-ipcMain.on('check-for-updates', () => {
+ipcMain.on('check-for-updates', (event) => {
+    if (!isTrusted(event)) return;
     checkForUpdates();
 });
 
 // Handle install update request
-ipcMain.on('install-update', () => {
+ipcMain.on('install-update', (event) => {
+    if (!isTrusted(event)) return;
     autoUpdater.quitAndInstall();
 });
 
 // Handle download update request
-ipcMain.on('download-update', () => {
+ipcMain.on('download-update', (event) => {
+    if (!isTrusted(event)) return;
     autoUpdater.downloadUpdate();
 });
 
 // Handle translation request from renderer
-// Handle translation request from renderer
 ipcMain.handle('translate-text', async (event, text, targetLang = 'en') => {
+    if (!isTrusted(event)) return { text: null, error: 'Untrusted sender' };
     try {
         // Dynamic import for ESM package compatibility
         const { translate } = await import('@vitalets/google-translate-api');
@@ -323,6 +354,7 @@ ipcMain.handle('translate-text', async (event, text, targetLang = 'en') => {
 
 // SafeStorage IPC handlers
 ipcMain.handle('encrypt-string', async (event, plainText) => {
+    if (!isTrusted(event)) return null;
     if (!safeStorage.isEncryptionAvailable()) {
         console.warn('[SafeStorage] Encryption is not available');
         return null;
@@ -338,6 +370,7 @@ ipcMain.handle('encrypt-string', async (event, plainText) => {
 });
 
 ipcMain.handle('decrypt-string', async (event, encryptedHex) => {
+    if (!isTrusted(event)) return null;
     if (!safeStorage.isEncryptionAvailable()) {
         console.warn('[SafeStorage] Encryption is not available');
         return null;
@@ -353,141 +386,5 @@ ipcMain.handle('decrypt-string', async (event, encryptedHex) => {
     } catch (error) {
         console.error('[SafeStorage] Decryption failed:', error);
         return null; // Return null on failure (e.g. wrong key, corrupted data)
-    }
-});
-
-// Proxy Request Handler to bypass CORS
-ipcMain.handle('proxy-request', async (event, { url, method = 'GET', headers = {}, body = null }) => {
-    try {
-        const safeRequest = validateProxyRequest({ url, method, headers, body });
-        const fetchOptions = {
-            method: safeRequest.method,
-            headers: safeRequest.headers,
-            body: safeRequest.body ? JSON.stringify(safeRequest.body) : undefined
-        };
-
-        if (isDev) {
-            let logUrl = safeRequest.url;
-            try {
-                const parsed = new URL(logUrl);
-                logUrl = `${parsed.protocol}//${parsed.host}/<path-redacted>`;
-            } catch (e) {
-                logUrl = logUrl.split('?')[0] + ' (redacted)';
-            }
-            console.log(`[Proxy] ${safeRequest.method} ${logUrl}`);
-        }
-        const response = await fetch(safeRequest.url, fetchOptions);
-
-        if (!response.ok) {
-            const text = await response.text();
-            console.error(`[Proxy] Error ${response.status}: ${text.substring(0, 200)}`);
-            throw new Error(`Request failed: ${response.status}`);
-        }
-
-        // Check content type to determine how to parse response
-        const contentType = response.headers.get('content-type') || '';
-        let data;
-
-        if (contentType.includes('application/json')) {
-            data = await response.json();
-        } else {
-            // Return as text for HTML and other content types
-            data = await response.text();
-        }
-
-        return { success: true, data };
-    } catch (error) {
-        console.error('[Proxy] Request error:', error.message);
-        return { success: false, error: error.message };
-    }
-});
-
-const SAFE_IMAGE_MIMES = [
-    'image/png',
-    'image/jpeg',
-    'image/jpg',
-    'image/gif',
-    'image/webp',
-    'image/bmp',
-    'image/tiff',
-    'image/x-icon',
-    'image/vnd.microsoft.icon'
-];
-
-// Image Proxy Handler - fetches images and returns as base64 data URL
-// This bypasses CDN restrictions that block browser requests
-ipcMain.handle('proxy-image', async (event, imageUrl) => {
-    try {
-        const safeImageUrl = validateImageUrl(imageUrl);
-        const response = await fetch(safeImageUrl, {
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                'Accept': 'image/webp,image/apng,image/*,*/*;q=0.8',
-                'Referer': 'https://civitasbay.org/'
-            }
-        });
-
-        if (!response.ok) {
-            // Only log errors, not every request
-            if (isDev) console.error(`[ImageProxy] Failed: ${response.status}`);
-            return { success: false, error: `HTTP ${response.status}` };
-        }
-
-        const contentType = (response.headers.get('content-type') || '').split(';')[0].trim().toLowerCase();
-        if (!SAFE_IMAGE_MIMES.includes(contentType)) {
-            console.error(`[ImageProxy] Blocked unsafe content-type: ${contentType}`);
-            return { success: false, error: `Unsafe image content-type: ${contentType}` };
-        }
-
-        const buffer = await response.arrayBuffer();
-        const base64 = Buffer.from(buffer).toString('base64');
-        const dataUrl = `data:${contentType};base64,${base64}`;
-
-        return { success: true, dataUrl };
-    } catch (error) {
-        console.error('[ImageProxy] Error:', error.message);
-        return { success: false, error: error.message };
-    }
-});
-
-// Proxy Import URL Handler - fetches CSV/JSON/XLSX with strict SSRF checks and a 10MB limit
-ipcMain.handle('proxy-import-url', async (event, targetUrl) => {
-    try {
-        const parsed = new URL(targetUrl);
-        if (parsed.protocol !== 'https:') {
-            throw new Error('URL protocol is not allowed');
-        }
-        if (parsed.username || parsed.password) {
-            throw new Error('URL credentials are not allowed');
-        }
-        if (isPrivateHost(parsed.hostname)) {
-            throw new Error('Private host is not allowed');
-        }
-
-        const response = await fetch(targetUrl);
-        if (!response.ok) {
-            throw new Error(`Request failed with status ${response.status}`);
-        }
-
-        const maxBytes = 10 * 1024 * 1024; // 10MB limit
-        const reader = response.body.getReader();
-        const chunks = [];
-        let bytesRead = 0;
-        
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            bytesRead += value.byteLength;
-            if (bytesRead > maxBytes) {
-                throw new Error('Response size limit exceeded (10MB)');
-            }
-            chunks.push(value);
-        }
-
-        const buffer = Buffer.concat(chunks.map(c => Buffer.from(c)));
-        return { success: true, base64: buffer.toString('base64'), contentType: response.headers.get('content-type') };
-    } catch (error) {
-        console.error('[ImportProxy] Error:', error.message);
-        return { success: false, error: error.message };
     }
 });

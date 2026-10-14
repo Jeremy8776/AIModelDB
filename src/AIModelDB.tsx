@@ -96,6 +96,7 @@ function AIModelDBContent() {
     setShowShortcutsModal,
     uiState,
     syncState,
+    persistedLastSync,
     validationState,
     validationSummary,
     setValidationSummary,
@@ -551,7 +552,7 @@ function AIModelDBContent() {
         <MCPView
           servers={mcpPageItems}
           totalCount={mcp.servers.length}
-          isSyncing={mcp.isSyncing}
+          isSyncing={mcp.isSyncing || mcp.isLoading}
           lastError={mcp.meta.lastError}
           sortKey={mcpSortKey}
           sortDirection={mcpSortDirection}
@@ -590,7 +591,7 @@ function AIModelDBContent() {
         <SkillsView
           skills={skillPageItems}
           totalCount={skills.skills.length}
-          isSyncing={skills.isSyncing}
+          isSyncing={skills.isSyncing || skills.isLoading}
           lastError={skills.meta.lastError}
           sortKey={skillSortKey}
           sortDirection={skillSortDirection}
@@ -758,7 +759,7 @@ function AIModelDBContent() {
             <Toolbar
               isSyncing={syncState.isSyncing || isSaving}
               syncProgress={syncState.syncProgress}
-              lastSync={syncState.lastSync}
+              lastSync={syncState.lastSync ?? persistedLastSync}
               pageSize={uiState.pageSize}
               onPageSizeChange={(size) => {
                 uiState.setPageSize(size);

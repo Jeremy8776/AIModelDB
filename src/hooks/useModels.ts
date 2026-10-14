@@ -49,6 +49,7 @@ export function useModels() {
     lastSync: persistence.lastSync,
     setLastSync: persistence.setLastSync,
     isSaving: persistence.isSaving,
+    saveError: persistence.saveError,
     saveModelsNow: persistence.saveModelsNow,
     isLoading: persistence.isLoading,
     loadingProgress: persistence.loadingProgress,

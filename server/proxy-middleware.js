@@ -69,19 +69,22 @@ const RATE_LIMITS = {
 };
 
 /**
- * Get client IP address from request
+ * Get client IP address from request.
+ *
+ * The socket address is used by default: X-Forwarded-For / X-Real-IP are chosen
+ * by the client and would let anyone dodge or exhaust another user's rate limit.
+ * Set TRUST_PROXY=true only when a reverse proxy you control sets those headers
+ * (the LAST X-Forwarded-For entry is the one that proxy appended).
  *
  * @param {Object} req - Express request object
  * @returns {string} Client IP address
  */
 function getClientIp(req) {
-    return (
-        req.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
-        req.headers['x-real-ip'] ||
-        req.socket.remoteAddress ||
-        req.connection.remoteAddress ||
-        'unknown'
-    );
+    if (process.env.TRUST_PROXY === 'true') {
+        const forwarded = String(req.headers['x-forwarded-for'] || '').split(',').map((v) => v.trim()).filter(Boolean);
+        if (forwarded.length) return forwarded[forwarded.length - 1];
+    }
+    return req.socket?.remoteAddress || req.connection?.remoteAddress || 'unknown';
 }
 
 /**
@@ -334,6 +337,7 @@ function getRateLimitStats() {
 
 module.exports = {
     proxyValidationMiddleware,
+    getClientIp,
     getRateLimitStats,
     cleanupRateLimits,
 };
