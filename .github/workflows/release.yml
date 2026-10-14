@@ -4,7 +4,8 @@ name: Release
 #
 #  - Tag push (v*)                    : build all three, verify the expected files exist, publish.
 #  - Pull request touching this file  : build all three and keep the files as workflow artifacts
-#    only. This is how a change to the release pipeline is tested without publishing anything.
+#    only (electron-builder skips code signing on pull requests, so signing is not exercised).
+#  - Manual run (workflow_dispatch)   : same as a tag build but never publishes.
 #
 # Nothing is published unless every platform built. electron-builder is told `--publish never`
 # so it cannot create its own (draft) release; the single publish job below owns that.
@@ -16,6 +17,10 @@ on:
   pull_request:
     paths:
       - '.github/workflows/release.yml'
+  # Manual dry run from the Actions tab (or `gh workflow run release.yml --ref main`): builds and signs
+  # exactly like a tag build, keeps the output as artifacts, publishes nothing. Unlike a pull request build,
+  # electron-builder does not skip code signing here, so this is the real test of the signing setup.
+  workflow_dispatch:
 
 permissions: {}
 
@@ -69,12 +74,19 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build Electron app
-        # `--publish never` is appended to the electron-builder command in the npm script.
+      # `--publish never` is appended to the electron-builder command in the npm script.
+      - name: Build Electron app (signed)
+        if: matrix.sign
         run: npm run ${{ matrix.script }} -- --publish never
         env:
-          CSC_LINK: ${{ matrix.sign && secrets.CSC_LINK || '' }}
-          CSC_KEY_PASSWORD: ${{ matrix.sign && secrets.CSC_KEY_PASSWORD || '' }}
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+
+      # The signing variables must be absent, not empty: electron-builder treats an empty CSC_LINK as a
+      # path ("not a file") instead of "no certificate".
+      - name: Build Electron app (no certificate)
+        if: ${{ !matrix.sign }}
+        run: npm run ${{ matrix.script }} -- --publish never
 
       - name: Upload build output
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
