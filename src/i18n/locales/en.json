@@ -4,7 +4,9 @@
         "tagline": "The ultimate desktop app for tracking, managing, and validating AI models",
         "loadingTitle": "Loading Model Database",
         "loadingDesc": "Please wait while we load your models...",
-        "offlineMode": "⚠️ OFFLINE MODE - Network features disabled"
+        "offlineMode": "⚠️ OFFLINE MODE - Network features disabled",
+        "saveFailedDesc": "Your latest changes are only in memory. Export your data to keep a copy, then restart the app.",
+        "saveFailedTitle": "Changes could not be saved"
     },
     "common": {
         "save": "Save",
@@ -64,14 +66,20 @@
         "flagged": "Flagged",
         "unflag": "Unflag",
         "addToFavorites": "Add to favorites",
-        "removeFromFavorites": "Remove from favorites"
+        "removeFromFavorites": "Remove from favorites",
+        "allowed": "Allowed",
+        "notAllowed": "Not allowed",
+        "other": "Other"
     },
     "header": {
         "searchPlaceholder": "Search models...",
         "addModel": "Add Model",
         "importModels": "Import",
         "syncModels": "Sync",
-        "openSettings": "Settings"
+        "openSettings": "Settings",
+        "searchPlaceholderAll": "Search models, MCP servers, and skills…",
+        "searchPlaceholderMcp": "Search MCP servers, models, and skills…",
+        "searchPlaceholderSkills": "Search skills, models, and MCP servers…"
     },
     "toolbar": {
         "showing": "Showing",
@@ -80,7 +88,11 @@
         "pageSize": "Page Size",
         "export": "Export",
         "validate": "Validate",
-        "deleteDatabase": "Delete Database"
+        "deleteDatabase": "Delete Database",
+        "idle": "Idle",
+        "neverSynced": "Not synced yet",
+        "synced": "Synced",
+        "syncing": "Syncing"
     },
     "filters": {
         "title": "Filters",
@@ -185,6 +197,8 @@
             "ollama": "Ollama Library",
             "syncModels": "Sync Models",
             "syncModelsDesc": "Fetch latest models from enabled sources",
+            "incremental": "Incremental sync",
+            "incrementalDesc": "Only fetch what changed since each source last synced, newest first. A full refresh still runs automatically every 14 days.",
             "syncNow": "Sync Now",
             "syncing": "Syncing...",
             "done": "Done",
@@ -198,7 +212,12 @@
                 "openmodeldb": "Open model database",
                 "civitasbay": "AI model marketplace",
                 "ollamaLibrary": "Top models from Ollama library"
-            }
+            },
+            "mcpSources": "MCP Server Sources",
+            "selectAll": "Select all",
+            "selectNone": "Select none",
+            "skillSources": "Skill Sources",
+            "soon": "Soon"
         },
         "security": {
             "title": "Security & Content Filtering",
@@ -441,6 +460,7 @@
     },
     "flagged": {
         "title": "Flagged Models for Approval",
+        "showMore": "Show more ({{remaining}} remaining)",
         "approveAll": "Approve All",
         "rejectAll": "Reject All",
         "noFlagged": "No flagged models to review",
@@ -618,7 +638,8 @@
         "scope": "Scope",
         "entireDatabase": "Entire Database",
         "customFilter": "Custom Filter",
-        "exportButton": "Export"
+        "exportButton": "Export",
+        "customFilterDesc": "Export only the models matching your current search and filters"
     },
     "import": {
         "title": "Import Models",
@@ -761,7 +782,8 @@
             "parameters": "Parameters",
             "context": "Context",
             "benchmarks": "Benchmarks",
-            "analytics": "Analytics"
+            "analytics": "Analytics",
+            "perSource": "Per-source stats"
         },
         "licenseIPDeployment": "License, IP & Deployment",
         "dataProvenance": "Data Provenance",
@@ -788,7 +810,12 @@
             "OpenRAIL": "Responsible AI license. Use restrictions may apply; review variant.",
             "Proprietary": "Vendor-specific license. Review terms for commercial use and redistribution.",
             "Unknown": "License information not available. Review the model page for details."
-        }
+        },
+        "licenseNotes": "License notes",
+        "licenseUrl": "License text",
+        "providers": "Hosted by",
+        "shareAlike": "Share-alike",
+        "viewLicense": "View terms"
     },
     "modelEditor": {
         "title": "Edit Model: {{name}}",
@@ -918,5 +945,107 @@
             "attributionRequired": "Attribution Required",
             "pricing": "Pricing (Blended)"
         }
+    },
+    "entityTabs": {
+        "mcp": "MCP Servers",
+        "mcpDesc": "Model Context Protocol servers",
+        "models": "Models",
+        "modelsDesc": "AI models from many providers",
+        "skills": "Skills",
+        "skillsDesc": "Claude skills, plugins, and agent capabilities"
+    },
+    "mcp": {
+        "empty": {
+            "desc": "Use Sync All to refresh every enabled source, or import custom data when you want to manage this section manually.",
+            "noMatches": "No MCP servers match the current filters.",
+            "title": "No MCP servers in the local database"
+        }
+    },
+    "mcpDetail": {
+        "description": "Description",
+        "downloads": "Downloads",
+        "license": "License",
+        "links": "Links",
+        "meta": "Other",
+        "namespaceVerified": "Publisher namespace ownership signal. Not a security audit.",
+        "packages": "Packages",
+        "provenanceHelp": "These checks show source or ownership signals. They do not guarantee the server is safe or audited.",
+        "published": "Published",
+        "quickStart": "Quick start",
+        "quickStartHelp": "Paste into your MCP client config. Add any required env vars / headers from below before running.",
+        "remotes": "Remote endpoints",
+        "repository": "Repository",
+        "sources": "Sources",
+        "tags": "Tags",
+        "timestamps": "Timestamps",
+        "updated": "Updated",
+        "verification": "Provenance",
+        "website": "Website"
+    },
+    "mcpFilters": {
+        "directoryVerified": "Directory listed",
+        "hasPackages": "Installable packages",
+        "hasRemotes": "Has remote endpoints",
+        "imageVerified": "Docker image",
+        "namespaceVerified": "Publisher namespace",
+        "registry": "Package registry",
+        "transport": "Transport",
+        "verified": "Provenance"
+    },
+    "mcpTable": {
+        "name": "Name",
+        "releaseDate": "Release Date",
+        "runtime": "How to run",
+        "runtimeHint": "Local install (node, python, docker, …) or remote endpoint (HTTP, SSE, WebSocket).",
+        "setup": "Setup",
+        "setupHint": "What you have to supply before it runs — API keys, env vars, or headers. None means nothing extra needed.",
+        "verified": "Provenance"
+    },
+    "skills": {
+        "empty": {
+            "desc": "Use Sync All to refresh every enabled source, or import custom data when you want to manage this section manually.",
+            "noMatches": "No skills match the current filters.",
+            "title": "No skills in the local database"
+        }
+    },
+    "skillsDetail": {
+        "apiKeys": "API keys",
+        "category": "Category",
+        "classification": "Classification",
+        "commercialUse": "Commercial use",
+        "description": "Description",
+        "homepage": "Homepage",
+        "install": "Install",
+        "license": "License",
+        "licenseName": "Name",
+        "licenseType": "Type",
+        "links": "Links",
+        "mcps": "MCP servers",
+        "origin": "Origin",
+        "plugins": "Plugins",
+        "redistributable": "Redistributable",
+        "repoPath": "Path",
+        "repoSha": "Commit",
+        "requirements": "Requires",
+        "runtimes": "Runtimes",
+        "sources": "Sources",
+        "tags": "Tags",
+        "timestamps": "Updated",
+        "triggers": "Activates when",
+        "triggersHelp": "Example phrases that trigger this skill in a conversation.",
+        "type": "Type",
+        "viewLicense": "View terms"
+    },
+    "skillsFilters": {
+        "family": "Category",
+        "origin": "Origin",
+        "type": "Type"
+    },
+    "skillsTable": {
+        "family": "Category",
+        "name": "Name",
+        "origin": "Origin",
+        "releaseDate": "Release Date",
+        "type": "Type"
     }
 }

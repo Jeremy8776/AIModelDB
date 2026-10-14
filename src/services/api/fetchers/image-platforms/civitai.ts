@@ -1,7 +1,6 @@
 import { Model } from '../../../../types';
 import { isModelComplete } from '../../filtering';
 import { safeFetch } from '../../utils/http-utils';
-import * as cheerio from 'cheerio';
 
 /**
  * Fetch generative AI models from Civitai by scraping
@@ -38,6 +37,8 @@ export async function fetchCivitai(limit = 500): Promise<{ complete: Model[], fl
             console.log('[Civitai] No HTML content received, proceeding to fallbacks.');
         } else {
             // Parse HTML using Cheerio for robust selection
+            // Loaded on first use: the HTML parser is ~215 KB and only scraping needs it.
+            const cheerio = await import('cheerio');
             const $ = cheerio.load(html);
 
             // Civitai model cards typically have specific classes or patterns

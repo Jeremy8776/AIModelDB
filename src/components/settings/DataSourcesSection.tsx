@@ -2,7 +2,7 @@ import React, { useContext, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Database, RefreshCw, Check } from 'lucide-react';
 import ThemeContext from '../../context/ThemeContext';
-import { useSettings } from '../../context/SettingsContext';
+import { useSettings, Settings } from '../../context/SettingsContext';
 import { ThemedSelect } from '../ThemedSelect';
 import { SourceCategoryTabs } from '../SourceCategoryTabs';
 import {
@@ -88,13 +88,14 @@ export function DataSourcesSection({ onSync, addConsoleLog }: DataSourcesSection
   };
 
   const renderModelApiKeyControls = (source: DisplayEntitySource, isEnabled: boolean) => {
-    const needsApiKey = activeSourceCategory === 'models' && (source.key === 'artificialanalysis' || source.key === 'github');
+    const needsApiKey = (activeSourceCategory === 'models' && (source.key === 'artificialanalysis' || source.key === 'github'))
+      || (activeSourceCategory === 'mcp' && source.key === 'glama');
     if (!isEnabled || !needsApiKey) return null;
-    const apiKeyValue = source.key === 'artificialanalysis'
-      ? settings.artificialAnalysisApiKey
-      : settings.gitHubToken;
-    const apiKeyPlaceholder = source.key === 'artificialanalysis' ? 'aa_...' : 'ghp_...';
-    const apiKeyLabel = source.key === 'artificialanalysis' ? 'API Key' : 'Token (optional)';
+    const keyField: 'artificialAnalysisApiKey' | 'gitHubToken' | 'glamaApiKey' =
+      source.key === 'artificialanalysis' ? 'artificialAnalysisApiKey' : source.key === 'glama' ? 'glamaApiKey' : 'gitHubToken';
+    const apiKeyValue = settings[keyField];
+    const apiKeyPlaceholder = source.key === 'artificialanalysis' ? 'aa_...' : source.key === 'glama' ? 'glama_...' : 'ghp_...';
+    const apiKeyLabel = source.key === 'github' ? 'Token (optional)' : 'API Key (required)';
 
     return (
       <div className="mt-3 pt-3 border-t border-border">
@@ -116,11 +117,7 @@ export function DataSourcesSection({ onSync, addConsoleLog }: DataSourcesSection
             onClick={(e) => {
               e.stopPropagation();
               const value = pendingKeys[source.key] ?? apiKeyValue ?? '';
-              if (source.key === 'artificialanalysis') {
-                saveSettings({ artificialAnalysisApiKey: value });
-              } else if (source.key === 'github') {
-                saveSettings({ gitHubToken: value });
-              }
+              saveSettings({ [keyField]: value } as Partial<Settings>);
               setSavedKeys(prev => ({ ...prev, [source.key]: true }));
               setTimeout(() => {
                 setSavedKeys(prev => ({ ...prev, [source.key]: false }));
@@ -254,6 +251,20 @@ export function DataSourcesSection({ onSync, addConsoleLog }: DataSourcesSection
             )}
           </button>
         </div>
+        <label className="flex items-start gap-2 text-sm cursor-pointer">
+          <input
+            type="checkbox"
+            checked={settings.incrementalSync !== false}
+            onChange={(e) => saveSettings({ incrementalSync: e.target.checked })}
+            className="mt-1"
+          />
+          <span>
+            <span className="font-medium">{t('settings.dataSources.incremental', { defaultValue: 'Incremental sync' })}</span>
+            <span className="block text-text-secondary">
+              {t('settings.dataSources.incrementalDesc', { defaultValue: 'Only fetch what changed since each source last synced, newest first. A full refresh still runs automatically every 14 days.' })}
+            </span>
+          </span>
+        </label>
       </div>
 
       <div>

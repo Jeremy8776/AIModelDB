@@ -6,7 +6,8 @@ import { fetchCoworkPlugins } from '../services/api/fetchers/skills/cowork-plugi
 import { fetchSkillsFromGitHubTopics } from '../services/api/fetchers/skills/github-skills';
 import { SKILL_SOURCES } from '../services/sources/entitySources';
 import { useSettings } from '../context/SettingsContext';
-import { mergeSkillLists } from '../utils/entityMerge';
+import { appendSkills, restoreSkills } from '../utils/entityMerge';
+import { useBatchedMerge, useEntityList } from './useEntityStore';
 
 const AVAILABLE_SKILL_KEYS = new Set(
     SKILL_SOURCES.filter(source => source.status === 'available').map(source => source.key)
@@ -33,16 +34,7 @@ interface SyncProgress {
  */
 export function useSkills() {
     const { settings } = useSettings();
-    const [skills, setSkillsState] = useState<Skill[]>(() => {
-        try {
-            const raw = localStorage.getItem(STORAGE_KEY);
-            if (raw) {
-                const parsed = JSON.parse(raw);
-                return Array.isArray(parsed) ? mergeSkillLists([], parsed as Skill[]) : [];
-            }
-        } catch { /* corrupt blob — start empty */ }
-        return [];
-    });
+    const { items: skills, setItems: setSkillsState, isLoading, persistError } = useEntityList<Skill>(STORAGE_KEY, restoreSkills);
 
     const [meta, setMetaState] = useState<SkillsMeta>(() => {
         try {
@@ -57,19 +49,12 @@ export function useSkills() {
     const abortRef = useRef<AbortController | null>(null);
 
     useEffect(() => {
-        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(skills)); }
-        catch { /* quota or disabled — non-fatal */ }
-    }, [skills]);
-
-    useEffect(() => {
         try { localStorage.setItem(META_KEY, JSON.stringify(meta)); }
         catch { /* non-fatal */ }
     }, [meta]);
 
     /** Merge incoming skills by id; preserve user edits + favorites. */
-    const mergeSkills = useCallback((incoming: Skill[]) => {
-        setSkillsState(prev => mergeSkillLists(prev, incoming));
-    }, []);
+    const { enqueue: mergeSkills, flush: flushSkills } = useBatchedMerge(setSkillsState, appendSkills);
 
     /** Pull from the official Claude plugins marketplace. */
     const syncOfficialMarketplace = useCallback(async () => {
@@ -90,6 +75,7 @@ export function useSkills() {
                     setSyncProgress({ fetched: fetchedTotal, page: pageIndex + 1, source: 'claude-plugins-official' });
                 },
             });
+            flushSkills();
             setMetaState({ lastSync: new Date().toISOString(), lastError: null });
         } catch (e: unknown) {
             const message = e instanceof Error ? e.message : String(e);
@@ -100,7 +86,7 @@ export function useSkills() {
             setSyncProgress(null);
             abortRef.current = null;
         }
-    }, [isSyncing, mergeSkills]);
+    }, [isSyncing, mergeSkills, flushSkills]);
 
     const syncAll = useCallback(async () => {
         if (isSyncing) return;
@@ -184,6 +170,8 @@ export function useSkills() {
                     const message = err instanceof Error ? err.message : String(err);
                     console.error(`[Skills] Source "${key}" failed:`, message);
                     errors.push(`${key}: ${message}`);
+                } finally {
+                    flushSkills();
                 }
             }
             setMetaState(prev => ({
@@ -196,7 +184,7 @@ export function useSkills() {
             setSyncProgress(null);
             abortRef.current = null;
         }
-    }, [isSyncing, mergeSkills, settings.skillSources, settings.gitHubToken]);
+    }, [isSyncing, mergeSkills, flushSkills, settings.skillSources, settings.gitHubToken]);
 
     const cancelSync = useCallback(() => {
         if (abortRef.current) abortRef.current.abort();
@@ -204,16 +192,16 @@ export function useSkills() {
 
     const toggleFavorite = useCallback((id: string) => {
         setSkillsState(prev => prev.map(s => (s.id === id ? { ...s, isFavorite: !s.isFavorite } : s)));
-    }, []);
+    }, [setSkillsState]);
 
     const deleteSkill = useCallback((id: string) => {
         setSkillsState(prev => prev.filter(s => s.id !== id));
-    }, []);
+    }, [setSkillsState]);
 
     const clearAll = useCallback(() => {
         setSkillsState([]);
         setMetaState({ lastSync: null });
-    }, []);
+    }, [setSkillsState]);
 
     const exportSkills = useCallback(() => {
         try {
@@ -233,6 +221,8 @@ export function useSkills() {
 
     return {
         skills,
+        isLoading,
+        persistError,
         meta,
         isSyncing,
         syncProgress,

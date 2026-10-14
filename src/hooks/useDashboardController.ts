@@ -99,9 +99,12 @@ export function useDashboardController() {
         validateEntireDatabase,
         isLoading,
         isSaving,
+        saveError,
         loadingProgress,
         validationProgress,
-        setLastMergeStats
+        setLastMergeStats,
+        lastSync: persistedLastSync,
+        setLastSync: setPersistedLastSync
     } = modelsHook;
 
     // Filtering and pagination
@@ -144,7 +147,12 @@ export function useDashboardController() {
             setModels,
             mergeInModels,
             setLastMergeStats,
-            setLastSync: syncState.setLastSync,
+            // Keep the on-screen value and the saved one together. The saved one used to be left
+            // untouched, so every launch said "Not synced yet".
+            setLastSync: (timestamp: string) => {
+                syncState.setLastSync(timestamp);
+                setPersistedLastSync(timestamp);
+            },
             setPage,
             setFlaggedModels: modalState.setFlaggedModels,
             setShowFlaggedModal: modalState.setShowFlaggedModal,
@@ -249,19 +257,34 @@ export function useDashboardController() {
         }
     }, [settings?.apiConfig, models, setApiConfig, addConsoleLog]);
 
-    // Auto-hide import toast
+    // A failed save means edits exist only in memory: tell the user instead of logging quietly.
+    const { setConfirmationToast } = modalState;
     useEffect(() => {
-        if (!modalState.importToast) return;
-        const timer = window.setTimeout(() => modalState.setImportToast(null), 6000);
+        if (!saveError) return;
+        addConsoleLog(`Could not save the database: ${saveError}`);
+        setConfirmationToast({
+            title: t('app.saveFailedTitle', 'Changes could not be saved'),
+            message: t('app.saveFailedDesc', 'Your latest changes are only in memory. Export your data to keep a copy, then restart the app.'),
+            type: 'error',
+            onConfirm: () => setConfirmationToast(null),
+        });
+    }, [saveError, addConsoleLog, setConfirmationToast, t]);
+
+    // Auto-hide import toast
+    const { importToast, setImportToast, setShowOnboarding, setOnboardingStartStep } = modalState;
+    useEffect(() => {
+        if (!importToast) return;
+        const timer = window.setTimeout(() => setImportToast(null), 6000);
         return () => window.clearTimeout(timer);
-    }, [modalState.importToast, modalState.setImportToast]);
+    }, [importToast, setImportToast]);
 
     // Auto-hide validation toast
+    const { validationToast, setValidationToast } = validationState;
     useEffect(() => {
-        if (!validationState.validationToast) return;
-        const timer = window.setTimeout(() => validationState.setValidationToast(null), 6000);
+        if (!validationToast) return;
+        const timer = window.setTimeout(() => setValidationToast(null), 6000);
         return () => window.clearTimeout(timer);
-    }, [validationState.validationToast, validationState.setValidationToast]);
+    }, [validationToast, setValidationToast]);
 
     // Show validation toast when all jobs complete
     useEffect(() => {
@@ -270,50 +293,48 @@ export function useDashboardController() {
         const failedJobs = validationJobs.filter(j => j.status === 'failed').length;
         const finishedJobs = completedJobs + failedJobs;
         if (finishedJobs === validationJobs.length && finishedJobs > 0) {
-            validationState.setValidationToast({ completed: completedJobs, failed: failedJobs });
+            setValidationToast({ completed: completedJobs, failed: failedJobs });
         }
-    }, [validationJobs, validationState.setValidationToast]);
+    }, [validationJobs, setValidationToast]);
 
     // Check config version and trigger onboarding update if needed (ONE-SHOT)
+    const configVersion = settings?.configVersion;
     useEffect(() => {
         if (hasTriggeredConfigOnboarding.current) return;
 
-        if (settings && typeof settings.configVersion === 'number') {
-            if (settings.configVersion < 2) {
-                if (models.length > 0) {
-                    hasTriggeredConfigOnboarding.current = true;
-                    consoleLogging.addConsoleLog("Detected old configuration version. Launching setup wizard for new features.");
-                    modalState.setOnboardingStartStep(2);
-                    modalState.setShowOnboarding(true);
-                }
-            }
+        if (typeof configVersion === 'number' && configVersion < 2 && models.length > 0) {
+            hasTriggeredConfigOnboarding.current = true;
+            addConsoleLog("Detected old configuration version. Launching setup wizard for new features.");
+            setOnboardingStartStep(2);
+            setShowOnboarding(true);
         }
-    }, [settings.configVersion, models.length, consoleLogging, modalState]);
+    }, [configVersion, models.length, addConsoleLog, setOnboardingStartStep, setShowOnboarding]);
 
     // Show import toast after sync
+    const { syncSummary, setSyncSummary } = syncState;
     useEffect(() => {
         if (!lastMergeStats) return;
         const added = lastMergeStats.added || 0;
         const updated = lastMergeStats.updated || 0;
 
         // Sum cross-source duplicates and internal database matches
-        const syncDuplicates = syncState.syncSummary?.duplicates ?? 0;
+        const syncDuplicates = syncSummary?.duplicates ?? 0;
         const mergeDuplicates = lastMergeStats.duplicates ?? 0;
         const duplicates = syncDuplicates + mergeDuplicates;
 
-        const found = syncState.syncSummary?.found ?? (added + updated);
-        const flagged = syncState.syncSummary?.flagged ?? 0;
+        const found = syncSummary?.found ?? (added + updated);
+        const flagged = syncSummary?.flagged ?? 0;
 
-        modalState.setImportToast({ scope: 'sync', found, added, updated, flagged, duplicates });
-        syncState.setSyncSummary(null);
+        setImportToast({ scope: 'sync', found, added, updated, flagged, duplicates });
+        setSyncSummary(null);
 
         if (updated > 0) {
-            consoleLogging.addConsoleLog(`Update complete: ${updated} models updated with new data`);
+            addConsoleLog(`Update complete: ${updated} models updated with new data`);
         }
         if (duplicates > 0) {
-            consoleLogging.addConsoleLog(`Sync found ${duplicates} models already present in database`);
+            addConsoleLog(`Sync found ${duplicates} models already present in database`);
         }
-    }, [lastMergeStats, syncState.syncSummary, syncState.setSyncSummary, modalState.setImportToast, consoleLogging.addConsoleLog]);
+    }, [lastMergeStats, syncSummary, setSyncSummary, setImportToast, addConsoleLog]);
 
     // Toggle handlers for models using extracted hook
     const {
@@ -356,6 +377,7 @@ export function useDashboardController() {
 
         // Sync state
         syncState,
+        persistedLastSync,
 
         // Validation state
         validationState,

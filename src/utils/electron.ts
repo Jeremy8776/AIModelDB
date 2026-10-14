@@ -55,7 +55,7 @@ export async function getAppVersion(): Promise<string> {
     if (isElectron() && window.electronAPI?.getAppVersion) {
         return window.electronAPI.getAppVersion();
     }
-    return '0.2.1'; // Fallback for web
+    return __APP_VERSION__; // Fallback for web (injected from package.json at build time)
 }
 
 /**

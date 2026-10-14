@@ -14,6 +14,14 @@ export function isHttpUrl(url: string): boolean {
 }
 
 /**
+ * Value for an `href` attribute built from untrusted data: the URL when it is
+ * http(s), otherwise undefined so no `javascript:` / `data:` link is rendered.
+ */
+export function safeHref(url: string | null | undefined): string | undefined {
+    return url && isHttpUrl(url) ? url : undefined;
+}
+
+/**
  * Open URL in user's default browser
  * @param url URL to open
  */

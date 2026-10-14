@@ -23,66 +23,22 @@ export async function enrichFromWebScraping(
 
     let scraped: ScrapedData | null = null;
 
-    // First try direct URL scraping
+    // /scrape is served by the optional Node server (npm run serve). The packaged desktop
+    // app loads from file:// and has no such endpoint, so skip instead of failing every model.
+    const hasScrapeServer = typeof window !== 'undefined' && /^https?:$/.test(window.location.protocol);
     const targetUrl = enriched.url || enriched.repo;
-    if (targetUrl && /^(https?:)\/\//.test(targetUrl)) {
-        const scrapeResp = await fetch('/scrape', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ url: targetUrl })
-        });
-        if (scrapeResp.ok) {
-            scraped = await scrapeResp.json();
-        }
-    }
-
-    // If still missing critical info, try web search for better sources (only when server search is available)
-    const canUseLocalSearch = !import.meta.env.DEV; // Node server provides /search in prod/build:serve
-    if (canUseLocalSearch && (!scraped || (!scraped.license && !scraped.params && !scraped.release && !scraped.author))) {
-        const searchQueries = [
-            `"${enriched.name}" AI model release announcement`,
-            `"${enriched.name}" technical report specifications`,
-            `"${enriched.name}" official documentation`,
-            `${enriched.name} model card parameters`,
-            `${enriched.name} AI model paper`
-        ];
-
-        for (const query of searchQueries.slice(0, 2)) { // Limit to 2 searches to avoid rate limits
-            try {
-                const searchResp = await fetch('/search', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ query: query })
-                });
-
-                if (searchResp.ok) {
-                    const searchData = await searchResp.json();
-                    const results = searchData.organic || searchData.results || [];
-
-                    // Try scraping the top result
-                    if (results.length > 0 && results[0].link) {
-                        const topUrl = results[0].link;
-                        const scrapeResp = await fetch('/scrape', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ url: topUrl })
-                        });
-
-                        if (scrapeResp.ok) {
-                            const searchScraped = await scrapeResp.json();
-                            if (searchScraped && (searchScraped.license || searchScraped.params || searchScraped.release || searchScraped.author)) {
-                                scraped = searchScraped;
-                                break; // Found useful info, stop searching
-                            }
-                        }
-                    }
-                }
-            } catch (searchError) {
-                console.warn(`Search failed for query: ${query}`, searchError);
+    if (hasScrapeServer && targetUrl && /^(https?:)\/\//.test(targetUrl)) {
+        try {
+            const scrapeResp = await fetch('/scrape', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: targetUrl })
+            });
+            if (scrapeResp.ok) {
+                scraped = await scrapeResp.json();
             }
-
-            // Rate limit protection
-            await new Promise(resolve => setTimeout(resolve, 500));
+        } catch (scrapeError) {
+            console.warn(`Scrape failed for ${targetUrl}`, scrapeError);
         }
     }
 

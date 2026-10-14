@@ -97,7 +97,7 @@ export async function orchestrateSync(
                         });
                     }
                 };
-                return fetchCivitasBay(opts.apiConfig, civitasBayLogger, cb?.onConfirmLLMCheck);
+                return fetchCivitasBay(opts.apiConfig, civitasBayLogger, cb?.onConfirmLLMCheck, { fullRefresh: opts.fullRefresh });
             }
         };
         registry.register(civitasFetcher);

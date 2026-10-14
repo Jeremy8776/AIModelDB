@@ -235,7 +235,8 @@ export function createWebhookStream(
             const head = await fetch('/webhooks/openai/logs', {
                 signal: AbortSignal.timeout(1000)
             });
-            if (!head.ok) return; // not available; skip
+            // A static host answers every path with index.html (200, text/html): that is not the webhook server.
+            if (!head.ok || !(head.headers.get('content-type') || '').includes('application/json')) return;
         } catch {
             return;
         }

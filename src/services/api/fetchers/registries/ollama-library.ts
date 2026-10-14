@@ -1,9 +1,9 @@
-import * as cheerio from 'cheerio';
 import { Model, ApiDir } from '../../../../types';
 import { fetchWrapper } from '../../../../utils/fetch-wrapper';
 import { loggers } from '../../../../utils/logger';
 import { parseRelativeDate } from '../../../../utils';
 import { Fetcher, SyncOptions, SyncCallbacks, SyncResult } from '../../../sync/SyncTypes';
+import { commitSourceSync, planSourceSync } from '../../../sync/syncCursor';
 
 const logger = loggers.sync;
 
@@ -18,9 +18,12 @@ export const ollamaLibraryFetcher: Fetcher = {
     async fetch(options: SyncOptions, callbacks?: SyncCallbacks): Promise<SyncResult> {
         try {
             logger.debug('[Ollama] Fetching popular models...');
+            const startedAt = Date.now();
 
             // Fetch main library page
             const html = await fetchHtml('https://ollama.com/library');
+            // Loaded on first use: the HTML parser is ~215 KB and only scraping needs it.
+            const cheerio = await import('cheerio');
             const $ = cheerio.load(html);
 
             const initialModels: Model[] = [];
@@ -118,15 +121,31 @@ export const ollamaLibraryFetcher: Fetcher = {
 
             logger.info(`[Ollama] Found ${initialModels.length} models. Starting deep fetch...`);
 
+            // Incremental: the listing says "Updated N days ago" for every model, so only models changed
+            // since the last successful pull need their detail page fetched (about 250 requests otherwise).
+            // The "N ago" text is coarse and rounds toward the present, so this can fetch a few extra but
+            // never skips a model that changed. Newest first, so fresh models show up first.
+            const plan = planSourceSync('ollama-library', { fullRefresh: options.fullRefresh });
+            let detailFailures = 0;
+            let toFetch = initialModels;
+            if (plan.cutoffMs !== null) {
+                const cutoff = plan.cutoffMs;
+                const newest = (m: Model) => Date.parse(m.release_date || m.updated_at || '') || 0;
+                toFetch = initialModels.filter(m => newest(m) >= cutoff).sort((a, b) => newest(b) - newest(a));
+                callbacks?.onLog?.(`[Ollama] Incremental sync (${plan.reason}): ${toFetch.length} of ${initialModels.length} models changed`);
+            } else {
+                callbacks?.onLog?.(`[Ollama] Full sync (${plan.reason}): ${initialModels.length} models`);
+            }
+
             // 2. Deep Fetch Details (Batched)
             const models: Model[] = [];
             const BATCH_SIZE = 5;
 
-            for (let i = 0; i < initialModels.length; i += BATCH_SIZE) {
-                const batch = initialModels.slice(i, i + BATCH_SIZE);
+            for (let i = 0; i < toFetch.length; i += BATCH_SIZE) {
+                const batch = toFetch.slice(i, i + BATCH_SIZE);
 
                 if (callbacks?.onLog) {
-                    callbacks.onLog(`[Ollama] Fetching details for batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(initialModels.length / BATCH_SIZE)}`);
+                    callbacks.onLog(`[Ollama] Fetching details for batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(toFetch.length / BATCH_SIZE)}`);
                 }
 
                 const enrichedBatch = await Promise.all(batch.map(async (model) => {
@@ -201,6 +220,7 @@ export const ollamaLibraryFetcher: Fetcher = {
                         };
 
                     } catch (err) {
+                        detailFailures++;
                         logger.warn(`[Ollama] Failed to fetch details for ${model.name}`, err);
                         return model;
                     }
@@ -212,12 +232,14 @@ export const ollamaLibraryFetcher: Fetcher = {
                 if (callbacks?.onProgress) {
                     callbacks.onProgress({
                         current: models.length,
-                        total: initialModels.length,
+                        total: toFetch.length,
                         source: 'Ollama Library',
                         statusMessage: `Fetching details...`
                     });
                 }
             }
+
+            if (initialModels.length > 0 && detailFailures === 0) commitSourceSync('ollama-library', plan, startedAt);
 
             logger.info(`[Ollama] Found ${models.length} models`);
 
@@ -258,6 +280,6 @@ async function fetchHtml(url: string): Promise<string> {
         if (!response.ok) {
             throw new Error(`Fetch failed for ${url}: ${response.status}`);
         }
-        return await response.text();
+        return response.text();
     }
 }

@@ -99,7 +99,7 @@ function tryPrettyJson(text?: string): string | undefined {
       try {
         const json = JSON.parse(trimmed.slice(start, end + 1));
         return JSON.stringify(json, null, 2);
-      } catch { }
+      } catch { /* not valid JSON: show the text as-is */ }
     }
   }
   return undefined;

@@ -134,6 +134,46 @@ function getTermVariations(term: string): string[] {
   return variations;
 }
 
+const escapeRegex = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+interface CompiledTerms {
+  /** Per term, the regexes to try (one per spelling variation); null marks the literal "18+" check. */
+  entries: Array<{ term: string; regexes: RegExp[] | null }>;
+  /** Alternation of every variation: a cheap pre-check that rules out almost all text in one pass. */
+  any: RegExp | null;
+}
+
+const compiledCache = new Map<string, CompiledTerms>();
+
+/**
+ * Compile the keyword list once. Building a RegExp per term per model made scanning
+ * 20,000 models take about 8 seconds on the main thread at startup.
+ */
+function compileTerms(customKeywords: string[]): CompiledTerms {
+  const cacheKey = customKeywords.join('\u0000');
+  const cached = compiledCache.get(cacheKey);
+  if (cached) return cached;
+
+  const entries: CompiledTerms['entries'] = [];
+  const alternatives: string[] = [];
+  for (const term of [...EXPLICIT_NAME_TERMS, ...customKeywords]) {
+    if (term === '18+') {
+      entries.push({ term, regexes: null });
+      continue;
+    }
+    const patterns = getTermVariations(term).map(variant => `\\b${escapeRegex(variant)}\\b`);
+    entries.push({ term, regexes: patterns.map(pattern => new RegExp(pattern, 'i')) });
+    alternatives.push(...patterns);
+  }
+  const compiled: CompiledTerms = {
+    entries,
+    any: alternatives.length > 0 ? new RegExp(alternatives.join('|'), 'i') : null,
+  };
+  if (compiledCache.size >= 8) compiledCache.clear();
+  compiledCache.set(cacheKey, compiled);
+  return compiled;
+}
+
 /**
  * Analyzes text content for NSFW indicators
  */
@@ -145,42 +185,59 @@ function analyzeTextForExplicitName(text: string, customKeywords: string[] = [])
   // Also keep original lowercase for direct matches (e.g., "pronebone" without spaces)
   const originalLower = text.toLowerCase();
 
+  const compiled = compileTerms(customKeywords);
+  const has18Plus = text.includes('18+');
+
+  // Almost every model name contains nothing explicit: one combined test settles it.
+  const mayMatch = compiled.any !== null && (compiled.any.test(normalizedText) || compiled.any.test(originalLower));
+  if (!mayMatch && !has18Plus) return { score: 0, flaggedTerms: [] };
+
+  // Something may match: find which terms, in list order.
   const flaggedTerms: string[] = [];
   let score = 0;
-
-  // Combine default explicit terms with custom keywords
-  const allTerms = [...EXPLICIT_NAME_TERMS, ...customKeywords];
-
-  for (const term of allTerms) {
-    if (term === '18+') {
-      if (text.includes('18+')) {
+  for (const { term, regexes } of compiled.entries) {
+    if (!regexes) {
+      if (has18Plus) {
         flaggedTerms.push(term);
         score = 100;
       }
       continue;
     }
-
-    // Get variations of the term (with and without spaces)
-    const variations = getTermVariations(term);
-
-    for (const variant of variations) {
-      // Escape special regex chars
-      const escaped = variant.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      // Use word boundaries to avoid false positives (e.g., 'sex' in 'essex')
-      const regex = new RegExp(`\\b${escaped}\\b`, 'i');
-
-      // Check both normalized and original text
-      if (regex.test(normalizedText) || regex.test(originalLower)) {
-        if (!flaggedTerms.includes(term)) {
-          flaggedTerms.push(term);
-          score = 100;
-        }
-        break; // Found a match for this term, no need to check other variations
-      }
+    if (regexes.some(regex => regex.test(normalizedText) || regex.test(originalLower)) && !flaggedTerms.includes(term)) {
+      flaggedTerms.push(term);
+      score = 100;
     }
   }
 
   return { score, flaggedTerms };
+}
+
+// Common safe tags that should never be flagged
+const SAFE_TAGS = [
+  'text2text', 'textgeneration', 'textclassification', 'language', 'multilingual', 'code',
+  'diffusers', 'transformers', 'safetensors', 'lora', 'controlnet', 'comfyui', 'stable-diffusion',
+  'text-to-image', 'image-to-image', 'image-generation', 'text-generation', 'text2image',
+  'base-model', 'checkpoint', 'finetune', 'fine-tune', 'distillation', 'quantized', 'gguf',
+  'community-archive', 'model', 'weights', 'pretrained', 'experimental', 'research'
+].map(tag => tag.replace(/[^a-z0-9]/g, ''));
+
+const alnum = (value: string): string => value.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+const nsfwTagSetCache = new Map<string, Set<string>>();
+
+/** Normalised NSFW tags long enough to compare (very short ones like 'dp' cause false positives). */
+function nsfwTagSet(customKeywords: string[]): Set<string> {
+  const cacheKey = customKeywords.join('\u0000');
+  const cached = nsfwTagSetCache.get(cacheKey);
+  if (cached) return cached;
+  const set = new Set<string>();
+  for (const tag of [...EXPLICIT_TAGS, ...customKeywords]) {
+    const normalized = alnum(tag);
+    if (normalized.length >= 4) set.add(normalized);
+  }
+  if (nsfwTagSetCache.size >= 8) nsfwTagSetCache.clear();
+  nsfwTagSetCache.set(cacheKey, set);
+  return set;
 }
 
 /**
@@ -191,40 +248,21 @@ function checkTagsForNSFW(tags: string[], customKeywords: string[] = []): { scor
 
   const flaggedTags: string[] = [];
   let score = 0;
-
-  const allNsfwTags = [...EXPLICIT_TAGS, ...customKeywords];
-
-  // Common safe tags that should never be flagged
-  const safeTags = [
-    'text2text', 'textgeneration', 'textclassification', 'language', 'multilingual', 'code',
-    'diffusers', 'transformers', 'safetensors', 'lora', 'controlnet', 'comfyui', 'stable-diffusion',
-    'text-to-image', 'image-to-image', 'image-generation', 'text-generation', 'text2image',
-    'base-model', 'checkpoint', 'finetune', 'fine-tune', 'distillation', 'quantized', 'gguf',
-    'community-archive', 'model', 'weights', 'pretrained', 'experimental', 'research'
-  ];
+  const nsfwTags = nsfwTagSet(customKeywords);
 
   for (const tag of tags) {
-    const normalizedTag = tag.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const normalizedTag = alnum(tag);
 
     // Skip known safe tags
-    if (safeTags.some(safe => normalizedTag === safe.replace(/[^a-z0-9]/g, '') ||
-      normalizedTag.includes(safe.replace(/[^a-z0-9]/g, '')))) {
+    if (SAFE_TAGS.some(safe => normalizedTag === safe || normalizedTag.includes(safe))) {
       continue;
     }
 
-    for (const nsfwTag of allNsfwTags) {
-      const normalizedNsfwTag = nsfwTag.toLowerCase().replace(/[^a-z0-9]/g, '');
-
-      // Skip very short NSFW terms to avoid false positives (e.g., 'dp', 'bj' matching random tags)
-      if (normalizedNsfwTag.length < 4) continue;
-
-      // Require EXACT match for tags - no substring matching
-      // Tags are short and specific, so partial matching causes too many false positives
-      if (normalizedTag === normalizedNsfwTag) {
-        flaggedTags.push(tag);
-        score += 100;
-        break;
-      }
+    // Require EXACT match for tags - no substring matching. Tags are short and
+    // specific, so partial matching causes too many false positives.
+    if (nsfwTags.has(normalizedTag)) {
+      flaggedTags.push(tag);
+      score += 100;
     }
   }
 

@@ -1,10 +1,10 @@
 import React from 'react';
-import { AlertTriangle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Skill } from '../../types';
 import { SkillsTable } from './SkillsTable';
 import { SkillSortKey } from './SkillsTableHeader';
 import { SectionEmptyState } from '../SectionEmptyState';
+import { SyncErrorBanner } from '../SyncErrorBanner';
 
 /**
  * Skills tab content. Slots into MainLayout's content area exactly where
@@ -70,11 +70,16 @@ export function SkillsView({
     if (lastError) {
         return (
             <div className="space-y-2">
-                <div className="flex items-center gap-2 p-3 rounded-lg border border-red-500/30 bg-red-500/10 text-red-700 text-sm">
-                    <AlertTriangle size={16} />
-                    <span>{lastError}</span>
-                </div>
+                <SyncErrorBanner message={lastError} theme={theme} onRetry={onSyncAll} isSyncing={isSyncing} />
                 {skills.length > 0 && table}
+                {totalCount === 0 && !isSyncing && (
+                    <SectionEmptyState
+                        title={t('skills.empty.title', { defaultValue: 'No skills in the local database' })}
+                        description={t('skills.empty.desc', { defaultValue: 'Use Sync All to refresh every enabled source, or import custom data when you want to manage this section manually.' })}
+                        onSyncAll={onSyncAll}
+                        onImportCustom={onImportCustom}
+                    />
+                )}
             </div>
         );
     }

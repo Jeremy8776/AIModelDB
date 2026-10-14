@@ -72,7 +72,9 @@ export function useSyncOperations({ models, settings, callbacks }: UseSyncOperat
                     apiConfig: settings.apiConfig,
                     preferredModelProvider: settings.preferredModelProvider,
                     ignoredModels: settings.ignoredModels || [],
-                    systemPrompt: settings.systemPrompt
+                    systemPrompt: settings.systemPrompt,
+                    // Per-source cursors decide what is fetched; this switches them off.
+                    fullRefresh: settings.incrementalSync === false
                 },
                 {
                     onProgress: setSyncProgress,

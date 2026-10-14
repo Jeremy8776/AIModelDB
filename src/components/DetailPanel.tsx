@@ -6,7 +6,7 @@ import ThemeContext from '../context/ThemeContext';
 import { Model } from '../types';
 import { Badge, DomainIcon } from './UI';
 import { fmtDate, kfmt } from '../utils/format';
-import { handleExternalLink } from '../utils/external-links';
+import { handleExternalLink, safeHref } from '../utils/external-links';
 import { fetchCivitasBayDetails, CivitasBayDetails } from '../services/api/fetchers/image-platforms/civitas-bay-details';
 import { fetchHuggingFaceDetails } from '../services/api/fetchers/huggingface-details';
 import { GalleryImage } from './detail/GalleryImage';
@@ -197,7 +197,7 @@ export function DetailPanel({ model, onClose, onDelete, triggerElement, onToggle
                 )}
                 {modelDetails?.civitaiUrl && (
                   <a
-                    href={modelDetails.civitaiUrl}
+                    href={safeHref(modelDetails.civitaiUrl)}
                     onClick={(e) => handleExternalLink(e, modelDetails.civitaiUrl!)}
                     className="mt-2 inline-flex items-center gap-1 text-sm text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300"
                   >
@@ -301,7 +301,7 @@ export function DetailPanel({ model, onClose, onDelete, triggerElement, onToggle
                 <span className={textSubtle}>{t('detailPanel.licenseUrl', 'License text')}</span>
                 <div>
                   <a
-                    href={model.license.url}
+                    href={safeHref(model.license.url)}
                     onClick={(e) => handleExternalLink(e, model.license.url!)}
                     className="inline-flex items-center gap-1 text-purple-600 dark:text-purple-300 hover:underline"
                   >
@@ -609,7 +609,7 @@ export function DetailPanel({ model, onClose, onDelete, triggerElement, onToggle
                     {displayLinks.map((btn, i) => (
                       <a
                         key={i}
-                        href={btn.url}
+                        href={safeHref(btn.url)}
                         onClick={(e) => handleExternalLink(e, btn.url)}
                         className={`
                           inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[11px] font-semibold

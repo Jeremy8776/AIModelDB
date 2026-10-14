@@ -297,7 +297,7 @@ export function useModelValidation(
         try {
             validationAbortRef.current?.abort();
             console.log('[CANCEL] Aborted in-flight API request');
-        } catch { }
+        } catch { /* abort() on an already-finished request: nothing to cancel */ }
         validationAbortRef.current = null;
 
         const queue = getValidationQueue();

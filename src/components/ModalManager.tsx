@@ -7,7 +7,7 @@
 
 import { useModal } from '../context/ModalContext';
 
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { Model } from '../types';
 import { Settings } from '../context/SettingsContext';
 import { ModalState } from '../hooks/useModalState';
@@ -19,24 +19,26 @@ import { filterModels, FilterOptions } from '../utils/filterLogic';
 import { exportModels } from '../services/exportService';
 import { dedupe } from '../utils/format';
 
-// Modal Component Imports
-import { AddModelModal } from './AddModelModal';
-import { ImportModal } from './ImportModal';
-import { SettingsModal } from './SettingsModal';
-import { FlaggedModelsModal } from './FlaggedModelsModal';
-import { TerminalConsole } from './TerminalConsole';
-import { OnboardingWizard } from './OnboardingWizard';
-import { ValidationProgress } from './ValidationProgress';
-import { ModelEditor } from './ModelEditor';
-import { SimpleValidationModal } from './SimpleValidationModal';
-import { ValidationResultsModal } from './ValidationResultsModal';
-import { FlagReasonModal } from './FlagReasonModal';
-import { ExportModal } from './ExportModal';
+// Modals are loaded on demand so they stay out of the startup bundle.
+const AddModelModal = lazy(() => import('./AddModelModal').then(m => ({ default: m.AddModelModal })));
+const ImportModal = lazy(() => import('./ImportModal').then(m => ({ default: m.ImportModal })));
+const SettingsModal = lazy(() => import('./SettingsModal').then(m => ({ default: m.SettingsModal })));
+const FlaggedModelsModal = lazy(() => import('./FlaggedModelsModal').then(m => ({ default: m.FlaggedModelsModal })));
+const TerminalConsole = lazy(() => import('./TerminalConsole').then(m => ({ default: m.TerminalConsole })));
+const OnboardingWizard = lazy(() => import('./OnboardingWizard').then(m => ({ default: m.OnboardingWizard })));
+const ValidationProgress = lazy(() => import('./ValidationProgress').then(m => ({ default: m.ValidationProgress })));
+const ModelEditor = lazy(() => import('./ModelEditor').then(m => ({ default: m.ModelEditor })));
+const SimpleValidationModal = lazy(() => import('./SimpleValidationModal').then(m => ({ default: m.SimpleValidationModal })));
+const ValidationResultsModal = lazy(() => import('./ValidationResultsModal').then(m => ({ default: m.ValidationResultsModal })));
+const FlagReasonModal = lazy(() => import('./FlagReasonModal').then(m => ({ default: m.FlagReasonModal })));
+const ExportModal = lazy(() => import('./ExportModal').then(m => ({ default: m.ExportModal })));
+const KeyboardShortcutsModal = lazy(() => import('./KeyboardShortcutsModal').then(m => ({ default: m.KeyboardShortcutsModal })));
+
+// Always-visible UI stays eager
 import { ConfirmationToast } from './ConfirmationToast';
 import { ToastContainer } from './toasts/ToastContainer';
 import { UndoToast } from './toasts/UndoToast';
 import { ConsoleButton } from './console/ConsoleButton';
-import { KeyboardShortcutsModal } from './KeyboardShortcutsModal';
 
 interface ModalManagerProps {
     // Global State
@@ -159,7 +161,7 @@ export function ModalManager({
     };
 
     return (
-        <>
+        <Suspense fallback={null}>
             <OnboardingWizard
                 isOpen={modalState.showOnboarding}
                 onClose={() => modalState.setShowOnboarding(false)}
@@ -426,6 +428,6 @@ export function ModalManager({
                     theme={theme}
                 />
             )}
-        </>
+        </Suspense>
     );
 }

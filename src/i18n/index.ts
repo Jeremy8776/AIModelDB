@@ -9,17 +9,9 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 
-// Import local translation files
+// English ships in the main bundle; every other language is loaded on demand
+// so the ~400 KB of locale JSON is not parsed before first paint.
 import en from './locales/en.json';
-import zh from './locales/zh.json';
-import ja from './locales/ja.json';
-import ko from './locales/ko.json';
-import es from './locales/es.json';
-import fr from './locales/fr.json';
-import de from './locales/de.json';
-import pt from './locales/pt.json';
-import ru from './locales/ru.json';
-import ar from './locales/ar.json';
 
 // Available languages
 export const SUPPORTED_LANGUAGES = [
@@ -44,15 +36,6 @@ i18n
     .init({
         resources: {
             en: { translation: en },
-            zh: { translation: zh },
-            ja: { translation: ja },
-            ko: { translation: ko },
-            es: { translation: es },
-            fr: { translation: fr },
-            de: { translation: de },
-            pt: { translation: pt },
-            ru: { translation: ru },
-            ar: { translation: ar },
         },
         fallbackLng: 'en',
         debug: process.env.NODE_ENV === 'development',
@@ -68,15 +51,39 @@ i18n
         }
     });
 
-// Placeholder for compatibility with previous dynamic implementation
-// This allows us to keep the interface consistent even if we switch back to static files
+type LoadableLanguage = Exclude<LanguageCode, 'en'>;
+
+const LANGUAGE_LOADERS: Record<LoadableLanguage, () => Promise<{ default: Record<string, unknown> }>> = {
+    zh: () => import('./locales/zh.json'),
+    ja: () => import('./locales/ja.json'),
+    ko: () => import('./locales/ko.json'),
+    es: () => import('./locales/es.json'),
+    fr: () => import('./locales/fr.json'),
+    de: () => import('./locales/de.json'),
+    pt: () => import('./locales/pt.json'),
+    ru: () => import('./locales/ru.json'),
+    ar: () => import('./locales/ar.json'),
+};
+
+async function ensureLanguageLoaded(code: string): Promise<void> {
+    const base = code.split('-')[0] as LanguageCode;
+    if (base === 'en' || !(base in LANGUAGE_LOADERS) || i18n.hasResourceBundle(base, 'translation')) return;
+    const bundle = await LANGUAGE_LOADERS[base as LoadableLanguage]();
+    i18n.addResourceBundle(base, 'translation', bundle.default, true, true);
+}
+
 export async function translateToLanguage(targetLang: LanguageCode): Promise<void> {
+    await ensureLanguageLoaded(targetLang);
     await i18n.changeLanguage(targetLang);
 }
 
+// The detector may pick a non-English language at startup; load it, then re-resolve.
+ensureLanguageLoaded(i18n.language || 'en')
+    .then(() => i18n.changeLanguage(i18n.language))
+    .catch((error) => console.error('[i18n] Failed to load detected language:', error));
+
 export function clearTranslationCache() {
-    // No-op for static files, but kept for compatibility
-    console.log('[i18n] Cache clear requested (using static files)');
+    // No-op: translations are static JSON files, kept for API compatibility
 }
 
 export default i18n;

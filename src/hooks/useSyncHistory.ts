@@ -4,18 +4,20 @@ import { Model } from '../types';
 import {
     saveSnapshot as saveToIDB,
     getSnapshots as getFromIDB,
+    getSnapshotModels,
     deleteSnapshot as deleteFromIDB,
     clearSnapshots as clearFromIDB,
-    HistoryEntry
-} from '../services/storage/indexedDBStorage';
+    buildMeta,
+    HistoryMeta
+} from '../services/storage/historyStorage';
 
-// Re-export for components
-export type { HistoryEntry as HistoryItem };
+// Re-export for components. The list holds metadata only; models are read on restore.
+export type { HistoryMeta as HistoryItem };
 
 const MAX_SNAPSHOTS = 5;
 
 export function useSyncHistory() {
-    const [history, setHistory] = useState<HistoryEntry[]>([]);
+    const [history, setHistory] = useState<HistoryMeta[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     const loadHistory = useCallback(async () => {
@@ -36,19 +38,9 @@ export function useSyncHistory() {
 
     const saveSnapshot = useCallback(async (models: Model[], description: string) => {
         try {
-            const timestamp = Date.now();
-            const id = crypto.randomUUID();
-            const item: HistoryEntry = {
-                id,
-                timestamp,
-                dateStr: new Date(timestamp).toLocaleString(),
-                modelCount: models.length,
-                description,
-                sizeBytes: new Blob([JSON.stringify(models)]).size,
-                models: models
-            };
+            const item = buildMeta(models, description);
 
-            await saveToIDB(item);
+            await saveToIDB(item, models);
 
             // Maintain max limit
             const current = await getFromIDB();
@@ -68,21 +60,12 @@ export function useSyncHistory() {
 
     const restoreSnapshot = useCallback(async (id: string): Promise<Model[] | null> => {
         try {
-            // Since we loaded everything into state/IDB, we might already have it in history state
-            // But to be safe/consistent with async nature, we can grab it from state or DB.
-            // Since getAll returns full objects including models, 'history' state has them.
-            const found = history.find(h => h.id === id);
-            if (found) return found.models;
-
-            // Fallback reload
-            const all = await getFromIDB();
-            const fresh = all.find(h => h.id === id);
-            return fresh ? fresh.models : null;
+            return await getSnapshotModels(id);
         } catch (e) {
             console.error("Failed to restore", e);
             return null;
         }
-    }, [history]);
+    }, []);
 
     const clearHistory = useCallback(async () => {
         try {

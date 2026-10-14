@@ -3,6 +3,40 @@
 All notable changes to this project will be documented in this file.
 
 
+## [Unreleased]
+
+### Fixed
+- **Startup black screen.** The window now stays hidden until React has mounted (with a 6 s safety timeout) instead of showing on a fixed timer. The main bundle dropped from 1.69 MB to about 0.87 MB: `xlsx`, the nine non-English locales and all modals now load on demand. Web fonts no longer block first paint.
+- **DeepSeek, Cohere, Gemini and local Ollama failed in the desktop app** because their hosts were not on the proxy allowlist (Ollama is now allowed on `127.0.0.1`/`localhost` port 11434 only).
+- **API keys were silently erased** when the OS keystore was unavailable, or when a legacy plaintext key was loaded. Keys are now kept, and a save during startup can no longer overwrite them.
+- A failed database save now shows an error toast, and a pending save is flushed when the window closes.
+- Untrusted `href` values (imported model and license URLs) are dropped unless http(s).
+
+- **Incremental sync.** Each source now remembers when it last finished a successful pull and only fetches what changed since then, newest first. CivitasBay (RSS, newest first) stops at the first page older than the last sync, Ollama Library fetches detail pages only for models updated since (its listing says "Updated N days ago"), and the official MCP registry uses its `updated_since` filter. Cursors are per source, so a source that failed or was off catches up next time instead of being skipped. A full refresh runs automatically every 14 days (to refresh download counts and edits), on the first sync of a source, and whenever "Incremental sync" is switched off in Settings > Data Sources. Measured in Electron against the real network: a full Sync All (models, MCP and skills) took 177 s, the next one 9 s. HuggingFace and the other single-request sources are unchanged (HuggingFace is the top 10,000 by downloads; "newest first" there would be thousands of empty repos a day).
+- **"Not synced yet" after every restart.** The last-sync time shown in the header was never saved. It is now stored with the database and restored at launch.
+- **Sync lag.** Merging fetched models, MCP servers and skills was quadratic (every incoming record scanned the whole list); it now uses hash lookups, with tests checking the results match the old behaviour. The NSFW scan compiled a regex per keyword per model (about 8 s for 20,000 models) and now takes about 0.1 s. MCP and Skills pages are merged in batches and saved once per burst, the model merge no longer round-trips through a web worker (removed), and model saves write only the records that changed.
+- **A real sync froze the UI for 8 to 22 seconds** (measured in Electron with 28,000 models). Two always-mounted dialogs were recomputing on every update: the validation dialog built a CSV of the whole database on every render, and the flagged-models dialog rendered thousands of heavy cards after a sync. The validation dialog now does no work while closed, and flagged models are shown 40 at a time with a "Show more" button. A full sync now blocks the UI for about 0.25 s in total, longest single stall 130 ms.
+- **Startup:** the NSFW rescan now runs in 8 ms slices instead of one long task (blocked time at startup went from 230 ms to about 55 ms with 20,000 models). The HTML parser (cheerio, 215 KB) loads only when a scraping source runs, taking the main bundle from 884 KB to 599 KB.
+- **Sync history** no longer clones the whole database in one go. Snapshots are stored in their own database in chunks, the history screen reads only metadata, size is estimated instead of stringifying every model, and existing snapshots are migrated on first launch.
+- **A stalled server could hang "Sync All" forever.** Requests from the desktop app now time out after 45 s (including reading the body).
+- `npm run perf` (scripts/perf-probe.mjs) seeds a throwaway profile and measures startup and sync responsiveness in Electron, with an optional CPU profile.
+- **MCP and Skills lists vanished after a large sync.** They were stored in localStorage (about 5 MB limit), which a full registry crawl exceeds. They now live in IndexedDB, and the old copy is migrated on first launch. Startup no longer re-validates every stored server.
+- **Glama failed with "Request failed: 401".** Glama's API requires a free API key; add one in Settings > Data Sources. Without a key the source is skipped instead of erroring on every sync.
+- Sync error banners on the MCP and Skills tabs now say what went wrong and what to do (with Retry and Dismiss), and the empty-state prompt shows under an error.
+- Console webhook probe no longer treats a static host's index.html as a webhook server.
+
+### Security
+- Private-address guard rewritten: IPv6 literals, IPv4-mapped/NAT64/6to4 forms, `0.0.0.0`, CGNAT and trailing-dot names were previously not blocked.
+- All main-process fetches revalidate every redirect hop, drop credentials on cross-origin hops and cap response size. Import URLs also have DNS results checked.
+- Privileged IPC refuses callers that are not the app's own page; in-window navigation is limited to the app page; browser permission requests are denied.
+- Updated Electron 39 to 44, replaced `xlsx` 0.18 with SheetJS 0.20.3, and cleared all production `npm audit` findings (server-only packages moved to devDependencies; `electron-squirrel-startup` removed).
+- Optional Node server: binds to 127.0.0.1 by default, webhook signatures are required and timing-safe when a secret is set, client IP no longer trusts `X-Forwarded-For`, and the placeholder `/search` endpoint is removed. Server tests now run in `npm test`.
+
+### Internal
+- Removed nine unused modules (about 1,700 lines). CI uses Node 22, adds a production dependency audit, and the Pages deploy runs tests first.
+
+---
+
 ## [0.6.1] - 2026-06-04
 
 ### Added

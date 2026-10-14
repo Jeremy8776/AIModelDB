@@ -88,7 +88,7 @@ export const MCP_SOURCES: EntitySource[] = [
     { key: 'packages', label: 'npm Registry', description: 'Packages with mcp-server / modelcontextprotocol keywords.', status: 'available' },
     { key: 'docker', label: 'Docker MCP Registry', description: 'Docker-signed, security-reviewed servers and catalog YAML/JSON.', status: 'planned' },
     { key: 'smithery', label: 'Smithery', description: 'Marketplace API with semantic search, verified flags, use counts, and remote status.', status: 'planned' },
-    { key: 'glama', label: 'Glama', description: 'Large community index with connectors, tool schemas, quality scoring, and gateway metadata.', status: 'available' },
+    { key: 'glama', label: 'Glama', description: 'Large community index with connectors, tool schemas, quality scoring, and gateway metadata. Needs a free Glama API key.', status: 'available' },
     { key: 'pulsemcp', label: 'PulseMCP', description: 'Sub-registry API with popularity, official status, auth, and tool enrichments.', status: 'planned' },
     { key: 'mcp-so', label: 'MCP.so', description: 'Large community MCP directory with install snippets and categorization.', status: 'planned' },
     { key: 'mcp-atlas', label: 'MCP Atlas', description: 'Cross-registry index that dedupes official, Smithery, Glama, PulseMCP, and GitHub.', status: 'planned' },

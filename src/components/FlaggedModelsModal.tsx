@@ -1,6 +1,7 @@
 
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { safeHref } from "../utils/external-links";
 import { CheckCircle, XCircle, Edit3, X, AlertTriangle, Download } from "lucide-react";
 import ThemeContext from "../context/ThemeContext";
 import { Model } from "../types";
@@ -24,11 +25,18 @@ interface FlaggedModelsModalProps {
 	addConsoleLog: (msg: string) => void;
 }
 
+const FLAGGED_PAGE_SIZE = 40;
+
 export const FlaggedModelsModal: React.FC<FlaggedModelsModalProps> = ({ flagged, isOpen, onApprove, onDeny, onApproveAll, onDenyAll, onEdit, onClose, addConsoleLog }) => {
 	const { theme } = useContext(ThemeContext);
 	const { settings } = useSettings();
 	const { t } = useTranslation();
 	const [editingModel, setEditingModel] = useState<Model | null>(null);
+	// A sync can flag thousands of models. Each card is heavy (about 15 translated labels), so render in pages.
+	const [visibleCount, setVisibleCount] = useState(FLAGGED_PAGE_SIZE);
+	useEffect(() => {
+		if (isOpen) setVisibleCount(FLAGGED_PAGE_SIZE);
+	}, [isOpen]);
 
 	const getCostDisplayLocal = (model: Model): string => {
 		if (!model.pricing || model.pricing.length === 0) return '—';
@@ -151,7 +159,7 @@ export const FlaggedModelsModal: React.FC<FlaggedModelsModalProps> = ({ flagged,
 					) : (
 						<div className="h-full overflow-y-auto">
 							<div className="p-6 space-y-4">
-								{flagged.map((model: Model) => (
+								{flagged.slice(0, visibleCount).map((model: Model) => (
 									<div key={model.id} className={`rounded-xl border ${bgCard} p-5 transition-all hover:shadow-md`}>
 										<div className="flex items-start justify-between">
 											{/* Model Info */}
@@ -206,7 +214,7 @@ export const FlaggedModelsModal: React.FC<FlaggedModelsModalProps> = ({ flagged,
 												{model.url && (
 													<div className="mt-3">
 														<a
-															href={model.url}
+															href={safeHref(model.url)}
 															target="_blank"
 															rel="noopener noreferrer"
 															className={`text-sm text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 truncate block`}
@@ -258,6 +266,14 @@ export const FlaggedModelsModal: React.FC<FlaggedModelsModalProps> = ({ flagged,
 										</div>
 									</div>
 								))}
+								{flagged.length > visibleCount && (
+									<button
+										onClick={() => setVisibleCount(count => count + FLAGGED_PAGE_SIZE)}
+										className={`w-full rounded-xl ${bgCard} px-4 py-3 text-sm font-medium hover:opacity-80 transition-opacity`}
+									>
+										{t('flagged.showMore', { defaultValue: 'Show more ({{remaining}} remaining)', remaining: flagged.length - visibleCount })}
+									</button>
+								)}
 							</div>
 						</div>
 					)}
