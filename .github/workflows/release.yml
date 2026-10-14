@@ -1,38 +1,67 @@
 name: Release
 
+# Build every platform in parallel, then publish ONE release containing all of it.
+#
+#  - Tag push (v*)                    : build all three, verify the expected files exist, publish.
+#  - Pull request touching this file  : build all three and keep the files as workflow artifacts
+#    only. This is how a change to the release pipeline is tested without publishing anything.
+#
+# Nothing is published unless every platform built. electron-builder is told `--publish never`
+# so it cannot create its own (draft) release; the single publish job below owns that.
+
 on:
   push:
     tags:
       - 'v*'
+  pull_request:
+    paths:
+      - '.github/workflows/release.yml'
 
-permissions:
-  contents: write
+permissions: {}
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
-  release:
-    name: Build and Release
-    strategy:
-      matrix:
-        os: [windows-latest, ubuntu-latest, macos-latest]
-        include:
-          - os: windows-latest
-            build_script: electron:build:win
-            artifact_name: windows
-          - os: ubuntu-latest
-            build_script: electron:build:linux
-            artifact_name: linux
-          - os: macos-latest
-            build_script: electron:build:mac
-            artifact_name: macos
-
+  build:
+    name: Build (${{ matrix.name }})
+    # Pull requests from forks never get the signing secrets, so they do not build.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false # one platform failing must not hide whether the others work
+      matrix:
+        include:
+          # Runners are pinned (not `-latest`) so a runner image migration cannot change the build.
+          - name: Windows
+            os: windows-2022
+            script: electron:build:win
+            # The Windows installer is signed with the self-signed certificate in CSC_LINK.
+            sign: true
+          - name: Linux
+            os: ubuntu-24.04
+            script: electron:build:linux
+            sign: false
+          - name: macOS
+            os: macos-15
+            script: electron:build:mac
+            # No Apple Developer ID is available, and a non-Apple certificate in the keychain fails
+            # to unlock on recent runners. With no certificate electron-builder falls back to an
+            # ad-hoc signature, which Apple Silicon requires in order to launch the app at all.
+            sign: false
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '22'
           cache: 'npm'
@@ -41,48 +70,70 @@ jobs:
         run: npm ci
 
       - name: Build Electron app
-        run: npm run ${{ matrix.build_script }}
+        # `--publish never` is appended to the electron-builder command in the npm script.
+        run: npm run ${{ matrix.script }} -- --publish never
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CSC_LINK: ${{ secrets.CSC_LINK }}
-          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+          CSC_LINK: ${{ matrix.sign && secrets.CSC_LINK || '' }}
+          CSC_KEY_PASSWORD: ${{ matrix.sign && secrets.CSC_KEY_PASSWORD || '' }}
 
-      - name: Upload Release Assets
-        uses: softprops/action-gh-release@v2
+      - name: Upload build output
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          files: |
+          name: release-${{ matrix.name }}
+          if-no-files-found: error
+          retention-days: 7
+          path: |
             release/*.exe
             release/*.dmg
-            release/*.zip
             release/*.AppImage
             release/*.deb
-            release/*.yml
+            release/*.zip
+            release/latest*.yml
             release/*.blockmap
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  create-release-notes:
-    name: Create Release Notes
-    runs-on: ubuntu-latest
-    needs: release
+  publish:
+    name: Publish release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write # the only job that can create a release
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Download build output
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
-          fetch-depth: 0
+          pattern: release-*
+          path: dist-release
+          merge-multiple: true
 
-      - name: Generate Release Notes
-        uses: softprops/action-gh-release@v2
+      - name: Verify every platform produced its installer
+        run: |
+          set -eu
+          ls -la dist-release
+          missing=0
+          for pattern in '*.exe' '*.dmg' '*.AppImage' 'latest.yml' 'latest-linux.yml'; do
+            if ! ls dist-release/$pattern >/dev/null 2>&1; then
+              echo "::error::No file matching $pattern in the build output"
+              missing=1
+            fi
+          done
+          exit $missing
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
+          files: dist-release/*
           generate_release_notes: true
+          fail_on_unmatched_files: true
           body: |
             ## AI Model DB ${{ github.ref_name }}
-            
+
             See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for detailed changes.
-            
+
             ### Downloads
-            - **Windows**: `.exe` installer or portable `.exe`
-            - **macOS**: `.dmg` disk image
-            - **Linux**: `.AppImage` or `.deb` package
+            - **Windows**: `AI-Model-DB-Setup.exe` (signed with a self-signed certificate, so SmartScreen will warn on first run)
+            - **macOS** (Apple Silicon): `.dmg` (ad-hoc signed, not notarized: right-click the app and choose Open the first time)
+            - **Linux**: `.AppImage` or `.deb`
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

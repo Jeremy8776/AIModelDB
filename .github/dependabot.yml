@@ -1,0 +1,13 @@
+# Keeps the SHA-pinned GitHub Actions current. Pinning to a commit SHA stops a moved tag from
+# changing what runs in CI or the release; Dependabot proposes the update with the new SHA.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "ci"
+    groups:
+      actions:
+        patterns: ['*']
