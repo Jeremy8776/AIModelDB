@@ -23,7 +23,10 @@ Releases are cut from `main` by pushing a version tag. Nothing else publishes an
 ## Testing a change to the pipeline
 
 A pull request that touches `release.yml` runs the three builds and keeps the output as workflow
-artifacts (7 days) without publishing. Use that before tagging.
+artifacts (7 days) without publishing, but electron-builder skips code signing on pull requests.
+To exercise signing as well, run the workflow by hand on `main` (`gh workflow run release.yml --ref main`):
+it builds exactly like a tag build and publishes nothing. Do that before tagging a release when the
+pipeline or the signing setup changed.
 
 ## If a release goes wrong
 
