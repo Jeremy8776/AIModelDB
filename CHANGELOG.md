@@ -5,6 +5,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-10-14
+
 ### Fixed
 - **Startup black screen.** The window now stays hidden until React has mounted (with a 6 s safety timeout) instead of showing on a fixed timer. The main bundle dropped from 1.69 MB to about 0.87 MB: `xlsx`, the nine non-English locales and all modals now load on demand. Web fonts no longer block first paint.
 - **DeepSeek, Cohere, Gemini and local Ollama failed in the desktop app** because their hosts were not on the proxy allowlist (Ollama is now allowed on `127.0.0.1`/`localhost` port 11434 only).
