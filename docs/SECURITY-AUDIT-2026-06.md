@@ -11,6 +11,9 @@ React JSX auto-escaping neutralizes classic stored-XSS-via-text. Weak points con
 path has) and (2) a few **client-side `fetch`/render sinks** that bypass the main-process allowlist.
 
 > Status legend: ☐ open · ☑ fixed during integration
+>
+> **Re-checked 14/10/2026:** H1, H4, H5, M2, M3, M5, L1 and L4 are fixed in code (H5 via `electron/net-guard.js`
+> and per-hop revalidation in `electron/safe-fetch.js`). C1, C2, H2, H3, M1, M4, L2, L3 and L5 were not re-verified.
 
 ---
 
@@ -30,7 +33,7 @@ path has) and (2) a few **client-side `fetch`/render sinks** that bypass the mai
 
 ## HIGH
 
-### ☐ H1. Zod schemas use `.passthrough()` everywhere — validation doesn't strip `__proto__`/`constructor`
+### ☑ H1. Zod schemas use `.passthrough()` everywhere — validation doesn't strip `__proto__`/`constructor`
 `src/services/api/schemas.ts:26,36,48,90,115,140,154,168,184`; `validation.ts:264-268` `coerceToModel` does `{ id, name, ...obj }`
 - **Fix:** use `.strip()` (Zod default); build patched object from fixed key list / `Object.create(null)`; guard/delete `__proto__` before spreads.
 
@@ -43,12 +46,12 @@ path has) and (2) a few **client-side `fetch`/render sinks** that bypass the mai
 - Renderer `fetch` has no host allowlist / private-IP block → SSRF to `127.0.0.1:11434`, `169.254.169.254`, intranet.
 - **Fix:** route all renderer outbound through validated IPC proxy / shared `safeFetch`; for import-from-URL block private/loopback + non-http(s).
 
-### ☐ H4. `/scrape` SSRF: allowlist checks hostname then `fetch` follows redirects off-allowlist
+### ☑ H4. `/scrape` SSRF: allowlist checks hostname then `fetch` follows redirects off-allowlist
 `server/index.js:328-338`, `:177` (`followRedirects: true`)
 - Allowlisted host can 302 → `169.254.169.254`/`127.0.0.1`.
 - **Fix:** `redirect: 'manual'`, re-validate `Location` host per hop.
 
-### ☐ H5. DNS-rebinding gap — allowlisted hostnames not pinned, private IPs only blocked for literal-IP hosts
+### ☑ H5. DNS-rebinding gap — allowlisted hostnames not pinned, private IPs only blocked for literal-IP hosts
 `electron/security.js:17-37,49-51`
 - **Fix:** resolve host once, reject private/loopback/link-local (incl. `::ffff:127.0.0.1`, `0.0.0.0`), connect to pinned IP with original Host. At minimum document residual risk.
 
@@ -57,16 +60,16 @@ path has) and (2) a few **client-side `fetch`/render sinks** that bypass the mai
 ## MEDIUM
 
 - ☐ **M1.** ReDoS in `cleanModelDescription` over untrusted descriptions — `format.ts:343` `(\*|_)(.*?)\1`, `:352` `[a-zA-Z\s]+\s+`. Cap length (5–10 KB), de-fang patterns, run in worker.
-- ☐ **M2.** ReDoS + unbounded body in server `/scrape` regexes — `server/index.js:348-492`. Cap fetched body (~1–2 MB), bound text, use `{1,80}` quantifiers.
-- ☐ **M3.** No pagination cap on MCP registry sync — `official-registry.ts:230` (`maxServers = Infinity`); callers pass none. Endless `nextCursor` → memory/disk DoS. Pass `maxServers` (~10–20k) + max pages.
+- ☑ **M2.** ReDoS + unbounded body in server `/scrape` regexes — `server/index.js:348-492`. Cap fetched body (~1–2 MB), bound text, use `{1,80}` quantifiers.
+- ☑ **M3.** No pagination cap on MCP registry sync — `official-registry.ts:230` (`maxServers = Infinity`); callers pass none. Endless `nextCursor` → memory/disk DoS. Pass `maxServers` (~10–20k) + max pages.
 - ☐ **M4.** `coerceToModel` `Date.now()`/`Math.random()` IDs + raw spread — `validation.ts:264-272`. Defeats dedupe; whitelist fields, derive deterministic IDs.
-- ☐ **M5.** `proxy-image` trusts remote `Content-Type` into `data:` URL — `main.js:406-409`. Reject `text/html`/`image/svg+xml`; image MIME allowlist.
+- ☑ **M5.** `proxy-image` trusts remote `Content-Type` into `data:` URL — `main.js:406-409`. Reject `text/html`/`image/svg+xml`; image MIME allowlist.
 
 ## LOW
-- ☐ **L1.** Right-click "Save Image As" downloads any `srcURL` incl. data: — `main.js:92-98`. Validate scheme/host.
+- ☑ **L1.** Right-click "Save Image As" downloads any `srcURL` incl. data: — `main.js:92-98`. Validate scheme/host.
 - ☐ **L2.** Secrets: dev logs full proxied URL (`main.js:359`); server forwards `x-api-key` to every route / `Authorization` to any `*openai*` path (`server/index.js:187-199`). Scope creds to owning upstream; don't log URLs. (Electron path OK.)
 - ☐ **L3.** `safeStorage` decrypt accepts arbitrary hex, no context binding — `main.js:333-346`.
-- ☐ **L4.** `parseCSV/TSV` unbounded input (OOM) — `format.ts:129-221`, `ImportModal.tsx:144`. Cap input length.
+- ☑ **L4.** `parseCSV/TSV` unbounded input (OOM) — `format.ts:129-221`, `ImportModal.tsx:144`. Cap input length.
 - ☐ **L5.** Skills `requires.*` assume string[] — `SkillsDetailPanel.tsx:259-282`. Validate via schema (C2).
 
 ---
