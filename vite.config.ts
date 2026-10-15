@@ -10,9 +10,6 @@ export default defineConfig({
     __APP_VERSION__: JSON.stringify(pkg.version),
   },
   base: './',
-  esbuild: {
-    logOverride: { 'this-is-undefined-in-esm': 'silent' }
-  },
   server: {
     // Use localhost by default for security. Set VITE_HOST=0.0.0.0 to expose to network.
     host: process.env.VITE_HOST || 'localhost',
@@ -140,15 +137,16 @@ export default defineConfig({
   build: {
     target: 'es2020',
     sourcemap: false,
-    minify: 'esbuild', // Use esbuild for faster minification (faster than terser)
     chunkSizeWarningLimit: 1000,
     reportCompressedSize: false, // Disable gzip size reporting to speed up build
-    rollupOptions: {
+    rolldownOptions: {
       output: {
-        manualChunks: {
-          // Split large dependencies into separate chunks for better caching
-          'react-vendor': ['react', 'react-dom'],
-          'icons': ['lucide-react'],
+        // Split large dependencies into separate chunks for better caching
+        codeSplitting: {
+          groups: [
+            { name: 'react-vendor', test: /node_modules[\/](react|react-dom|scheduler)[\/]/ },
+            { name: 'icons', test: /node_modules[\/]lucide-react[\/]/ },
+          ],
         },
       },
     },
