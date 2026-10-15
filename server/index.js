@@ -174,7 +174,7 @@ proxy('/civitasbay-api', 'https://civitasbay.org', { from: /^\/civitasbay-api/, 
 registerScrape(app);
 
 // SPA fallback
-app.get('/{*splat}', (req, res) => { // Express 5 wildcard syntax ('*' alone no longer parses)
+app.get(/.*/, (req, res) => { // Express 5: a bare '*' path no longer parses, so match everything with a regex
   res.sendFile(path.join(distDir, 'index.html'));
 });
 
