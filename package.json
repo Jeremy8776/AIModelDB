@@ -46,7 +46,7 @@
     "lucide-react": "^0.452.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-i18next": "^16.5.1",
+    "react-i18next": "^17.0.16",
     "react-icons": "^5.5.0",
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
     "zod": "^4.3.5"
