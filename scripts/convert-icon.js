@@ -1,4 +1,12 @@
-const puppeteer = require('puppeteer');
+// Needs puppeteer, which is deliberately NOT a project dependency (it downloads a full Chrome on every
+// `npm ci`). Install it on demand: npm install --no-save puppeteer
+let puppeteer;
+try {
+    puppeteer = require('puppeteer');
+} catch {
+    console.error('puppeteer is not installed. Run: npm install --no-save puppeteer');
+    process.exit(1);
+}
 const fs = require('fs');
 const path = require('path');
 
