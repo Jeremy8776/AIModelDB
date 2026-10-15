@@ -9,6 +9,7 @@
  * client sends.
  */
 import express from 'express';
+import { rateLimit, ipKeyGenerator } from 'express-rate-limit';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { createProxyMiddleware } from 'http-proxy-middleware';
@@ -30,29 +31,14 @@ const distDir = path.resolve(__dirname, '..', 'dist');
 app.use(express.static(distDir));
 
 // Global rate limiting to prevent DOS and resource exhaustion
-const rateLimitWindowMs = 15 * 60 * 1000; // 15 minutes
-const maxRequestsPerWindow = 1000; // per client per window
-const ipRequestCounts = new Map();
-
-setInterval(() => {
-  ipRequestCounts.clear();
-}, rateLimitWindowMs).unref();
-
-function globalRateLimiter(req, res, next) {
-  const ip = getClientIp(req);
-  const now = Date.now();
-  const record = ipRequestCounts.get(ip);
-  if (!record || now > record.resetTime) {
-    ipRequestCounts.set(ip, { count: 1, resetTime: now + rateLimitWindowMs });
-    return next();
-  }
-  record.count++;
-  if (record.count > maxRequestsPerWindow) {
-    return res.status(429).json({ error: 'Too many requests, please try again later.' });
-  }
-  next();
-}
-
+const globalRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  limit: 1000, // per client per window
+  standardHeaders: false,
+  legacyHeaders: false,
+  keyGenerator: req => ipKeyGenerator(getClientIp(req)),
+  handler: (req, res) => res.status(429).json({ error: 'Too many requests, please try again later.' }),
+});
 app.use(globalRateLimiter);
 
 // Webhooks need the raw body, so they register before the JSON parser.
