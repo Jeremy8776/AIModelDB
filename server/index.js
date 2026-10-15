@@ -9,6 +9,7 @@
  * client sends.
  */
 import express from 'express';
+import { rateLimit, ipKeyGenerator } from 'express-rate-limit';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { createProxyMiddleware } from 'http-proxy-middleware';
@@ -30,29 +31,14 @@ const distDir = path.resolve(__dirname, '..', 'dist');
 app.use(express.static(distDir));
 
 // Global rate limiting to prevent DOS and resource exhaustion
-const rateLimitWindowMs = 15 * 60 * 1000; // 15 minutes
-const maxRequestsPerWindow = 1000; // per client per window
-const ipRequestCounts = new Map();
-
-setInterval(() => {
-  ipRequestCounts.clear();
-}, rateLimitWindowMs).unref();
-
-function globalRateLimiter(req, res, next) {
-  const ip = getClientIp(req);
-  const now = Date.now();
-  const record = ipRequestCounts.get(ip);
-  if (!record || now > record.resetTime) {
-    ipRequestCounts.set(ip, { count: 1, resetTime: now + rateLimitWindowMs });
-    return next();
-  }
-  record.count++;
-  if (record.count > maxRequestsPerWindow) {
-    return res.status(429).json({ error: 'Too many requests, please try again later.' });
-  }
-  next();
-}
-
+const globalRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  limit: 1000, // per client per window
+  standardHeaders: false,
+  legacyHeaders: false,
+  keyGenerator: req => ipKeyGenerator(getClientIp(req)),
+  handler: (req, res) => res.status(429).json({ error: 'Too many requests, please try again later.' }),
+});
 app.use(globalRateLimiter);
 
 // Webhooks need the raw body, so they register before the JSON parser.
@@ -63,9 +49,17 @@ app.use(express.json({ limit: '1mb' }));
 app.use(proxyValidationMiddleware());
 
 // Mirror Vite dev proxies for production
+const PROXY_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36';
 const proxy = (route, target, rewrite) =>
   app.use(
     route,
+    // The proxy copies req.headers onto the outgoing request. Client Authorization and x-api-key
+    // headers are forwarded as they are, so only the user agent and POST content type are overridden.
+    (req, res, next) => {
+      req.headers['user-agent'] = PROXY_USER_AGENT;
+      if (req.method === 'POST') req.headers['content-type'] = 'application/json';
+      next();
+    },
     createProxyMiddleware({
       target,
       changeOrigin: true,
@@ -75,32 +69,8 @@ const proxy = (route, target, rewrite) =>
       followRedirects: true,
       pathRewrite: rewrite ? pathStr => pathStr.replace(rewrite.from, rewrite.to) : undefined,
       onProxyReq: (proxyReq, req) => {
-        // Preserve original headers
-        proxyReq.setHeader(
-          'User-Agent',
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-        );
-
-        // For OpenAI API calls, preserve Authorization header
-        if (req.headers.authorization && route.includes('openai')) {
-          proxyReq.setHeader('Authorization', req.headers.authorization);
-        }
-
-        // For ArtificialAnalysis API calls, preserve x-api-key header
-        if (req.headers['x-api-key'] && route.includes('aa-api')) {
-          proxyReq.setHeader('x-api-key', req.headers['x-api-key']);
-        }
-
-        // For RoboFlow API calls, preserve Authorization header
-        if (req.headers.authorization && route.includes('roboflow')) {
-          proxyReq.setHeader('Authorization', req.headers.authorization);
-        }
-
-        // Set content type for POST requests
-        if (req.method === 'POST') {
-          proxyReq.setHeader('Content-Type', 'application/json');
-        }
-
+        // Headers are set in the middleware above, not here: with followRedirects the proxy request
+        // has already been flushed by the time this hook runs, so setHeader() throws and kills the process.
         let logPath = proxyReq.path || req.url || '';
         try {
           const parsedPath = new URL(logPath, 'http://localhost');
@@ -190,7 +160,7 @@ proxy('/civitasbay-api', 'https://civitasbay.org', { from: /^\/civitasbay-api/, 
 registerScrape(app);
 
 // SPA fallback
-app.get('*', (req, res) => {
+app.get(/.*/, (req, res) => { // Express 5: a bare '*' path no longer parses, so match everything with a regex
   res.sendFile(path.join(distDir, 'index.html'));
 });
 
