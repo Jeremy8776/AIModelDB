@@ -11,3 +11,20 @@ updates:
     groups:
       actions:
         patterns: ['*']
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      # Minor and patch updates arrive as one PR; majors come one at a time so each can be reviewed.
+      npm-minor-patch:
+        update-types: ['minor', 'patch']
+    ignore:
+      # Tailwind 4 needs a PostCSS and config migration; remove this once that is done.
+      - dependency-name: tailwindcss
+        update-types: ['version-update:semver-major']
+      # Pinned exactly on purpose (see the release fix in #18); bump by hand after a test build.
+      - dependency-name: electron-builder
