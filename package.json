@@ -63,7 +63,7 @@
     "cheerio": "^1.2.0",
     "concurrently": "^8.2.2",
     "cross-env": "^7.0.3",
-    "electron": "^44.7.2",
+    "electron": "^44.9.1",
     "electron-builder": "26.6.0",
     "eslint": "^9.39.2",
     "eslint-plugin-react-hooks": "^7.1.1",
